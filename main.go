@@ -175,8 +175,6 @@ func openSqlite(filename string) *sql.DB {
 }
 
 func printAccounts(w http.ResponseWriter, db *sql.DB) {
-	//var count int;
-	//count = number_of_rows(db, "Konton")
 	fmt.Fprintf(w, "<html>\n")
 	fmt.Fprintf(w, "<head>\n")
 	fmt.Fprintf(w, "<style>\n")
@@ -282,169 +280,6 @@ func generateSummary(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<a href=\"close\">Stäng databas</a><p>\n")
 	fmt.Fprintf(w, "</body>\n")
 	fmt.Fprintf(w, "</html>\n")
-}
-
-// printMonthly_SQL is not used due to floatingpoint in sqlite
-func printMonthly_SQL(w http.ResponseWriter, db *sql.DB, accName string, accYear int, accMonth int) {
-	fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
-	fmt.Fprintf(w, "Kontonamn: %s<br>\n", accName)
-	fmt.Fprintf(w, "År: %d<br>\n", accYear)
-	fmt.Fprintf(w, "Månad: %d<br>\n", accMonth)
-
-	var startDate,endDate string
-	startDate = fmt.Sprintf("%d-%02d-01", accYear, accMonth)
-	endDate = fmt.Sprintf("%d-%02d-01", accYear, accMonth+1)
-	fmt.Fprintf(w, "DEBUG Startdatum: %s<br>\n", startDate)
-	fmt.Fprintf(w, "DEBUG Slutdatum: %s<br>\n", endDate)
-
-	fmt.Fprintf(w, "<p>\n")
-
-	/*
-	res, err := db.Query(`
-SELECT FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Löpnr,Saldo,Fastöverföring,Text from
-(select FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Löpnr,Fastöverföring,Text,
-(select iif(isnull(sum(konton.startsaldo)),0,sum(konton.startsaldo)) as total
-  from konton
-  where (konton.benämning = T1.tillkonto and T1.typ='Insättning')
-    or (konton.benämning = T1.frånkonto and (T1.typ='Inköp' or T1.typ='Överföring' or T1.typ='Uttag')))
-+
-(select iif(isnull(sum(transaktioner.belopp)),0,sum(transaktioner.belopp)) as total
-  from transaktioner
-  where ((transaktioner.löpnr <= T1.löpnr and transaktioner.datum <= T1.datum) or (transaktioner.datum < T1.datum))
-    and (transaktioner.tillkonto = 'Lönekonto')
-    and ((transaktioner.typ = 'Insättning')
-          or (transaktioner.typ = 'Överföring')
-    )  
-  )
--
-(select iif(isnull(sum(transaktioner.belopp)),0,sum(transaktioner.belopp)) as total
-  from transaktioner
-  where ((transaktioner.löpnr <= T1.löpnr and transaktioner.datum <= T1.datum) or (transaktioner.datum < T1.datum))
-    and (transaktioner.frånkonto = 'Lönekonto')
-    and ((transaktioner.typ = 'Uttag')
-         or (transaktioner.typ = 'Inköp')
-         or (transaktioner.typ = 'Överföring')
-    )    
-  ) as Saldo
-
-from transaktioner as T1
-where frånkonto = 'Lönekonto' or tillkonto = 'Lönekonto'
-order by datum,löpnr
-)
-where datum >= '2015-11-01' and datum < '2020-05-01';`)
-*/
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	var err error
-	var res *sql.Rows
-	if dbtype == 1 {
-	res, err = db.QueryContext(ctx, `
-SELECT FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Löpnr,Saldo,Fastöverföring,Text from
-(select FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Löpnr,Fastöverföring,Text,
-(select iif(isnull(sum(konton.startsaldo)),0,sum(konton.startsaldo)) as total
-  from konton
-  where (konton.benämning = ?))
-+
-(select iif(isnull(sum(transaktioner.belopp)),0,sum(transaktioner.belopp)) as total
-  from transaktioner
-  where ((transaktioner.löpnr <= T1.löpnr and transaktioner.datum = T1.datum) or (transaktioner.datum < T1.datum))
-    and (transaktioner.tillkonto = ?)
-    and ((transaktioner.typ = 'Insättning')
-         or (transaktioner.typ = 'Uttag')
-         or (transaktioner.typ = 'Fast Inkomst')
-          or (transaktioner.typ = 'Överföring')
-    )  
-  )
--
-(select iif(isnull(sum(transaktioner.belopp)),0,sum(transaktioner.belopp)) as total
-  from transaktioner
-  where ((transaktioner.löpnr <= T1.löpnr and transaktioner.datum = T1.datum) or (transaktioner.datum < T1.datum))
-    and (transaktioner.frånkonto = ?)
-    and ((transaktioner.typ = 'Uttag')
-         or (transaktioner.typ = 'Inköp')
-         or (transaktioner.typ = 'Fast Utgift')
-         or (transaktioner.typ = 'Överföring')
-    )    
-  ) as Saldo
-
-from transaktioner as T1
-where frånkonto = ? or tillkonto = ?
-order by datum,löpnr
-)
-where datum >= ? and datum < ?;`, accName, accName, accName, accName, accName, startDate,endDate)
-	}
-	if dbtype == 2 {
-	res, err = db.QueryContext(ctx, `
-SELECT FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Löpnr,Saldo,Fastöverföring,Text from
-(select FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Löpnr,Fastöverföring,Text,
-(select ifnull(sum(konton.startsaldo),0) as total
-  from konton
-  where (konton.benämning = ?))
-+
-(select ifnull(sum(transaktioner.belopp),0) as total
-  from transaktioner
-  where ((transaktioner.löpnr <= T1.löpnr and transaktioner.datum = T1.datum) or (transaktioner.datum < T1.datum))
-    and (transaktioner.tillkonto = ?)
-    and ((transaktioner.typ = 'Insättning')
-         or (transaktioner.typ = 'Uttag')
-         or (transaktioner.typ = 'Fast Inkomst')
-          or (transaktioner.typ = 'Överföring')
-    )  
-  )
--
-(select ifnull(sum(transaktioner.belopp),0) as total
-  from transaktioner
-  where ((transaktioner.löpnr <= T1.löpnr and transaktioner.datum = T1.datum) or (transaktioner.datum < T1.datum))
-    and (transaktioner.frånkonto = ?)
-    and ((transaktioner.typ = 'Uttag')
-         or (transaktioner.typ = 'Inköp')
-         or (transaktioner.typ = 'Fast Utgift')
-         or (transaktioner.typ = 'Överföring')
-    )    
-  ) as Saldo
-
-from transaktioner as T1
-where frånkonto = ? or tillkonto = ?
-order by datum,löpnr
-)
-where datum >= ? and datum < ?;`, accName, accName, accName, accName, accName, startDate,endDate)
-	}
-	
-	if err != nil {
-		log.Fatal(err)
-		os.Exit(2)
-	}
-
-	var fromAcc []byte  // size 40
-	var toAcc []byte    // size 40
-	var tType []byte    // size 40
-	var date []byte     // size 10
-	var what []byte     // size 40
-	var who []byte      // size 50
-	var amount []byte   // BCD / Decimal Precision 19
-	var nummer int      // Autoinc Primary Key, index
-	var saldo []byte    // BCD / Decimal Precision 19
-	var fixed bool      // Boolean
-	var comment []byte  // size 60
-
-	fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Löpnr</th><th>Frånkonto</th><th>Tillkonto</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Saldo</th><th>Text</th><th>Fast överföring</th>\n")
-	for res.Next() {
-		err = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
-		sqlStmt:=""
-		sqlStmt+="<tr><td>" + strconv.Itoa(nummer) + "</td>"
-		sqlStmt+="<td>" + toUtf8(fromAcc) + "</td>"
-		sqlStmt+="<td>" + toUtf8(toAcc) + "</td>"
-		sqlStmt+="<td>" + toUtf8(tType) + "</td>"
-		sqlStmt+="<td>" + toUtf8(what) + "</td>"
-		sqlStmt+="<td>" + toUtf8(date) + "</td>"
-		sqlStmt+="<td>" + toUtf8(who) + "</td>"
-		sqlStmt+="<td>" + toUtf8(amount) + "</td>"
-		sqlStmt+="<td>" + toUtf8(saldo) + "</td>"
-		sqlStmt+="<td>" + toUtf8(comment) + "</td>\n"
-		sqlStmt+="<td>" + strconv.FormatBool(fixed) + "</td></tr>"
-		fmt.Fprintf(w, sqlStmt)
-	}
-	fmt.Fprintf(w, "</table>\n")
 }
 
 func printMonthly(w http.ResponseWriter, db *sql.DB, accName string, accYear int, accMonth int) {
@@ -1111,7 +946,6 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 }
 
 func addtransaction(w http.ResponseWriter, req *http.Request) {
-	fmt.Println("addtrans 10")
 	fmt.Fprintf(w, "<html>\n")
 	fmt.Fprintf(w, "<head>\n")
 	fmt.Fprintf(w, "<style>\n")
@@ -1120,13 +954,11 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "</head>\n")
 	fmt.Fprintf(w, "<body>\n")
 	fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
-	fmt.Println("addtrans 20")
 
 	err := req.ParseForm()
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("addtrans 20")
 
 	transtyp := req.FormValue("transtyp")
 	date := req.FormValue("date")
@@ -1139,9 +971,7 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 	fmt.Println("Val: ", amount)
 	fmt.Println("Val: ", text)
 
-	fmt.Println("addtrans 30")
 	if transtyp == "Inköp" {
-		fmt.Println("addtrans 40")
 		fromacc := req.FormValue("fromacc")
 		place := req.FormValue("place")
 		what := req.FormValue("what")
@@ -1149,7 +979,6 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 		fmt.Println("Val: ", place)
 		fmt.Println("Val: ", what)
 
-		fmt.Println("addtrans 50")
 		fmt.Fprintf(w, "Inserting... ")
 
 		sqlStatement := `
@@ -1159,22 +988,17 @@ VALUES (?,?,?,?,?,?,?,?)`
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("addtrans 60")
-		fmt.Println("err=", err)
 
-		fmt.Fprintf(w, "err=%s.\n", err)
 		fmt.Fprintf(w, "Inserted.\n")
 		
 		fmt.Fprintf(w," Insert res:\n", err)
 	}
 	if transtyp == "Insättning" {
-		fmt.Println("addtrans 40")
 		toacc := req.FormValue("toacc")
 		what := req.FormValue("what")
 		fmt.Println("Val: ", toacc)
 		fmt.Println("Val: ", what)
 
-		fmt.Println("addtrans 50")
 		fmt.Fprintf(w, "Inserting... ")
 
 		sqlStatement := `
@@ -1184,22 +1008,17 @@ VALUES (?,?,?,?,?,?,?,?)`
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("addtrans 60")
-		fmt.Println("err=", err)
 
-		fmt.Fprintf(w, "err=%s.\n", err)
 		fmt.Fprintf(w, "Inserted.\n")
 		
 		fmt.Fprintf(w," Insert res:\n", err)
 	}
 	if transtyp == "Uttag" {
-		fmt.Println("addtrans 40")
 		fromacc := req.FormValue("fromacc")
 		what := req.FormValue("what")
 		fmt.Println("Val: ", fromacc)
 		fmt.Println("Val: ", what)
 
-		fmt.Println("addtrans 50")
 		fmt.Fprintf(w, "Inserting... ")
 
 		sqlStatement := `
@@ -1209,22 +1028,16 @@ VALUES (?,?,?,?,?,?,?,?)`
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("addtrans 60")
-		fmt.Println("err=", err)
-
-		fmt.Fprintf(w, "err=%s.\n", err)
 		fmt.Fprintf(w, "Inserted.\n")
 		
 		fmt.Fprintf(w," Insert res:\n", err)
 	}
 	if transtyp == "Överföring" {
-		fmt.Println("addtrans 40")
 		fromacc := req.FormValue("fromacc")
 		toacc := req.FormValue("toacc")
 		fmt.Println("Val: ", fromacc)
 		fmt.Println("Val: ", toacc)
 
-		fmt.Println("addtrans 50")
 		fmt.Fprintf(w, "Inserting... ")
 
 		sqlStatement := `
@@ -1234,10 +1047,6 @@ VALUES (?,?,?,?,?,?,?,?)`
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("addtrans 60")
-		fmt.Println("err=", err)
-
-		fmt.Fprintf(w, "err=%s.\n", err)
 		fmt.Fprintf(w, "Inserted.\n")
 		
 		fmt.Fprintf(w," Insert res:\n", err)
