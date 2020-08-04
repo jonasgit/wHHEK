@@ -1,15 +1,17 @@
 //-*- coding: utf-8 -*-
 
 // This is a personal finance package, inspired by Hogia Hemekonomi.
+// Detta är ett hemekonomiprogram, inspirerat av Hogia Hemekonomi från 90-talet.
 
 // System Requirements: Windows 10 (any)
 
+// To build on Windows:
 // Prepare: install gnu emacs: emacs-26.3-x64_64 (optional)
 // Prepare: TDM-GCC from https://jmeubank.github.io/tdm-gcc/
 //https://github.com/jmeubank/tdm-gcc/releases/download/v9.2.0-tdm-1/tdm-gcc-9.2.0.exe
 
 // Prepare: install git: Git-2.23.0-64-bit
-// Prepare: install golang 32-bits (can't access access/jet driver using 64-bits)
+// Prepare: install golang 32-bits (can't access access/jet/mdb driver using 64-bits)
 //   go1.13.3.windows-386.msi
 // Prepare: go get github.com/alexbrainman/odbc
 // Prepare: go get github.com/mattn/go-sqlite3
@@ -23,9 +25,67 @@
 // Allow access if Windows Firewall asks. Only allow access from localhost
 // if possible.
 
-// TODO: escape & in all html. escapeHTML verkar inte fungera
-// TODO: limit access to localhost?
+// Existerande funktioner
+// ======================
+// Välj databas att hantera. Hanterar både mdb (endast på Windows) från Hogia Hemekonomi och konverterad till sqlite med hhek2sqlite
+// Visa konton (enkel HTML)
+// Visa kontoutdrag per månad för ett konto med saldo (enkel HTML)
+// Visa transaktioner, vald tidsperiod (enkel HTML)
+// Visa transaktioner, sök text i kommentar (enkel HTML)
+// Visa graf på saldo under månad (enkel HTML)
+// Registrera transaktion (enkel HTML)
 
+// ROADMAP/TODO/The Future Is In Flux
+// ============
+// escape & in all html. escapeHTML verkar inte fungera. Use template?
+// kommandorads help-option
+// kommandoradsoption för att välja katalog med databas
+// Installationsinstruktion (ladda ner exe, skapa ikon, brandvägg)
+// Efter lagt till transaktion, visa den tillagda
+// Visa platser
+// Lägg till ny plats
+// Redigera plats
+// Visa personer
+// Lägg till ny person
+// Redigera person
+// Graf som i månadsvyn fast för senaste året
+// Lägg till nytt konto
+// Redigera konto
+// Visa fasta överföringar
+// Lägg till fast överföring
+// Redigera fast överföring
+// Visa fasta betalningar
+// Lägg till fast betalning
+// Redigera fast betalning
+// Registrera fasta överföringar
+// Registrera fasta betalningar
+// REST-api: visa transaktioner
+// REST-api: månadskontoutdrag
+// REST-api: lägg till transaktion
+// REST-api: redigera transaktion
+// REST-api: visa/lägg till/redigera platser
+// REST-api: visa/lägg till/redigera konton
+// REST-api: visa/lägg till/redigera personer
+// REST-api: visa/lägg till/redigera fasta överföringar
+// REST-api: visa/lägg till/redigera fasta betalningar
+// REST-api: registrera överföringar
+// REST-api: registrera betalningar
+// Visa budget
+// Redigera budget
+// REST-api: visa/redigera budget
+// Visa budget med jämförelse till resultat
+// REST-api: Visa budget med jämförelse till resultat
+// Byt till https/SSL
+// Kräv inloggning
+// Årsskiftesrutin inkl uppdatera budget på olika sätt
+// Graf som i månadsvyn, med valfri grupp av konton
+// Graf som i månadsvyn fast för senaste året, med valfri grupp av konton
+// Visa lån
+// Lägg till nytt lån
+// Redigera lån
+// Testa kompabilitet Linux/Mac (endast med sqlite-databas)
+
+// Notes/references/hints for further development
 // TODO: https://stackoverflow.com/questions/26345318/how-can-i-prevent-sql-injection-attacks-in-go-while-using-database-sql
 // TODO: https://www.calhoun.io/what-is-sql-injection-and-how-do-i-avoid-it-in-go/
 // TODO: https://golang.org/pkg/html/template/
