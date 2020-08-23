@@ -38,13 +38,26 @@
 // ROADMAP/TODO/The Future Is In Flux
 // ============
 // escape & in all html. escapeHTML verkar inte fungera. Use template?
+// hantera fel: för lång text till comment
 // kommandorads help-option
 // kommandoradsoption för att välja katalog med databas
+// kommandoradsoption för att välja databas
+// kommandoradsoption för att sätta portnummer
+// kommandoradsoption för att lägga till transaktion
 // Installationsinstruktion (ladda ner exe, skapa ikon, brandvägg)
 // Efter lagt till transaktion, visa den tillagda
 // Visa platser
 // Lägg till ny plats
 // Redigera plats
+// Visa transaktioner, filter: Frånkonto
+// Visa transaktioner, filter: Tillkonto
+// Visa transaktioner, filter: Summa
+// Visa transaktioner, filter: Plats
+// Visa transaktioner, filter: Person
+// Visa transaktioner, filter: Vad
+// Visa resultat-tabellen, aktuell/vald månad
+// Visa resultat-tabellen, helår
+// Visa resultat-tabellen, delår till och med aktuell månad
 // Visa personer
 // Lägg till ny person
 // Redigera person
@@ -59,6 +72,8 @@
 // Redigera fast betalning
 // Registrera fasta överföringar
 // Registrera fasta betalningar
+// Skapa ny fil (sqlite), kompatibel
+// Skapa budget enligt Konsumentverkets riktlinjer
 // REST-api: visa transaktioner
 // REST-api: månadskontoutdrag
 // REST-api: lägg till transaktion
@@ -70,6 +85,7 @@
 // REST-api: visa/lägg till/redigera fasta betalningar
 // REST-api: registrera överföringar
 // REST-api: registrera betalningar
+// kommandorads "api"
 // Visa budget
 // Redigera budget
 // REST-api: visa/redigera budget
@@ -280,7 +296,7 @@ func opendb(w http.ResponseWriter, req *http.Request) {
 
 	if(strings.HasSuffix(strings.ToLower(filename), ".mdb")) {
 		//fmt.Fprintf(w, "Trying to open Access/Jet<br>\n")
-		db = openJetDB(filename, true)
+		db = openJetDB(filename, false)
 		currentDatabase = filename
 		dbtype=1;
 	} else {
@@ -336,6 +352,7 @@ func generateSummary(w http.ResponseWriter, req *http.Request) {
 	printAccounts(w, db)
 	fmt.Fprintf(w, "<a href=\"monthly\">Månads kontoutdrag</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"transactions\">Transaktionslista</a><p>\n")
+	fmt.Fprintf(w, "<a href=\"platser\">Platser</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"newtrans\">Ny transaktion</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"close\">Stäng databas</a><p>\n")
 	fmt.Fprintf(w, "</body>\n")
@@ -729,6 +746,87 @@ func transactions(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
 	fmt.Fprintf(w, "</body>\n")
 	fmt.Fprintf(w, "</html>\n")
+}
+
+func printPlatser(w http.ResponseWriter, db *sql.DB) {
+	res, err := db.Query("SELECT Namn,Gironummer,Typ,RefKonto,Löpnr FROM Platser")
+
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+
+	var Namn []byte  // size 40
+	var Gironummer []byte  // size 20
+	var Typ []byte  // size 2
+	var RefKonto []byte  // size 40
+	var Löpnr []byte  // autoinc Primary Key, index
+
+	fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Namn</th><th>Gironummer</th><th>Typ</th><th>RefKonto</th><th>Redigera</th><th>Radera</th>\n")
+	for res.Next() {
+		err = res.Scan(&Namn,&Gironummer,&Typ,&RefKonto,&Löpnr)
+
+		fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td>", toUtf8(Namn), toUtf8(Gironummer), toUtf8(Typ), toUtf8(RefKonto))
+		fmt.Fprintf(w, "<td>%s</td>", "Red")
+		fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/platser\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%s\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"radera\"><input type=\"submit\" value=\"Radera\"></form></td></tr>\n", Löpnr)
+	}
+	fmt.Fprintf(w, "</table>\n")
+}
+
+func printPlatserFooter(w http.ResponseWriter, db *sql.DB) {
+	fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
+	fmt.Fprintf(w, "</body>\n")
+	fmt.Fprintf(w, "</html>\n")
+}
+
+func raderaPlats(w http.ResponseWriter, lopnr int, db *sql.DB) {
+	fmt.Println("raderaPlats lopnr: ", lopnr)
+	
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	_, err := db.ExecContext(ctx,
+`DELETE FROM Platser WHERE (Löpnr=?)`, lopnr)
+
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+	fmt.Fprintf(w, "Plats med löpnr %d raderad.<br>", lopnr);
+}
+
+func hanteraplatser(w http.ResponseWriter, req *http.Request) {
+	fmt.Fprintf(w, "<html>\n")
+	fmt.Fprintf(w, "<head>\n")
+	fmt.Fprintf(w, "<style>\n")
+	fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
+	fmt.Fprintf(w, "</style>\n")
+	fmt.Fprintf(w, "</head>\n")
+	fmt.Fprintf(w, "<body>\n")
+
+	fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
+	fmt.Fprintf(w, "<h2>Platser</h2>\n")
+
+	err := req.ParseForm()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	formaction := req.FormValue("action")
+	//formlopnr := req.FormValue("lopnr")
+	//	fmt.Println("formaction: ", formaction)
+	//fmt.Println("formlopnr: ", formlopnr)
+
+	var lopnr int=-1;
+	if len(req.FormValue("lopnr"))>0 {
+		lopnr,err = strconv.Atoi(req.FormValue("lopnr"))
+	}
+
+	switch formaction {
+	case "radera" : raderaPlats(w, lopnr, db)
+	}
+	printPlatser(w, db)
+	printPlatserFooter(w, db)
 }
 
 func externalIP() (string, error) {
@@ -1127,6 +1225,7 @@ func main() {
 	http.HandleFunc("/addtrans", addtransaction)
 	http.HandleFunc("/monthly", monthly)
 	http.HandleFunc("/transactions", transactions)
+	http.HandleFunc("/platser", hanteraplatser)
 	http.HandleFunc("/summary", generateSummary)
 	http.HandleFunc("/", root)
 
