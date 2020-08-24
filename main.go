@@ -768,7 +768,7 @@ func printPlatser(w http.ResponseWriter, db *sql.DB) {
 
 		fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td>", toUtf8(Namn), toUtf8(Gironummer), toUtf8(Typ), toUtf8(RefKonto))
 		fmt.Fprintf(w, "<td>%s</td>", "Red")
-		fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/platser\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%s\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"radera\"><input type=\"submit\" value=\"Radera\"></form></td></tr>\n", Löpnr)
+		fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/platser\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%s\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"radera\"><input type=\"checkbox\" id=\"OK\" name=\"OK\" required><label for=\"OK\">OK</label><input type=\"submit\" value=\"Radera\"></form></td></tr>\n", Löpnr)
 	}
 	fmt.Fprintf(w, "</table>\n")
 }
@@ -813,10 +813,6 @@ func hanteraplatser(w http.ResponseWriter, req *http.Request) {
 	}
 
 	formaction := req.FormValue("action")
-	//formlopnr := req.FormValue("lopnr")
-	//	fmt.Println("formaction: ", formaction)
-	//fmt.Println("formlopnr: ", formlopnr)
-
 	var lopnr int=-1;
 	if len(req.FormValue("lopnr"))>0 {
 		lopnr,err = strconv.Atoi(req.FormValue("lopnr"))
