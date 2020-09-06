@@ -17,8 +17,8 @@
 // Prepare: go get github.com/mattn/go-sqlite3
 // Prepare: go get golang.org/x/text/encoding/charmap
 // Prepare: go get github.com/shopspring/decimal
-// Build: go build -o wHHEK.exe main.go
-// Build release: go build -ldflags="-s -w" -o wHHEK.exe main.go
+// Build: go build -o wHHEK.exe main.go platser.go transaktioner.go personer.go
+// Build release: go build -ldflags="-s -w" -o wHHEK.exe main.go platser.go transaktioner.go personer.go
 // Run: ./wHHEK.exe -help
 // Run: ./wHHEK.exe -optin=.
 
@@ -353,6 +353,7 @@ func generateSummary(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<a href=\"monthly\">Månads kontoutdrag</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"transactions\">Transaktionslista</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"platser\">Platser</a><p>\n")
+	fmt.Fprintf(w, "<a href=\"personer\">Personer</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"newtrans\">Ny transaktion</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"close\">Stäng databas</a><p>\n")
 	fmt.Fprintf(w, "</body>\n")
@@ -687,24 +688,6 @@ func getAccNames() []string {
 	return names
 }
 
-func getPersonNames() []string {
-	names := make([]string, 0)
-
-	res, err := db.Query("SELECT Namn FROM Personer ORDER BY Namn")
-
-	if err != nil {
-		log.Fatal(err)
-		os.Exit(2)
-	}
-
-	var Namn  []byte  // size 50, index
-	for res.Next() {
-		err = res.Scan(&Namn)
-		names = append(names, toUtf8(Namn))
-	}
-	return names
-}
-
 func getTypeInNames() []string {
 	names := make([]string, 0)
 
@@ -752,6 +735,7 @@ func main() {
 	http.HandleFunc("/monthly", monthly)
 	http.HandleFunc("/transactions", transactions)
 	http.HandleFunc("/platser", hanteraplatser)
+	http.HandleFunc("/personer", hanterapersoner)
 	http.HandleFunc("/summary", generateSummary)
 	http.HandleFunc("/", root)
 
