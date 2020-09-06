@@ -17,8 +17,8 @@
 // Prepare: go get github.com/mattn/go-sqlite3
 // Prepare: go get golang.org/x/text/encoding/charmap
 // Prepare: go get github.com/shopspring/decimal
-// Build: go build -o wHHEK.exe main.go platser.go transaktioner.go personer.go
-// Build release: go build -ldflags="-s -w" -o wHHEK.exe main.go platser.go transaktioner.go personer.go
+// Build: go build -o wHHEK.exe main.go platser.go transaktioner.go personer.go konton.go
+// Build release: go build -ldflags="-s -w" -o wHHEK.exe main.go platser.go transaktioner.go personer.go konton.go
 // Run: ./wHHEK.exe -help
 // Run: ./wHHEK.exe -optin=.
 
@@ -37,6 +37,11 @@
 // Visa platser
 // Lägg till ny plats
 // Redigera plats
+// Visa personer
+// Lägg till ny person
+// Redigera person
+// Lägg till nytt konto
+// Redigera konto
 
 // ROADMAP/TODO/The Future Is In Flux
 // ============
@@ -59,12 +64,7 @@
 // Visa resultat-tabellen, aktuell/vald månad
 // Visa resultat-tabellen, helår
 // Visa resultat-tabellen, delår till och med aktuell månad
-// Visa personer
-// Lägg till ny person
-// Redigera person
 // Graf som i månadsvyn fast för senaste året
-// Lägg till nytt konto
-// Redigera konto
 // Visa fasta överföringar
 // Lägg till fast överföring
 // Redigera fast överföring
@@ -354,6 +354,7 @@ func generateSummary(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<a href=\"transactions\">Transaktionslista</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"platser\">Platser</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"personer\">Personer</a><p>\n")
+	fmt.Fprintf(w, "<a href=\"konton\">Konton</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"newtrans\">Ny transaktion</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"close\">Stäng databas</a><p>\n")
 	fmt.Fprintf(w, "</body>\n")
@@ -670,24 +671,6 @@ func externalIP() (string, error) {
 	return "", errors.New("are you connected to the network?")
 }
 
-func getAccNames() []string {
-	names := make([]string, 0)
-
-	res, err := db.Query("SELECT Benämning FROM Konton ORDER BY Benämning")
-
-	if err != nil {
-		log.Fatal(err)
-		os.Exit(2)
-	}
-
-	var Benämning  []byte  // size 40, index
-	for res.Next() {
-		err = res.Scan(&Benämning)
-		names = append(names, toUtf8(Benämning))
-	}
-	return names
-}
-
 func getTypeInNames() []string {
 	names := make([]string, 0)
 
@@ -736,6 +719,7 @@ func main() {
 	http.HandleFunc("/transactions", transactions)
 	http.HandleFunc("/platser", hanteraplatser)
 	http.HandleFunc("/personer", hanterapersoner)
+	http.HandleFunc("/konton", hanterakonton)
 	http.HandleFunc("/summary", generateSummary)
 	http.HandleFunc("/", root)
 
