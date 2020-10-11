@@ -66,6 +66,8 @@
 // Visa resultat-tabellen, delår till och med aktuell månad
 // Graf som i månadsvyn fast för senaste året
 // Visa fasta överföringar
+// Hantera fasta överföringar/betalningar som passerat datum
+// Hantera fasta överföringar/betalningar för hela aktuell månad
 // Lägg till fast överföring
 // Redigera fast överföring
 // Visa fasta betalningar
@@ -127,6 +129,7 @@ import (
 	"os"
 	"strings"
 	"strconv"
+	"time"
 	
 	_ "github.com/alexbrainman/odbc"    // BSD-3-Clause License 
 	_ "github.com/mattn/go-sqlite3"     // MIT License
@@ -250,6 +253,33 @@ func openSqlite(filename string) *sql.DB {
 	return db
 }
 
+func GetCountPendingÖverföringar(db *sql.DB, currDate string) int {
+    var cnt int
+    _ = db.QueryRow(`select count(*) from Överföringar WHERE Datum <= ?`, currDate).Scan(&cnt)
+    return cnt 
+}
+
+func checkÖverföringar(w http.ResponseWriter, db *sql.DB) {
+	currentTime := time.Now()
+	currDate := currentTime.Format("2006-01-02")
+	antal := GetCountPendingÖverföringar(db, currDate)
+	if antal > 0 {
+		fmt.Fprintf(w, "<p>%d fasta transaktioner tills idag väntar på att hanteras. Gå till <a href=\"newtrans\">Nya transaktioner</a>.<p>\n", antal)
+	}
+	
+	now := time.Now()
+	currentYear, currentMonth, _ := now.Date()
+	currentLocation := now.Location()
+	
+	firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, currentLocation)
+	lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
+	currDate = lastOfMonth.Format("2006-01-02")
+	antal = GetCountPendingÖverföringar(db, currDate)
+	if antal > 0 {
+		fmt.Fprintf(w, "<p>%d fasta transaktioner till hela denna månaden väntar på att hanteras. Gå till <a href=\"newtrans\">Nya transaktioner</a>.<p>\n", antal)
+	}
+}
+
 func printAccounts(w http.ResponseWriter, db *sql.DB) {
 	fmt.Fprintf(w, "<html>\n")
 	fmt.Fprintf(w, "<head>\n")
@@ -350,6 +380,7 @@ func closedb(w http.ResponseWriter, req *http.Request) {
 
 func generateSummary(w http.ResponseWriter, req *http.Request) {
 	printAccounts(w, db)
+	checkÖverföringar(w, db);
 	fmt.Fprintf(w, "<a href=\"monthly\">Månads kontoutdrag</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"transactions\">Transaktionslista</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"platser\">Platser</a><p>\n")
