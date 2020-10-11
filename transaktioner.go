@@ -135,15 +135,13 @@ func transactions(w http.ResponseWriter, req *http.Request) {
 }
 
 func newtransaction(w http.ResponseWriter, req *http.Request) {
-	fmt.Println("newtrans 10")
 	// Common
 	kontonamn := getAccNames()
-	fmt.Println("newtrans 20")
+
 	platser := getPlaceNames()
 	personer := getPersonNames()
 	vad_inkomst := getTypeInNames()
 	vad_utgift := getTypeOutNames()
-	fmt.Println("newtrans 30")
 
 	fmt.Fprintf(w, "<html>\n")
 	fmt.Fprintf(w, "<head>\n")
@@ -154,16 +152,18 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<body>\n")
 	fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
 
+	addtransaction(w, req)
+	
 	// Inköp
 	fmt.Fprintf(w, "<h3>Inköp</h3>\n")
-	fmt.Fprintf(w, "<form method=\"POST\" action=\"/addtrans\">\n")
+	fmt.Fprintf(w, "<form method=\"POST\" action=\"/newtrans\">\n")
 	fmt.Fprintf(w, "<input type=\"hidden\" id=\"transtyp\" name=\"transtyp\" value=\"Inköp\">\n")
 	fmt.Fprintf(w, "  <label for=\"fromacc\">Från:</label>")
 	fmt.Fprintf(w, "  <select name=\"fromacc\" id=\"fromacc\">")
 	for _, s := range kontonamn {
 		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", s, s)
 	}
-	fmt.Println("newtrans 40")
+
 	fmt.Fprintf(w, "  </select>\n")
 	fmt.Fprintf(w, "  <label for=\"place\">Plats:</label>")
 	fmt.Fprintf(w, "  <select name=\"place\" id=\"place\">")
@@ -192,14 +192,14 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<input type=\"submit\" value=\"Submit\"></form>\n")
 	// Insättning
 	fmt.Fprintf(w, "<h3>Insättning</h3>\n")
-	fmt.Fprintf(w, "<form method=\"POST\" action=\"/addtrans\">\n")
+	fmt.Fprintf(w, "<form method=\"POST\" action=\"/newtrans\">\n")
 	fmt.Fprintf(w, "<input type=\"hidden\" id=\"transtyp\" name=\"transtyp\" value=\"Insättning\">\n")
 	fmt.Fprintf(w, "  <label for=\"toacc\">Till:</label>")
 	fmt.Fprintf(w, "  <select name=\"toacc\" id=\"fromacc\">")
 	for _, s := range kontonamn {
 		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", s, s)
 	}
-	fmt.Println("newtrans 40")
+
 	fmt.Fprintf(w, "  </select>\n")
 	fmt.Fprintf(w, "<label for=\"date\">Datum:</label>")
 	fmt.Fprintf(w, "	<input type=\"date\" id=\"date\" name=\"date\">")
@@ -222,14 +222,14 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<input type=\"submit\" value=\"Submit\"></form>\n")
 	// Uttag
 	fmt.Fprintf(w, "<h3>Uttag</h3>\n")
-	fmt.Fprintf(w, "<form method=\"POST\" action=\"/addtrans\">\n")
+	fmt.Fprintf(w, "<form method=\"POST\" action=\"/newtrans\">\n")
 	fmt.Fprintf(w, "<input type=\"hidden\" id=\"transtyp\" name=\"transtyp\" value=\"Uttag\">\n")
 	fmt.Fprintf(w, "  <label for=\"fromacc\">Från:</label>")
 	fmt.Fprintf(w, "  <select name=\"fromacc\" id=\"fromacc\">")
 	for _, s := range kontonamn {
 		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", s, s)
 	}
-	fmt.Println("newtrans 40")
+
 	fmt.Fprintf(w, "  </select>\n")
 	fmt.Fprintf(w, "<label for=\"date\">Datum:</label>")
 	fmt.Fprintf(w, "	<input type=\"date\" id=\"date\" name=\"date\">")
@@ -246,7 +246,7 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<input type=\"submit\" value=\"Submit\"></form>\n")
 	// Överföring
 	fmt.Fprintf(w, "<h3>Överföring</h3>\n")
-	fmt.Fprintf(w, "<form method=\"POST\" action=\"/addtrans\">\n")
+	fmt.Fprintf(w, "<form method=\"POST\" action=\"/newtrans\">\n")
 	fmt.Fprintf(w, "<input type=\"hidden\" id=\"transtyp\" name=\"transtyp\" value=\"Överföring\">\n")
 	fmt.Fprintf(w, "  <label for=\"fromacc\">Från:</label>")
 	fmt.Fprintf(w, "  <select name=\"fromacc\" id=\"fromacc\">")
@@ -259,7 +259,7 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 	for _, s := range kontonamn {
 		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", s, s)
 	}
-	fmt.Println("newtrans 40")
+
 	fmt.Fprintf(w, "  </select>\n")
 	fmt.Fprintf(w, "<label for=\"date\">Datum:</label>")
 	fmt.Fprintf(w, "	<input type=\"date\" id=\"date\" name=\"date\">")
@@ -274,7 +274,6 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<label for=\"text\">Text:</label>")
 	fmt.Fprintf(w, "<input type=\"text\" id=\"text\" name=\"text\" >")
 	fmt.Fprintf(w, "<input type=\"submit\" value=\"Submit\"></form>\n")
-	fmt.Println("newtrans 50")
 
 	fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
 	fmt.Fprintf(w, "</body>\n")
@@ -282,15 +281,6 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 }
 
 func addtransaction(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "<html>\n")
-	fmt.Fprintf(w, "<head>\n")
-	fmt.Fprintf(w, "<style>\n")
-	fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
-	fmt.Fprintf(w, "</style>\n")
-	fmt.Fprintf(w, "</head>\n")
-	fmt.Fprintf(w, "<body>\n")
-	fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
-
 	err := req.ParseForm()
 	if err != nil {
 		log.Fatal(err)
@@ -315,7 +305,7 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 		fmt.Println("Val: ", place)
 		fmt.Println("Val: ", what)
 
-		fmt.Fprintf(w, "Inserting... ")
+		fmt.Fprintf(w, "Registrerar Inköp...<br> ")
 
 		sqlStatement := `
 INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
@@ -325,9 +315,19 @@ VALUES (?,?,?,?,?,?,?,?)`
 			panic(err)
 		}
 
-		fmt.Fprintf(w, "Inserted.\n")
-
-		fmt.Fprintf(w, " Insert res:\n", err)
+		fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Frånkonto</th><th>Plats</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
+		sqlStmt := "<tr>"
+		sqlStmt += "<td>" + fromacc + "</td>"
+		sqlStmt += "<td>" + place + "</td>"
+		sqlStmt += "<td>" + transtyp + "</td>"
+		sqlStmt += "<td>" + what + "</td>"
+		sqlStmt += "<td>" + date + "</td>"
+		sqlStmt += "<td>" + who + "</td>"
+		sqlStmt += "<td>" + amount + "</td>"
+		sqlStmt += "<td>" + html.EscapeString(text) + "</td>\n"
+		sqlStmt += "</tr>"
+		fmt.Fprintf(w, "%s", sqlStmt)
+		fmt.Fprintf(w, "</table>\n")
 	}
 	if transtyp == "Insättning" {
 		toacc := req.FormValue("toacc")
@@ -335,7 +335,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 		fmt.Println("Val: ", toacc)
 		fmt.Println("Val: ", what)
 
-		fmt.Fprintf(w, "Inserting... ")
+		fmt.Fprintf(w, "Registrerar Insättning...<br> ")
 
 		sqlStatement := `
 INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
@@ -345,9 +345,18 @@ VALUES (?,?,?,?,?,?,?,?)`
 			panic(err)
 		}
 
-		fmt.Fprintf(w, "Inserted.\n")
-
-		fmt.Fprintf(w, " Insert res:\n", err)
+		fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Konto</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
+		sqlStmt := "<tr>"
+		sqlStmt += "<td>" + toacc + "</td>"
+		sqlStmt += "<td>" + transtyp + "</td>"
+		sqlStmt += "<td>" + what + "</td>"
+		sqlStmt += "<td>" + date + "</td>"
+		sqlStmt += "<td>" + who + "</td>"
+		sqlStmt += "<td>" + amount + "</td>"
+		sqlStmt += "<td>" + html.EscapeString(text) + "</td>\n"
+		sqlStmt += "</tr>"
+		fmt.Fprintf(w, "%s", sqlStmt)
+		fmt.Fprintf(w, "</table>\n")
 	}
 	if transtyp == "Uttag" {
 		fromacc := req.FormValue("fromacc")
@@ -355,7 +364,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 		fmt.Println("Val: ", fromacc)
 		fmt.Println("Val: ", what)
 
-		fmt.Fprintf(w, "Inserting... ")
+		fmt.Fprintf(w, "Registrerar Uttag...<br> ")
 
 		sqlStatement := `
 INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
@@ -364,9 +373,18 @@ VALUES (?,?,?,?,?,?,?,?)`
 		if err != nil {
 			panic(err)
 		}
-		fmt.Fprintf(w, "Inserted.\n")
 
-		fmt.Fprintf(w, " Insert res:\n", err)
+		fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Frånkonto</th><th>Typ</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
+		sqlStmt := "<tr>"
+		sqlStmt += "<td>" + fromacc + "</td>"
+		sqlStmt += "<td>" + transtyp + "</td>"
+		sqlStmt += "<td>" + date + "</td>"
+		sqlStmt += "<td>" + who + "</td>"
+		sqlStmt += "<td>" + amount + "</td>"
+		sqlStmt += "<td>" + html.EscapeString(text) + "</td>\n"
+		sqlStmt += "</tr>"
+		fmt.Fprintf(w, "%s", sqlStmt)
+		fmt.Fprintf(w, "</table>\n")
 	}
 	if transtyp == "Överföring" {
 		fromacc := req.FormValue("fromacc")
@@ -374,7 +392,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 		fmt.Println("Val: ", fromacc)
 		fmt.Println("Val: ", toacc)
 
-		fmt.Fprintf(w, "Inserting... ")
+		fmt.Fprintf(w, "Registrerar Överföring...<br> ")
 
 		sqlStatement := `
 INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
@@ -383,12 +401,18 @@ VALUES (?,?,?,?,?,?,?,?)`
 		if err != nil {
 			panic(err)
 		}
-		fmt.Fprintf(w, "Inserted.\n")
 
-		fmt.Fprintf(w, " Insert res:\n", err)
+		fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Frånkonto</th><th>Tillkonto</th><th>Typ</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
+		sqlStmt := "<tr>"
+		sqlStmt += "<td>" + fromacc + "</td>"
+		sqlStmt += "<td>" + toacc + "</td>"
+		sqlStmt += "<td>" + transtyp + "</td>"
+		sqlStmt += "<td>" + date + "</td>"
+		sqlStmt += "<td>" + who + "</td>"
+		sqlStmt += "<td>" + amount + "</td>"
+		sqlStmt += "<td>" + html.EscapeString(text) + "</td>\n"
+		sqlStmt += "</tr>"
+		fmt.Fprintf(w, "%s", sqlStmt)
+		fmt.Fprintf(w, "</table>\n")
 	}
-
-	fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
-	fmt.Fprintf(w, "</body>\n")
-	fmt.Fprintf(w, "</html>\n")
 }

@@ -738,7 +738,7 @@ func main() {
 	http.HandleFunc("/open", opendb)
 	http.HandleFunc("/close", closedb)
 	http.HandleFunc("/newtrans", newtransaction)
-	http.HandleFunc("/addtrans", addtransaction)
+	//	http.HandleFunc("/addtrans", addtransaction)
 	http.HandleFunc("/monthly", monthly)
 	http.HandleFunc("/transactions", transactions)
 	http.HandleFunc("/platser", hanteraplatser)
