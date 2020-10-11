@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"html"
 	"net/http"
 	"os"
 	"strconv"
@@ -70,9 +71,9 @@ order by datum,löpnr`, endDate, startDate)
 		sqlStmt += "<td>" + toUtf8(date) + "</td>"
 		sqlStmt += "<td>" + toUtf8(who) + "</td>"
 		sqlStmt += "<td>" + toUtf8(amount) + "</td>"
-		sqlStmt += "<td>" + escapeHTML(toUtf8(comment)) + "</td>\n"
+		sqlStmt += "<td>" + html.EscapeString(toUtf8(comment)) + "</td>\n"
 		sqlStmt += "<td>" + strconv.FormatBool(fixed) + "</td></tr>"
-		fmt.Fprintf(w, sqlStmt)
+		fmt.Fprintf(w, "%s", sqlStmt)
 	}
 	fmt.Fprintf(w, "</table>\n")
 }

@@ -122,6 +122,7 @@ import (
 	"golang.org/x/text/encoding/charmap"
 	"io/ioutil"
 	"log"
+	"html"
 	"math"
 	"net"
 	"net/http"
@@ -154,14 +155,6 @@ func toUtf8(in_buf []byte) string {
 	stringVal2 := strings.ReplaceAll(stringVal, "'", "''")
 	stringVal3 := strings.ReplaceAll(stringVal2, "\"", "\"\"")
 	return stringVal3
-}
-
-func escapeHTML(stringVal string) string {
-	stringVal2 := strings.ReplaceAll(stringVal, "&", "&amp;")
-	stringVal3 := strings.ReplaceAll(stringVal2, "\"", "&quot;")
-	stringVal4 := strings.ReplaceAll(stringVal3, "<", "&lt;")
-	stringVal5 := strings.ReplaceAll(stringVal4, ">", "&gt;")
-	return stringVal5
 }
 
 func hello(w http.ResponseWriter, req *http.Request) {
@@ -480,9 +473,9 @@ order by datum,löpnr`, endDate, accName, accName)
 			sqlStmt += "<td>" + toUtf8(who) + "</td>"
 			sqlStmt += "<td>" + toUtf8(amount) + "</td>"
 			sqlStmt += "<td>" + currSaldo.String() + "</td>"
-			sqlStmt += "<td>" + escapeHTML(toUtf8(comment)) + "</td>\n"
+			sqlStmt += "<td>" + html.EscapeString(toUtf8(comment)) + "</td>\n"
 			sqlStmt += "<td>" + strconv.FormatBool(fixed) + "</td></tr>"
-			fmt.Fprintf(w, sqlStmt)
+			fmt.Fprintf(w, "%s", sqlStmt)
 
 			daynum, _ := strconv.Atoi(toUtf8(date)[8:10])
 			day_saldo[daynum] = currSaldo
