@@ -117,23 +117,23 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"golang.org/x/text/encoding/charmap"
 	"io/ioutil"
 	"log"
-	"golang.org/x/text/encoding/charmap"
-	"net/http"
-	"errors"
 	"math"
 	"net"
+	"net/http"
 	//	"flag"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
 	"time"
-	
-	_ "github.com/alexbrainman/odbc"    // BSD-3-Clause License 
-	_ "github.com/mattn/go-sqlite3"     // MIT License
-	"github.com/shopspring/decimal"     // MIT License
+
+	_ "github.com/alexbrainman/odbc" // BSD-3-Clause License
+	_ "github.com/mattn/go-sqlite3"  // MIT License
+	"github.com/shopspring/decimal"  // MIT License
 )
 
 // Global variables
@@ -173,23 +173,23 @@ func root(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<body>\n")
 	//fmt.Fprintf(w, "hello root<p>")
 	fmt.Fprintf(w, "Välj databas att arbeta med:<br>")
-	
+
 	files, err := ioutil.ReadDir(".")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if (len(files) >0) {
-		fmt.Fprintf(w,"<form method=\"POST\" action=\"/open\">\n")
+	if len(files) > 0 {
+		fmt.Fprintf(w, "<form method=\"POST\" action=\"/open\">\n")
 		for _, file := range files {
-			
-			if(strings.HasSuffix(strings.ToLower(file.Name()), ".mdb") ||
-				strings.HasSuffix(strings.ToLower(file.Name()), ".db")) {
+
+			if strings.HasSuffix(strings.ToLower(file.Name()), ".mdb") ||
+				strings.HasSuffix(strings.ToLower(file.Name()), ".db") {
 				//fmt.Fprintf(w,"%s<br>\n", file.Name())
-				fmt.Fprintf(w,"<input type=\"radio\" id=\"%s\" name=\"fname\" value=\"%s\"><label for=\"%s\">%s</label><br>\n", file.Name(), file.Name(), file.Name(), file.Name())
+				fmt.Fprintf(w, "<input type=\"radio\" id=\"%s\" name=\"fname\" value=\"%s\"><label for=\"%s\">%s</label><br>\n", file.Name(), file.Name(), file.Name(), file.Name())
 			}
 		}
-		fmt.Fprintf(w,"<input type=\"submit\" value=\"Submit\"></form>\n")
+		fmt.Fprintf(w, "<input type=\"submit\" value=\"Submit\"></form>\n")
 	} else {
 		fmt.Fprintf(w, "No files available.<p>\n")
 	}
@@ -206,7 +206,7 @@ func restapi(w http.ResponseWriter, req *http.Request) {
 
 func headers(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "Host: %s\n\n", req.Host)
-	
+
 	for name, headers := range req.Header {
 		for _, h := range headers {
 			fmt.Fprintf(w, "%v: %v\n", name, h)
@@ -222,7 +222,7 @@ func sanitizeFilename(fname string) string {
 	fname = strings.Replace(fname, ">", "", -1)
 	fname = strings.Replace(fname, "\"", "", -1)
 
-	return fname;
+	return fname
 }
 
 func openJetDB(filename string, ro bool) *sql.DB {
@@ -230,10 +230,10 @@ func openJetDB(filename string, ro bool) *sql.DB {
 	if ro {
 		readonlyCommand = "READONLY;"
 	}
-	
-	databaseAccessCommand := "Driver={Microsoft Access Driver (*.mdb)};"+
+
+	databaseAccessCommand := "Driver={Microsoft Access Driver (*.mdb)};" +
 		readonlyCommand +
-		"DBQ="+filename
+		"DBQ=" + filename
 	//fmt.Println("Database access command: "+databaseAccessCommand)
 	db, err := sql.Open("odbc",
 		databaseAccessCommand)
@@ -254,9 +254,9 @@ func openSqlite(filename string) *sql.DB {
 }
 
 func GetCountPendingÖverföringar(db *sql.DB, currDate string) int {
-    var cnt int
-    _ = db.QueryRow(`select count(*) from Överföringar WHERE Datum <= ?`, currDate).Scan(&cnt)
-    return cnt 
+	var cnt int
+	_ = db.QueryRow(`select count(*) from Överföringar WHERE Datum <= ?`, currDate).Scan(&cnt)
+	return cnt
 }
 
 func checkÖverföringar(w http.ResponseWriter, db *sql.DB) {
@@ -266,11 +266,11 @@ func checkÖverföringar(w http.ResponseWriter, db *sql.DB) {
 	if antal > 0 {
 		fmt.Fprintf(w, "<p>%d fasta transaktioner tills idag väntar på att hanteras. Gå till <a href=\"newtrans\">Nya transaktioner</a>.<p>\n", antal)
 	}
-	
+
 	now := time.Now()
 	currentYear, currentMonth, _ := now.Date()
 	currentLocation := now.Location()
-	
+
 	firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, currentLocation)
 	lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
 	currDate = lastOfMonth.Format("2006-01-02")
@@ -298,18 +298,18 @@ func printAccounts(w http.ResponseWriter, db *sql.DB) {
 		os.Exit(2)
 	}
 
-	var KontoNummer []byte  // size 20
-	var Benämning  []byte  // size 40, index
-	var Saldo []byte  // BCD / Decimal Precision 19
-	var StartSaldo []byte  // BCD / Decimal Precision 19
-	var StartManad []byte  // size 10
-	var Löpnr  []byte  // autoinc Primary Key
-	var SaldoArsskifte []byte  // BCD / Decimal Precision 19
-	var ArsskifteManad []byte  // size 10
+	var KontoNummer []byte    // size 20
+	var Benämning []byte      // size 40, index
+	var Saldo []byte          // BCD / Decimal Precision 19
+	var StartSaldo []byte     // BCD / Decimal Precision 19
+	var StartManad []byte     // size 10
+	var Löpnr []byte          // autoinc Primary Key
+	var SaldoArsskifte []byte // BCD / Decimal Precision 19
+	var ArsskifteManad []byte // size 10
 
 	fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Kontonamn</th><th>Saldo (kanske?)</th>\n")
 	for res.Next() {
-		err = res.Scan(&KontoNummer,&Benämning,&Saldo,&StartSaldo,&StartManad,&Löpnr,&SaldoArsskifte,&ArsskifteManad)
+		err = res.Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &Löpnr, &SaldoArsskifte, &ArsskifteManad)
 
 		fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td>\n", toUtf8(Benämning), toUtf8(Saldo))
 	}
@@ -324,26 +324,26 @@ func opendb(w http.ResponseWriter, req *http.Request) {
 
 	filename := sanitizeFilename(req.FormValue("fname"))
 
-	if(strings.HasSuffix(strings.ToLower(filename), ".mdb")) {
+	if strings.HasSuffix(strings.ToLower(filename), ".mdb") {
 		//fmt.Fprintf(w, "Trying to open Access/Jet<br>\n")
 		db = openJetDB(filename, false)
 		currentDatabase = filename
-		dbtype=1;
+		dbtype = 1
 	} else {
-		if(strings.HasSuffix(strings.ToLower(filename), ".db")) {
+		if strings.HasSuffix(strings.ToLower(filename), ".db") {
 			//fmt.Fprintf(w, "Trying to open sqlite3<br>\n")
 			db = openSqlite(filename)
 			currentDatabase = filename
-			dbtype=2;
+			dbtype = 2
 		} else {
 			fmt.Fprintf(w, "Bad filename: %s<br>\n", filename)
 		}
 	}
 
-	if(db==nil) {
+	if db == nil {
 		fmt.Fprintf(w, "<html>\n")
 		fmt.Fprintf(w, "<body>\n")
-		
+
 		fmt.Fprintf(w, "Error opening database<p>\n")
 	} else {
 		fmt.Fprintf(w, "<!DOCTYPE html>\n")
@@ -363,9 +363,9 @@ func opendb(w http.ResponseWriter, req *http.Request) {
 
 func closedb(w http.ResponseWriter, req *http.Request) {
 	db.Close()
-	dbtype=0;
+	dbtype = 0
 	currentDatabase = "NONE"
-	
+
 	fmt.Fprintf(w, "<!DOCTYPE html>\n")
 	fmt.Fprintf(w, "<html>\n")
 	fmt.Fprintf(w, "   <head>\n")
@@ -380,7 +380,7 @@ func closedb(w http.ResponseWriter, req *http.Request) {
 
 func generateSummary(w http.ResponseWriter, req *http.Request) {
 	printAccounts(w, db)
-	checkÖverföringar(w, db);
+	checkÖverföringar(w, db)
 	fmt.Fprintf(w, "<a href=\"monthly\">Månads kontoutdrag</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"transactions\">Transaktionslista</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"platser\">Platser</a><p>\n")
@@ -398,7 +398,7 @@ func printMonthly(w http.ResponseWriter, db *sql.DB, accName string, accYear int
 	fmt.Fprintf(w, "År: %d<br>\n", accYear)
 	fmt.Fprintf(w, "Månad: %d<br>\n", accMonth)
 
-	var startDate,endDate string
+	var startDate, endDate string
 	startDate = fmt.Sprintf("%d-%02d-01", accYear, accMonth)
 	endDate = fmt.Sprintf("%d-%02d-01", accYear, accMonth+1)
 	//fmt.Println("DEBUG Startdatum: ", startDate)
@@ -412,19 +412,19 @@ func printMonthly(w http.ResponseWriter, db *sql.DB, accName string, accYear int
 	var res *sql.Rows
 	var day_saldo [32]decimal.Decimal
 	var day_found [32]bool
-	
+
 	res1 := db.QueryRowContext(ctx,
-`select startsaldo
+		`select startsaldo
   from konton
   where benämning = ?`, accName)
-	var rawStart []byte     // size 16
+	var rawStart []byte // size 16
 	err = res1.Scan(&rawStart)
 	res2 := toUtf8(rawStart)
-        startSaldo, err := decimal.NewFromString(res2)
+	startSaldo, err := decimal.NewFromString(res2)
 	currSaldo := startSaldo
-	
+
 	res, err = db.QueryContext(ctx,
-`SELECT FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Löpnr,Saldo,Fastöverföring,Text from transaktioner
+		`SELECT FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Löpnr,Saldo,Fastöverföring,Text from transaktioner
   where (datum < ?)
     and ((tillkonto = ?)
          or (frånkonto = ?))
@@ -435,23 +435,23 @@ order by datum,löpnr`, endDate, accName, accName)
 		os.Exit(2)
 	}
 
-	var fromAcc []byte  // size 40
-	var toAcc []byte    // size 40
-	var tType []byte    // size 40
-	var date []byte     // size 10
-	var what []byte     // size 40
-	var who []byte      // size 50
-	var amount []byte   // BCD / Decimal Precision 19
-	var nummer int      // Autoinc Primary Key, index
-	var saldo []byte    // BCD / Decimal Precision 19
-	var fixed bool      // Boolean
-	var comment []byte  // size 60
+	var fromAcc []byte // size 40
+	var toAcc []byte   // size 40
+	var tType []byte   // size 40
+	var date []byte    // size 10
+	var what []byte    // size 40
+	var who []byte     // size 50
+	var amount []byte  // BCD / Decimal Precision 19
+	var nummer int     // Autoinc Primary Key, index
+	var saldo []byte   // BCD / Decimal Precision 19
+	var fixed bool     // Boolean
+	var comment []byte // size 60
 
 	fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Löpnr</th><th>Frånkonto</th><th>Tillkonto</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Saldo</th><th>Text</th><th>Fast överföring</th>\n")
 	for res.Next() {
 		err = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
 		decAmount, _ := decimal.NewFromString(toUtf8(amount))
- 		if !day_found[01] && toUtf8(date) >= startDate {
+		if !day_found[01] && toUtf8(date) >= startDate {
 			day_saldo[01] = currSaldo
 			day_found[01] = true
 		}
@@ -463,28 +463,28 @@ order by datum,löpnr`, endDate, accName, accName)
 			currSaldo = currSaldo.Add(decAmount)
 		}
 		if (accName == toUtf8(fromAcc)) &&
-			( (toUtf8(tType) == "Uttag") ||
+			((toUtf8(tType) == "Uttag") ||
 				(toUtf8(tType) == "Inköp") ||
 				(toUtf8(tType) == "Fast Utgift") ||
 				(toUtf8(tType) == "Överföring")) {
 			currSaldo = currSaldo.Sub(decAmount)
 		}
- 		if toUtf8(date) >= startDate {
-			sqlStmt:=""
-			sqlStmt+="<tr><td>" + strconv.Itoa(nummer) + "</td>"
-			sqlStmt+="<td>" + toUtf8(fromAcc) + "</td>"
-			sqlStmt+="<td>" + toUtf8(toAcc) + "</td>"
-			sqlStmt+="<td>" + toUtf8(tType) + "</td>"
-			sqlStmt+="<td>" + toUtf8(what) + "</td>"
-			sqlStmt+="<td>" + toUtf8(date) + "</td>"
-			sqlStmt+="<td>" + toUtf8(who) + "</td>"
-			sqlStmt+="<td>" + toUtf8(amount) + "</td>"
-			sqlStmt+="<td>" + currSaldo.String() + "</td>"
-			sqlStmt+="<td>" + escapeHTML(toUtf8(comment)) + "</td>\n"
-			sqlStmt+="<td>" + strconv.FormatBool(fixed) + "</td></tr>"
+		if toUtf8(date) >= startDate {
+			sqlStmt := ""
+			sqlStmt += "<tr><td>" + strconv.Itoa(nummer) + "</td>"
+			sqlStmt += "<td>" + toUtf8(fromAcc) + "</td>"
+			sqlStmt += "<td>" + toUtf8(toAcc) + "</td>"
+			sqlStmt += "<td>" + toUtf8(tType) + "</td>"
+			sqlStmt += "<td>" + toUtf8(what) + "</td>"
+			sqlStmt += "<td>" + toUtf8(date) + "</td>"
+			sqlStmt += "<td>" + toUtf8(who) + "</td>"
+			sqlStmt += "<td>" + toUtf8(amount) + "</td>"
+			sqlStmt += "<td>" + currSaldo.String() + "</td>"
+			sqlStmt += "<td>" + escapeHTML(toUtf8(comment)) + "</td>\n"
+			sqlStmt += "<td>" + strconv.FormatBool(fixed) + "</td></tr>"
 			fmt.Fprintf(w, sqlStmt)
-			
-			daynum,_ := strconv.Atoi(toUtf8(date)[8:10])
+
+			daynum, _ := strconv.Atoi(toUtf8(date)[8:10])
 			day_saldo[daynum] = currSaldo
 			day_found[daynum] = true
 		}
@@ -494,7 +494,7 @@ order by datum,löpnr`, endDate, accName, accName)
 	min_saldo := decimal.NewFromInt(math.MaxInt64)
 	max_saldo := decimal.NewFromInt(math.MinInt64)
 
-	for i := 1; i<32; i++ {
+	for i := 1; i < 32; i++ {
 		//fmt.Fprintf(w, "%d: %s<br>\n", i, day_saldo[i].String())
 		if day_saldo[i].GreaterThan(max_saldo) {
 			max_saldo = day_saldo[i]
@@ -508,27 +508,27 @@ order by datum,löpnr`, endDate, accName, accName)
 	var y int
 	var y1 decimal.Decimal
 	const colWidth = 20
-	for i := 1; i<32; i++ {
+	for i := 1; i < 32; i++ {
 		if day_found[i] {
 			y1 = max_saldo.Sub(day_saldo[i])
 			currSaldo = day_saldo[i]
 		} else {
 			y1 = max_saldo.Sub(currSaldo)
 		}
-		val,_ = y1.Float64()
+		val, _ = y1.Float64()
 		y2 := max_saldo.Sub(min_saldo)
-		y2f,_ := y2.Float64()
-		yf = val / (y2f / (500.0-0.0))
+		y2f, _ := y2.Float64()
+		yf = val / (y2f / (500.0 - 0.0))
 		y = int(yf)
 		fmt.Fprintf(w, "  <rect x=%d y=%d width=\"%d\" height=\"%d\"", (i-1)*colWidth, int(y), colWidth, 500-int(y))
 		fmt.Fprintf(w, "  style=\"fill:rgb(0,0,255);stroke-width:1;stroke:rgb(0,0,0)\" />\n")
 	}
 	// zero line
 	y1 = max_saldo //.Sub(0.0)
-	val,_ = y1.Float64()
+	val, _ = y1.Float64()
 	y2 := max_saldo.Sub(min_saldo)
-	y2f,_ := y2.Float64()
-	yf = val / (y2f / (500.0-0.0))
+	y2f, _ := y2.Float64()
+	yf = val / (y2f / (500.0 - 0.0))
 	y = int(yf)
 	fmt.Fprintf(w, "  <rect x=%d y=%d width=\"%d\" height=\"%d\"", 0, y, 900, 1)
 	fmt.Fprintf(w, "  style=\"fill:rgb(0,0,255);stroke-width:1;stroke:rgb(0,0,0)\" />\n")
@@ -539,8 +539,8 @@ order by datum,löpnr`, endDate, accName, accName)
 
 	fmt.Fprintf(w, "<text fill=\"#000000\" font-size=\"12\" font-family=\"Verdana\" x=\"%d\" y=\"10\">%s</text>\n", 33*colWidth, max_saldo.String())
 	fmt.Fprintf(w, "<text fill=\"#000000\" font-size=\"12\" font-family=\"Verdana\" x=\"%d\" y=\"500\">%s</text>\n", 33*colWidth, min_saldo.String())
-	fmt.Fprintf(w, "Sorry, your browser does not support inline SVG.\n");
-	fmt.Fprintf(w, "</svg>\n");
+	fmt.Fprintf(w, "Sorry, your browser does not support inline SVG.\n")
+	fmt.Fprintf(w, "</svg>\n")
 }
 
 func monthly(w http.ResponseWriter, req *http.Request) {
@@ -557,109 +557,109 @@ func monthly(w http.ResponseWriter, req *http.Request) {
 		log.Fatal(err)
 	}
 
-	var accYear,accMonth int
+	var accYear, accMonth int
 	var accName string
-	
-	if len(req.FormValue("accYear"))>3 {
-		accYear,err = strconv.Atoi(req.FormValue("accYear"))
-		accMonth,err = strconv.Atoi(req.FormValue("accMonth"))
+
+	if len(req.FormValue("accYear")) > 3 {
+		accYear, err = strconv.Atoi(req.FormValue("accYear"))
+		accMonth, err = strconv.Atoi(req.FormValue("accMonth"))
 		accName = req.FormValue("accName")
 	} else {
 		res1 := db.QueryRow("SELECT MAX(Datum) FROM Transaktioner")
-		var date []byte     // size 10
+		var date []byte // size 10
 		err = res1.Scan(&date)
-		accYear,err = strconv.Atoi(toUtf8(date)[0:4])
-		accMonth,err = strconv.Atoi(toUtf8(date)[5:7])
+		accYear, err = strconv.Atoi(toUtf8(date)[0:4])
+		accMonth, err = strconv.Atoi(toUtf8(date)[5:7])
 		res1 = db.QueryRow("SELECT TOP 1 Benämning FROM Konton")
-		var namn []byte     // size 10
+		var namn []byte // size 10
 		err = res1.Scan(&namn)
 		accName = toUtf8(namn)
-	}	
+	}
 
-	if(db==nil) {
+	if db == nil {
 		fmt.Fprintf(w, "Monthly: No database open<p>\n")
 	} else {
 		res1 := db.QueryRow("SELECT MIN(Datum) FROM Transaktioner")
-		var date []byte     // size 10
+		var date []byte // size 10
 		err = res1.Scan(&date)
-		firstYear,err := strconv.Atoi(toUtf8(date)[0:4])
+		firstYear, err := strconv.Atoi(toUtf8(date)[0:4])
 		res1 = db.QueryRow("SELECT MAX(Datum) FROM Transaktioner")
 		err = res1.Scan(&date)
-		lastYear,err := strconv.Atoi(toUtf8(date)[0:4])
-		
+		lastYear, err := strconv.Atoi(toUtf8(date)[0:4])
+
 		printMonthly(w, db, accName, accYear, accMonth)
 		//fmt.Fprintf(w, "<a href=\"monthly\">Månads kontoutdrag</a>\n")
-		fmt.Fprintf(w,"<form method=\"POST\" action=\"/monthly\">\n")
-		fmt.Fprintf(w,"<select id=\"accName\" name=\"accName\">\n")
+		fmt.Fprintf(w, "<form method=\"POST\" action=\"/monthly\">\n")
+		fmt.Fprintf(w, "<select id=\"accName\" name=\"accName\">\n")
 		res, err := db.Query("SELECT KontoNummer,Benämning,Saldo,StartSaldo,StartManad,Löpnr,SaldoArsskifte,ArsskifteManad FROM Konton order by Benämning")
-		
+
 		if err != nil {
 			log.Fatal(err)
 			os.Exit(2)
 		}
-		
-		var KontoNummer []byte  // size 20
-		var Benämning  []byte  // size 40, index
-		var Saldo []byte  // BCD / Decimal Precision 19
-		var StartSaldo []byte  // BCD / Decimal Precision 19
-		var StartManad []byte  // size 10
-		var Löpnr  []byte  // autoinc Primary Key
-		var SaldoArsskifte []byte  // BCD / Decimal Precision 19
-		var ArsskifteManad []byte  // size 10
+
+		var KontoNummer []byte    // size 20
+		var Benämning []byte      // size 40, index
+		var Saldo []byte          // BCD / Decimal Precision 19
+		var StartSaldo []byte     // BCD / Decimal Precision 19
+		var StartManad []byte     // size 10
+		var Löpnr []byte          // autoinc Primary Key
+		var SaldoArsskifte []byte // BCD / Decimal Precision 19
+		var ArsskifteManad []byte // size 10
 		for res.Next() {
-			err = res.Scan(&KontoNummer,&Benämning,&Saldo,&StartSaldo,&StartManad,&Löpnr,&SaldoArsskifte,&ArsskifteManad)
+			err = res.Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &Löpnr, &SaldoArsskifte, &ArsskifteManad)
 
-			fmt.Fprintf(w,"<option value=\"%s\"", toUtf8(Benämning))
+			fmt.Fprintf(w, "<option value=\"%s\"", toUtf8(Benämning))
 			if toUtf8(Benämning) == accName {
-				fmt.Fprintf(w," selected ")
+				fmt.Fprintf(w, " selected ")
 			}
-			fmt.Fprintf(w,">%s</option>\n", toUtf8(Benämning))
+			fmt.Fprintf(w, ">%s</option>\n", toUtf8(Benämning))
 		}
-		fmt.Fprintf(w,"</select>\n")
-		fmt.Fprintf(w,"<select id=\"accYear\" name=\"accYear\">\n")
-		for year := firstYear; year<=lastYear; year++ {
-			fmt.Fprintf(w,"<option value=\"%d\"", year)
+		fmt.Fprintf(w, "</select>\n")
+		fmt.Fprintf(w, "<select id=\"accYear\" name=\"accYear\">\n")
+		for year := firstYear; year <= lastYear; year++ {
+			fmt.Fprintf(w, "<option value=\"%d\"", year)
 			if year == accYear {
-				fmt.Fprintf(w," selected ")
+				fmt.Fprintf(w, " selected ")
 			}
-			fmt.Fprintf(w,">%d</option>\n", year)
+			fmt.Fprintf(w, ">%d</option>\n", year)
 		}
-		fmt.Fprintf(w,"</select>\n")
-		fmt.Fprintf(w,"<select id=\"accMonth\" name=\"accMonth\">\n")
-		for month := 1; month<13; month++ {
-			fmt.Fprintf(w,"<option value=\"%d\"", month)
+		fmt.Fprintf(w, "</select>\n")
+		fmt.Fprintf(w, "<select id=\"accMonth\" name=\"accMonth\">\n")
+		for month := 1; month < 13; month++ {
+			fmt.Fprintf(w, "<option value=\"%d\"", month)
 			if month == accMonth {
-				fmt.Fprintf(w," selected ")
+				fmt.Fprintf(w, " selected ")
 			}
-			fmt.Fprintf(w,">%d</option>\n", month)
+			fmt.Fprintf(w, ">%d</option>\n", month)
 		}
-		fmt.Fprintf(w,"</select>\n")
+		fmt.Fprintf(w, "</select>\n")
 
-		fmt.Fprintf(w,"<input type=\"submit\" value=\"Visa\"></form>\n")
+		fmt.Fprintf(w, "<input type=\"submit\" value=\"Visa\"></form>\n")
 
-		fmt.Fprintf(w,"<form method=\"POST\" action=\"/monthly\">\n")
-		fmt.Fprintf(w,"<input type=\"hidden\" id=\"accName\" name=\"accName\" value=\"%s\">", accName)
+		fmt.Fprintf(w, "<form method=\"POST\" action=\"/monthly\">\n")
+		fmt.Fprintf(w, "<input type=\"hidden\" id=\"accName\" name=\"accName\" value=\"%s\">", accName)
 		if accMonth+1 > 12 {
-			fmt.Fprintf(w,"<input type=\"hidden\" id=\"accYear\" name=\"accYear\" value=\"%d\">", accYear+1)
-			fmt.Fprintf(w,"<input type=\"hidden\" id=\"accMonth\" name=\"accMonth\" value=\"%d\">", 1)
+			fmt.Fprintf(w, "<input type=\"hidden\" id=\"accYear\" name=\"accYear\" value=\"%d\">", accYear+1)
+			fmt.Fprintf(w, "<input type=\"hidden\" id=\"accMonth\" name=\"accMonth\" value=\"%d\">", 1)
 		} else {
-			fmt.Fprintf(w,"<input type=\"hidden\" id=\"accYear\" name=\"accYear\" value=\"%d\">", accYear)
-			fmt.Fprintf(w,"<input type=\"hidden\" id=\"accMonth\" name=\"accMonth\" value=\"%d\">", accMonth+1)
+			fmt.Fprintf(w, "<input type=\"hidden\" id=\"accYear\" name=\"accYear\" value=\"%d\">", accYear)
+			fmt.Fprintf(w, "<input type=\"hidden\" id=\"accMonth\" name=\"accMonth\" value=\"%d\">", accMonth+1)
 		}
-		fmt.Fprintf(w,"<input type=\"submit\" value=\"Nästa månad\"></form>\n")
+		fmt.Fprintf(w, "<input type=\"submit\" value=\"Nästa månad\"></form>\n")
 
-		fmt.Fprintf(w,"<form method=\"POST\" action=\"/monthly\">\n")
-		fmt.Fprintf(w,"<input type=\"hidden\" id=\"accName\" name=\"accName\" value=\"%s\">", accName)
+		fmt.Fprintf(w, "<form method=\"POST\" action=\"/monthly\">\n")
+		fmt.Fprintf(w, "<input type=\"hidden\" id=\"accName\" name=\"accName\" value=\"%s\">", accName)
 		if accMonth-1 < 1 {
-			fmt.Fprintf(w,"<input type=\"hidden\" id=\"accYear\" name=\"accYear\" value=\"%d\">", accYear-1)
-			fmt.Fprintf(w,"<input type=\"hidden\" id=\"accMonth\" name=\"accMonth\" value=\"%d\">", 12)
+			fmt.Fprintf(w, "<input type=\"hidden\" id=\"accYear\" name=\"accYear\" value=\"%d\">", accYear-1)
+			fmt.Fprintf(w, "<input type=\"hidden\" id=\"accMonth\" name=\"accMonth\" value=\"%d\">", 12)
 		} else {
-			fmt.Fprintf(w,"<input type=\"hidden\" id=\"accYear\" name=\"accYear\" value=\"%d\">", accYear)
-			fmt.Fprintf(w,"<input type=\"hidden\" id=\"accMonth\" name=\"accMonth\" value=\"%d\">", accMonth-1)
+			fmt.Fprintf(w, "<input type=\"hidden\" id=\"accYear\" name=\"accYear\" value=\"%d\">", accYear)
+			fmt.Fprintf(w, "<input type=\"hidden\" id=\"accMonth\" name=\"accMonth\" value=\"%d\">", accMonth-1)
 		}
-		fmt.Fprintf(w,"<input type=\"submit\" value=\"Föregående månad\"></form>\n")
+		fmt.Fprintf(w, "<input type=\"submit\" value=\"Föregående månad\"></form>\n")
 	}
-	
+
 	fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
 	fmt.Fprintf(w, "</body>\n")
 	fmt.Fprintf(w, "</html>\n")
@@ -712,7 +712,7 @@ func getTypeInNames() []string {
 		os.Exit(2)
 	}
 
-	var Typ  []byte  // size 40, index
+	var Typ []byte // size 40, index
 	for res.Next() {
 		err = res.Scan(&Typ)
 		names = append(names, toUtf8(Typ))
@@ -730,7 +730,7 @@ func getTypeOutNames() []string {
 		os.Exit(2)
 	}
 
-	var Typ  []byte  // size 40, index
+	var Typ []byte // size 40, index
 	for res.Next() {
 		err = res.Scan(&Typ)
 		names = append(names, toUtf8(Typ))
