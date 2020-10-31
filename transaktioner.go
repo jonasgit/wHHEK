@@ -153,6 +153,7 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
 
 	addtransaction(w, req)
+	showFastaTransaktioner(w, req)
 	
 	// Inköp
 	fmt.Fprintf(w, "<h3>Inköp</h3>\n")
@@ -415,4 +416,76 @@ VALUES (?,?,?,?,?,?,?,?)`
 		fmt.Fprintf(w, "%s", sqlStmt)
 		fmt.Fprintf(w, "</table>\n")
 	}
+	if transtyp == "FastTrans" {
+		transid := req.FormValue("transid")
+		transidnum, _ := strconv.Atoi(transid)
+		registreraFastTransaktion(w, transidnum)
+		fmt.Fprintf(w, "<p>\n")
+	}
+}
+
+func showFastaTransaktioner(w http.ResponseWriter, req *http.Request) {
+	now := time.Now()
+	currentYear, currentMonth, _ := now.Date()
+	currentLocation := now.Location()
+	
+	firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, currentLocation)
+	lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
+	currDate := lastOfMonth.Format("2006-01-02")
+	antal := GetCountPendingÖverföringar(db, currDate)
+	if antal > 0 {
+		fmt.Fprintf(w, "<p>%d fasta transaktioner till hela denna månaden väntar på att hanteras:<br>\n", antal)
+		res, err := db.Query("SELECT FrånKonto,TillKonto,Belopp,Datum,HurOfta,Vad,Vem,Löpnr,Kontrollnr,TillDatum,Rakning FROM Överföringar WHERE Datum <= ?", currDate)
+		
+		if err != nil {
+			log.Fatal(err)
+			os.Exit(2)
+		}
+		
+		var FrånKonto []byte  // size 40
+		var TillKonto []byte  // size 40
+		var Belopp []byte  // BCD / Decimal Precision 19
+		var Datum []byte  // size 10
+		var HurOfta []byte  // size 15
+		var Vad []byte  // size 40
+		var Vem []byte  // size 40
+		var Löpnr []byte  // Autoinc Primary Key, index
+		var Kontrollnr int  // Integer
+		var TillDatum []byte  // size 10
+		var Rakning []byte  // size 1
+		
+		fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Löpnr</th><th>Frånkonto</th><th>Tillkonto/Plats</th><th>Belopp</th><th>Datum</th><th>Hur Ofta</th><th>Vad</th><th>Vem</th><th>Kontrollnr</th><th>Till datum</th><th>Räkning</th><th>Agera</th>\n")
+		for res.Next() {
+			err = res.Scan(&FrånKonto, &TillKonto, &Belopp, &Datum, &HurOfta, &Vad, &Vem, &Löpnr, &Kontrollnr, &TillDatum, &Rakning)
+			
+			sqlStmt := ""
+			sqlStmt += "<tr><td>" + toUtf8(Löpnr) + "</td>"
+			sqlStmt += "<td>" + toUtf8(FrånKonto) + "</td>"
+			sqlStmt += "<td>" + toUtf8(TillKonto) + "</td>"
+			sqlStmt += "<td>" + toUtf8(Belopp) + "</td>"
+			sqlStmt += "<td>" + toUtf8(Datum) + "</td>"
+			sqlStmt += "<td>" + toUtf8(HurOfta) + "</td>"
+			sqlStmt += "<td>" + toUtf8(Vad) + "</td>"
+			sqlStmt += "<td>" + toUtf8(Vem) + "</td>"
+			sqlStmt += "<td>" + strconv.Itoa(Kontrollnr) + "</td>"
+			sqlStmt += "<td>" + toUtf8(TillDatum) + "</td>"
+			sqlStmt += "<td>" + toUtf8(Rakning) + "</td>"
+			sqlStmt += "<td>"
+			sqlStmt += "<form method=\"POST\" action=\"/newtrans\">\n"
+			sqlStmt += "<input type=\"hidden\" id=\"transtyp\" name=\"transtyp\" value=\"FastTrans\">\n"
+			sqlStmt += "<input type=\"hidden\" id=\"transid\" name=\"transid\" value=\""+toUtf8(Löpnr)+"\">\n"
+			sqlStmt += "<input type=\"submit\" value=\"Registrera\"></form>\n"
+			sqlStmt += "</td>"
+
+			sqlStmt += "</tr>\n"
+			fmt.Fprintf(w, "%s", sqlStmt)
+		}
+		fmt.Fprintf(w, "</table>\n")
+	}
+}
+
+func registreraFastTransaktion(w http.ResponseWriter, transid int) {
+	fmt.Fprintf(w, "Registrerar transaktion#"+strconv.Itoa(transid))
+	fmt.Fprintf(w, "<br>TODO TODO !!\n")
+	fmt.Fprintf(w, "<p>\n")
 }
