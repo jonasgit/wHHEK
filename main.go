@@ -366,7 +366,7 @@ func closedb(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "      <meta http-equiv = \"refresh\" content = \"0; url = /\" />\n")
 	fmt.Fprintf(w, "   </head>\n")
 	fmt.Fprintf(w, "   <body>\n")
-	fmt.Fprintf(w, "      <p>Hello HTML5!</p>\n")
+	fmt.Fprintf(w, "      <p>Closing database!</p>\n")
 	fmt.Fprintf(w, "   </body>\n")
 	fmt.Fprintf(w, "</html>\n")
 }
