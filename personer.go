@@ -10,9 +10,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-
-	_ "github.com/alexbrainman/odbc" // BSD-3-Clause License
-	_ "github.com/mattn/go-sqlite3"  // MIT License
 )
 
 func printPersoner(w http.ResponseWriter, db *sql.DB) {

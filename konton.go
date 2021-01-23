@@ -12,9 +12,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	_ "github.com/alexbrainman/odbc" // BSD-3-Clause License
-	_ "github.com/mattn/go-sqlite3"  // MIT License
 )
 
 func printKonton(w http.ResponseWriter, db *sql.DB) {

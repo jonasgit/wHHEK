@@ -17,8 +17,8 @@
 // Prepare: go get github.com/mattn/go-sqlite3
 // Prepare: go get golang.org/x/text/encoding/charmap
 // Prepare: go get github.com/shopspring/decimal
-// Build: go build -o wHHEK.exe main.go platser.go transaktioner.go personer.go konton.go
-// Build release: go build -ldflags="-s -w" -o wHHEK.exe main.go platser.go transaktioner.go personer.go konton.go
+// Build: go build -o wHHEK.exe main.go platser.go transaktioner.go personer.go konton.go budget.go
+// Build release: go build -ldflags="-s -w" -o wHHEK.exe main.go platser.go transaktioner.go personer.go konton.go budget.go
 // Run: ./wHHEK.exe -help
 // Run: ./wHHEK.exe -optin=.
 
@@ -102,7 +102,17 @@
 // Visa lån
 // Lägg till nytt lån
 // Redigera lån
+
 // Testa kompabilitet Linux/Mac (endast med sqlite-databas)
+//   Requires use of: go build -tags withoutODBC
+//                    / /  + b u i l d withoutODBC
+// Experimental (does not work yet):
+// Build on Windows for Linux:
+// In powershell:
+// $env:GOOS="linux"
+// $env:GOARCH="386"
+// go build -o wHHEK.elf32 main.go platser.go transaktioner.go personer.go konton.go
+
 
 // Notes/references/hints for further development
 // TODO: https://stackoverflow.com/questions/26345318/how-can-i-prevent-sql-injection-attacks-in-go-while-using-database-sql
@@ -379,6 +389,7 @@ func generateSummary(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<a href=\"platser\">Platser</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"personer\">Personer</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"konton\">Konton</a><p>\n")
+	fmt.Fprintf(w, "<a href=\"budget\">Budget</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"newtrans\">Ny transaktion</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"close\">Stäng databas</a><p>\n")
 	fmt.Fprintf(w, "</body>\n")
@@ -744,6 +755,7 @@ func main() {
 	http.HandleFunc("/platser", hanteraplatser)
 	http.HandleFunc("/personer", hanterapersoner)
 	http.HandleFunc("/konton", hanterakonton)
+	http.HandleFunc("/budget", hanteraBudget)
 	http.HandleFunc("/summary", generateSummary)
 	http.HandleFunc("/", root)
 
