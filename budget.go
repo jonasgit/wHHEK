@@ -173,20 +173,102 @@ func editformBudget(w http.ResponseWriter, lopnr int, db *sql.DB) {
 }
 
 
-func updateBudget(w http.ResponseWriter, lopnr int, Benamning string, StartSaldo string, StartManad string, db *sql.DB) {
+func updateBudget(w http.ResponseWriter, lopnr int, req *http.Request, db *sql.DB) {
 	fmt.Println("updateBudget lopnr: ", lopnr)
+
+	var Typ string = ""
+	if len(req.FormValue("Typ")) > 0 {
+		Typ = req.FormValue("Typ")
+	}
+	var Inkomst string = ""
+	if len(req.FormValue("Inkomst")) > 0 {
+		Inkomst = req.FormValue("Inkomst")
+	}
+	var HurOfta string = ""
+	if len(req.FormValue("HurOfta")) > 0 {
+		HurOfta = req.FormValue("HurOfta")
+	}
+	var StartMånad string = ""
+	if len(req.FormValue("StartMånad")) > 0 {
+		StartMånad = req.FormValue("StartMånad")
+	}
+	var Jan string = ""
+	if len(req.FormValue("Jan")) > 0 {
+		Jan = req.FormValue("Jan")
+	}
+	var Feb string = ""
+	if len(req.FormValue("Feb")) > 0 {
+		Feb = req.FormValue("Feb")
+	}
+	var Mar string = ""
+	if len(req.FormValue("Mar")) > 0 {
+		Mar = req.FormValue("Mar")
+	}
+	var Apr string = ""
+	if len(req.FormValue("Apr")) > 0 {
+		Apr = req.FormValue("Apr")
+	}
+	var Maj string = ""
+	if len(req.FormValue("Maj")) > 0 {
+		Maj = req.FormValue("Maj")
+	}
+	var Jun string = ""
+	if len(req.FormValue("Jun")) > 0 {
+		Jun = req.FormValue("Jun")
+	}
+	var Jul string = ""
+	if len(req.FormValue("Jul")) > 0 {
+		Jul = req.FormValue("Jul")
+	}
+	var Aug string = ""
+	if len(req.FormValue("Aug")) > 0 {
+		Aug = req.FormValue("Aug")
+	}
+	var Sep string = ""
+	if len(req.FormValue("Sep")) > 0 {
+		Sep = req.FormValue("Sep")
+	}
+	var Okt string = ""
+	if len(req.FormValue("Okt")) > 0 {
+		Okt = req.FormValue("Okt")
+	}
+	var Nov string = ""
+	if len(req.FormValue("Nov")) > 0 {
+		Nov = req.FormValue("Nov")
+	}
+	var Dec string = ""
+	if len(req.FormValue("Dec")) > 0 {
+		Dec = req.FormValue("Dec")
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	_, err := db.ExecContext(ctx,
-		`UPDATE Budget SET Benämning = ?, StartSaldo = ?, StartManad = ? WHERE (Löpnr=?)`, Benamning, strings.ReplaceAll(StartSaldo, ".", ","), StartManad, lopnr)
+		`UPDATE Budget SET Typ = ?, Inkomst = ?, HurOfta = ?, StartMånad = ?, Jan = ?, Feb = ?, Mar = ?, Apr = ?, Maj = ?, Jun = ?, Jul = ?, Aug = ?, Sep = ?, Okt = ?, Nov = ?, Dec = ? WHERE (Löpnr=?)`,
+		Typ,
+		Inkomst,
+		HurOfta,
+		StartMånad,
+		strings.ReplaceAll(Jan, ".", ","),
+		strings.ReplaceAll(Feb, ".", ","),
+		strings.ReplaceAll(Mar, ".", ","),
+		strings.ReplaceAll(Apr, ".", ","),
+		strings.ReplaceAll(Maj, ".", ","),
+		strings.ReplaceAll(Jun, ".", ","),
+		strings.ReplaceAll(Jul, ".", ","),
+		strings.ReplaceAll(Aug, ".", ","),
+		strings.ReplaceAll(Sep, ".", ","),
+		strings.ReplaceAll(Okt, ".", ","),
+		strings.ReplaceAll(Nov, ".", ","),
+		strings.ReplaceAll(Dec, ".", ","),
+		lopnr)
 
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(2)
 	}
-	fmt.Fprintf(w, "Budgetpost %s uppdaterad.<br>", Benamning)
+	fmt.Fprintf(w, "Budgetpost %s uppdaterad.<br>", Typ)
 }
 
 func hanteraBudget(w http.ResponseWriter, req *http.Request) {
@@ -216,19 +298,7 @@ func hanteraBudget(w http.ResponseWriter, req *http.Request) {
 	case "editform":
 		editformBudget(w, lopnr, db)
 	case "update":
-		var Benamning string = ""
-		if len(req.FormValue("Benamning")) > 0 {
-			Benamning = req.FormValue("Benamning")
-		}
-		var StartSaldo string = ""
-		if len(req.FormValue("StartSaldo")) > 0 {
-			StartSaldo = req.FormValue("StartSaldo")
-		}
-		var StartManad string = ""
-		if len(req.FormValue("StartManad")) > 0 {
-			StartManad = req.FormValue("StartManad")
-		}
-		updateBudget(w, lopnr, Benamning, StartSaldo, StartManad, db)
+		updateBudget(w, lopnr, req, db)
 	default:
 		fmt.Println("Okänd action: %s\n", formaction)
 	}
