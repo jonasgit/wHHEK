@@ -56,34 +56,27 @@ order by datum,löpnr`, endDate, startDate)
 	var comment []byte // size 60
 
 	fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Löpnr</th><th>Frånkonto</th><th>Tillkonto/Plats</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th><th>Fast överföring</th>\n")
+	fmt.Fprintf(w, "<th>Redigera</th><th>Radera</th>\n")
 	for res.Next() {
 		err = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
 
-		sqlStmt := ""
-		sqlStmt += "<tr><td>" + strconv.Itoa(nummer) + "</td>"
-		sqlStmt += "<td>" + toUtf8(fromAcc) + "</td>"
-		sqlStmt += "<td>" + toUtf8(toAcc) + "</td>"
-		sqlStmt += "<td>" + toUtf8(tType) + "</td>"
-		sqlStmt += "<td>" + toUtf8(what) + "</td>"
-		sqlStmt += "<td>" + toUtf8(date) + "</td>"
-		sqlStmt += "<td>" + toUtf8(who) + "</td>"
-		sqlStmt += "<td>" + toUtf8(amount) + "</td>"
-		sqlStmt += "<td>" + html.EscapeString(toUtf8(comment)) + "</td>\n"
-		sqlStmt += "<td>" + strconv.FormatBool(fixed) + "</td></tr>"
-		fmt.Fprintf(w, "%s", sqlStmt)
+		fmt.Fprintf(w, "<tr><td>" + strconv.Itoa(nummer) + "</td>")
+		fmt.Fprintf(w, "<td>" + toUtf8(fromAcc) + "</td>")
+		fmt.Fprintf(w, "<td>" + toUtf8(toAcc) + "</td>")
+		fmt.Fprintf(w, "<td>" + toUtf8(tType) + "</td>")
+		fmt.Fprintf(w, "<td>" + toUtf8(what) + "</td>")
+		fmt.Fprintf(w, "<td>" + toUtf8(date) + "</td>")
+		fmt.Fprintf(w, "<td>" + toUtf8(who) + "</td>")
+		fmt.Fprintf(w, "<td>" + toUtf8(amount) + "</td>")
+		fmt.Fprintf(w, "<td>" + html.EscapeString(toUtf8(comment)) + "</td>\n")
+		fmt.Fprintf(w, "<td>" + strconv.FormatBool(fixed) + "</td>")
+		fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/transactions\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"editform\"><input type=\"submit\" value=\"Redigera\"></form></td>\n", nummer)
+		fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/transactions\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"radera\"><input type=\"checkbox\" id=\"OK\" name=\"OK\" required><label for=\"OK\">OK</label><input type=\"submit\" value=\"Radera\"></form></td></tr>\n", nummer)
 	}
 	fmt.Fprintf(w, "</table>\n")
 }
 
-func transactions(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "<html>\n")
-	fmt.Fprintf(w, "<head>\n")
-	fmt.Fprintf(w, "<style>\n")
-	fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
-	fmt.Fprintf(w, "</style>\n")
-	fmt.Fprintf(w, "</head>\n")
-	fmt.Fprintf(w, "<body>\n")
-
+func handletransactions(w http.ResponseWriter, req *http.Request) {
 	currentTime := time.Now()
 	startDate := currentTime.Format("2006-01-02")
 	startDate = startDate[0:8] + "01"
@@ -125,11 +118,62 @@ func transactions(w http.ResponseWriter, req *http.Request) {
 
 		fmt.Fprintf(w, "<form method=\"POST\" action=\"/transactions\">\n")
 	}
+}
+
+func transactions(w http.ResponseWriter, req *http.Request) {
+	fmt.Fprintf(w, "<html>\n")
+	fmt.Fprintf(w, "<head>\n")
+	fmt.Fprintf(w, "<style>\n")
+	fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
+	fmt.Fprintf(w, "</style>\n")
+	fmt.Fprintf(w, "</head>\n")
+	fmt.Fprintf(w, "<body>\n")
+	
+	err := req.ParseForm()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	formaction := req.FormValue("action")
+	var lopnr int = -1
+	if len(req.FormValue("lopnr")) > 0 {
+		lopnr, err = strconv.Atoi(req.FormValue("lopnr"))
+	}
+
+	switch formaction {
+	case "radera":
+		raderaTransaction(w, lopnr, db)
+	case "editform":
+		editformTransaction(w, lopnr, db)
+	case "update":
+		updateTransaction(w, lopnr, req, db)
+	default:
+		fmt.Println("Okänd action: ", formaction)
+	}
+
+	handletransactions(w, req)
 
 	fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
 	fmt.Fprintf(w, "</body>\n")
 	fmt.Fprintf(w, "</html>\n")
 }
+
+func raderaTransaction(w http.ResponseWriter, lopnr int, db *sql.DB) {
+	fmt.Println("raderaTransaction lopnr: ", lopnr)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	_, err := db.ExecContext(ctx,
+		`DELETE FROM transaktioner WHERE (Löpnr=?)`, lopnr)
+
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+	fmt.Fprintf(w, "Transaktion med löpnr %d raderad.<br>", lopnr)
+}
+
 
 func newtransaction(w http.ResponseWriter, req *http.Request) {
 	// Common
@@ -419,6 +463,61 @@ VALUES (?,?,?,?,?,?,?,?)`
 		registreraFastTransaktion(w, transidnum)
 		fmt.Fprintf(w, "<p>\n")
 	}
+}
+
+func editformTransaction(w http.ResponseWriter, lopnr int, db *sql.DB) {
+	fmt.Println("editformTransaktion lopnr: ", lopnr)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	res1 := db.QueryRowContext(ctx,
+		`SELECT FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Saldo,Fastöverföring,Text FROM transaktioner WHERE (Löpnr=?)`, lopnr)
+
+	var fromAcc []byte // size 40
+	var toAcc []byte   // size 40
+	var tType []byte   // size 40
+	var date []byte    // size 10
+	var what []byte    // size 40
+	var who []byte     // size 50
+	var amount []byte  // BCD / Decimal Precision 19
+	var saldo []byte   // BCD / Decimal Precision 19
+	var fixed bool     // Boolean
+	var comment []byte // size 60
+
+	err := res1.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &saldo, &fixed, &comment)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+
+	fmt.Fprintf(w, "Redigera transaktion<br>")
+	fmt.Fprintf(w, "<form method=\"POST\" action=\"/transactions\">")
+
+	PrintEditCellText(w, "fromAcc", "Från konto", toUtf8(fromAcc))
+	PrintEditCellText(w, "toAcc", "Till konto", toUtf8(toAcc))
+	PrintEditCellText(w, "tType", "Typ", toUtf8(tType))
+	PrintEditCellText(w, "date", "Datum", toUtf8(date))
+	PrintEditCellText(w, "what", "Vad", toUtf8(what))
+	PrintEditCellText(w, "who", "Vem", toUtf8(who))
+	PrintEditCellText(w, "amount", "Summa", toUtf8(amount))
+	PrintEditCellText(w, "fixed", "Fast transaktion", strconv.FormatBool(fixed))
+	PrintEditCellText(w, "comment", "Text", toUtf8(comment))
+
+	fmt.Fprintf(w, "<input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\">", lopnr)
+	fmt.Fprintf(w, "<input type=\"hidden\" id=\"action\" name=\"action\" value=\"update\">")
+	fmt.Fprintf(w, "<input type=\"submit\" value=\"Uppdatera\">")
+	fmt.Fprintf(w, "</form>\n")
+	fmt.Fprintf(w, "<p>\n")
+}
+
+
+func updateTransaction(w http.ResponseWriter, lopnr int, req *http.Request, db *sql.DB) {
+	fmt.Println("updateTransaktion lopnr: ", lopnr)
+
+	// TODO
+	
+	fmt.Fprintf(w, "Transaktion %s INTE uppdaterad.<br>", lopnr)
 }
 
 func CurrDate() string {

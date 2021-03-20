@@ -107,7 +107,7 @@ func PrintEditCellText(w http.ResponseWriter, label string, title string, value 
 }
 
 func editformBudget(w http.ResponseWriter, lopnr int, db *sql.DB) {
-	fmt.Println("editformKonto lopnr: ", lopnr)
+	fmt.Println("editformBudget lopnr: ", lopnr)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
