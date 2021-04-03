@@ -17,8 +17,8 @@
 // Prepare: go get github.com/mattn/go-sqlite3
 // Prepare: go get golang.org/x/text/encoding/charmap
 // Prepare: go get github.com/shopspring/decimal
-// Build: go build -o wHHEK.exe main.go platser.go transaktioner.go personer.go konton.go budget.go
-// Build release: go build -ldflags="-s -w" -o wHHEK.exe main.go platser.go transaktioner.go personer.go konton.go budget.go
+// Build: go build -o wHHEK.exe main.go jetdb.go platser.go transaktioner.go personer.go konton.go budget.go
+// Build release: go build -ldflags="-s -w" -o wHHEK.exe main.go jetdb.go platser.go transaktioner.go personer.go konton.go budget.go
 // Run: ./wHHEK.exe -help
 // Run: ./wHHEK.exe -optin=.
 
@@ -111,7 +111,7 @@
 // In powershell:
 // $env:GOOS="linux"
 // $env:GOARCH="386"
-// go build -o wHHEK.elf32 main.go platser.go transaktioner.go personer.go konton.go budget.go
+// go build -o wHHEK.elf32 main.go nojetdb.go platser.go transaktioner.go personer.go konton.go budget.go
 
 
 // Notes/references/hints for further development
@@ -142,7 +142,6 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/alexbrainman/odbc" // BSD-3-Clause License
 	_ "github.com/mattn/go-sqlite3"  // MIT License
 	"github.com/shopspring/decimal"  // MIT License
 )
@@ -226,25 +225,6 @@ func sanitizeFilename(fname string) string {
 	fname = strings.Replace(fname, "\"", "", -1)
 
 	return fname
-}
-
-func openJetDB(filename string, ro bool) *sql.DB {
-	readonlyCommand := ""
-	if ro {
-		readonlyCommand = "READONLY;"
-	}
-
-	databaseAccessCommand := "Driver={Microsoft Access Driver (*.mdb)};" +
-		readonlyCommand +
-		"DBQ=" + filename
-	//fmt.Println("Database access command: "+databaseAccessCommand)
-	db, err := sql.Open("odbc",
-		databaseAccessCommand)
-	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
-	}
-	return db
 }
 
 func openSqlite(filename string) *sql.DB {
