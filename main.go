@@ -42,6 +42,10 @@
 // Redigera person
 // Lägg till nytt konto
 // Redigera konto
+// Hantera fasta överföringar/betalningar som passerat datum
+// Hantera fasta överföringar/betalningar för hela aktuell månad
+// Visa budget
+// Redigera budget
 
 // ROADMAP/TODO/The Future Is In Flux
 // ============
@@ -66,8 +70,6 @@
 // Visa resultat-tabellen, delår till och med aktuell månad
 // Graf som i månadsvyn fast för senaste året
 // Visa fasta överföringar
-// Hantera fasta överföringar/betalningar som passerat datum
-// Hantera fasta överföringar/betalningar för hela aktuell månad
 // Lägg till fast överföring
 // Redigera fast överföring
 // Visa fasta betalningar
@@ -89,8 +91,6 @@
 // REST-api: registrera överföringar
 // REST-api: registrera betalningar
 // kommandorads "api"
-// Visa budget
-// Redigera budget
 // REST-api: visa/redigera budget
 // Visa budget med jämförelse till resultat
 // REST-api: Visa budget med jämförelse till resultat
