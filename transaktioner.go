@@ -626,7 +626,6 @@ func registreraFastTransaktion(w http.ResponseWriter, transid int) {
 		fmt.Fprintf(w, "registreraFastTransaktion: No database open<p>\n")
 		return
 	}
-	fmt.Fprintf(w, "<br>TODO TODO !!\n")
 	fmt.Fprintf(w, "<p>\n")
 	// Retrieve repeating transaction
 	var res *sql.Rows
@@ -722,12 +721,12 @@ VALUES (?,?,?,?,?,?,?,?)`
 		fmt.Fprintf(w, "</table>\n")
 	} else {
 		// Fasta utgifter
-		fmt.Fprintf(w, "Registrerar Inköp...<br> ")
+		fmt.Fprintf(w, "Registrerar Fast Utgift...<br> ")
 		
 		sqlStatement := `
 INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
 VALUES (?,?,?,?,?,?,?,?)`
-		_, err = db.Exec(sqlStatement, toUtf8(FrånKonto), toUtf8(TillKonto), "Inköp", CurrentDatum, toUtf8(Vad), toUtf8(Vem), strings.ReplaceAll(toUtf8(Belopp), ".", ","), "Fast transaktion wHHEK")
+		_, err = db.Exec(sqlStatement, toUtf8(FrånKonto), toUtf8(TillKonto), "Fast Utgift", CurrentDatum, toUtf8(Vad), toUtf8(Vem), strings.ReplaceAll(toUtf8(Belopp), ".", ","), "Fast transaktion wHHEK")
 		if err != nil {
 			panic(err)
 		}
@@ -736,7 +735,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 		sqlStmt := "<tr>"
 		sqlStmt += "<td>" + toUtf8(FrånKonto) + "</td>"
 		sqlStmt += "<td>" + toUtf8(TillKonto) + "</td>"
-		sqlStmt += "<td>" + "Inköp" + "</td>"
+		sqlStmt += "<td>" + "Fast Utgift" + "</td>"
 		sqlStmt += "<td>" + toUtf8(Vad) + "</td>"
 		sqlStmt += "<td>" + CurrentDatum + "</td>"
 		sqlStmt += "<td>" + toUtf8(Vem) + "</td>"
@@ -782,6 +781,5 @@ VALUES (?,?,?,?,?,?,?,?)`
 		panic(err)
 	}
 
-	fmt.Fprintf(w, "<br>TODO TODO !!\n")
 	fmt.Fprintf(w, "<p>\n")
 }
