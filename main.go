@@ -3,7 +3,8 @@
 // This is a personal finance package, inspired by Hogia Hemekonomi.
 // Detta är ett hemekonomiprogram, inspirerat av Hogia Hemekonomi från 90-talet.
 
-// System Requirements: Windows 10 (any)
+// System Requirements: Windows 10 (any), Endast om mdb/JetDB-filer ska hanteras
+//                      Any, om endast sqlite
 
 // To build on Windows:
 // Prepare: install gnu emacs: emacs-26.3-x64_64 (optional)
@@ -104,9 +105,9 @@
 // Redigera lån
 
 // Testa kompabilitet Linux/Mac (endast med sqlite-databas)
-//   Requires use of: go build -tags withoutODBC
+//   Alternate use of: go build -tags withoutODBC
 //                    / /  + b u i l d withoutODBC
-// Experimental (does not work yet):
+// Experimental:
 // Build on Windows for Linux:
 // In powershell:
 // $env:GOOS="linux"
@@ -136,7 +137,6 @@ import (
 	"math"
 	"net"
 	"net/http"
-	//	"flag"
 	"os"
 	"strconv"
 	"strings"
@@ -347,13 +347,14 @@ func opendb(w http.ResponseWriter, req *http.Request) {
 func closedb(w http.ResponseWriter, req *http.Request) {
 	db.Close()
 	dbtype = 0
+	db = nil
 	currentDatabase = "NONE"
 
 	fmt.Fprintf(w, "<!DOCTYPE html>\n")
 	fmt.Fprintf(w, "<html>\n")
 	fmt.Fprintf(w, "   <head>\n")
 	fmt.Fprintf(w, "      <title>HTML Meta Tag</title>\n")
-	fmt.Fprintf(w, "      <meta http-equiv = \"refresh\" content = \"0; url = /\" />\n")
+	fmt.Fprintf(w, "      <meta http-equiv = \"refresh\" content = \"10; url = /\" />\n")
 	fmt.Fprintf(w, "   </head>\n")
 	fmt.Fprintf(w, "   <body>\n")
 	fmt.Fprintf(w, "      <p>Closing database!</p>\n")
@@ -742,5 +743,5 @@ func main() {
 	ip, _ := externalIP()
 	fmt.Println("Öppna URL i webläsaren:  http://localhost:8090/")
 	fmt.Printf(" eller :  http://%s:8090/\n", ip)
-	http.ListenAndServe(":8090", nil)
+	log.Fatal(http.ListenAndServe(":8090", nil))
 }

@@ -515,9 +515,68 @@ func editformTransaction(w http.ResponseWriter, lopnr int, db *sql.DB) {
 func updateTransaction(w http.ResponseWriter, lopnr int, req *http.Request, db *sql.DB) {
 	fmt.Println("updateTransaktion lopnr: ", lopnr)
 
-	// TODO
+	var fromAcc string = ""
+	if len(req.FormValue("fromAcc")) > 0 {
+		fromAcc = req.FormValue("fromAcc")
+	}
+	var toAcc string = ""
+	if len(req.FormValue("toAcc")) > 0 {
+		toAcc = req.FormValue("toAcc")
+	}
+	var tType string = ""
+	if len(req.FormValue("tType")) > 0 {
+		tType = req.FormValue("tType")
+	}
+	var date string = ""
+	if len(req.FormValue("date")) > 0 {
+		date = req.FormValue("date")
+	}
+	var what string = ""
+	if len(req.FormValue("what")) > 0 {
+		what = req.FormValue("what")
+	}
+	var who string = ""
+	if len(req.FormValue("who")) > 0 {
+		who = req.FormValue("who")
+	}
+	var amount string = ""
+	if len(req.FormValue("amount")) > 0 {
+		amount = req.FormValue("amount")
+	}
+	var fixed bool = false
+	if len(req.FormValue("fixed")) > 0 {
+		var fixedString string = ""
+		fixedString = req.FormValue("fixed")
+		fixed,_ = strconv.ParseBool(fixedString)
+	}
 	
-	fmt.Fprintf(w, "Transaktion %s INTE uppdaterad.<br>", lopnr)
+	var comment string = ""
+	if len(req.FormValue("comment")) > 0 {
+		comment = req.FormValue("comment")
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	_, err := db.ExecContext(ctx,
+		`UPDATE transaktioner SET FrånKonto = ?, TillKonto = ?, Typ = ?, Datum = ?, Vad = ?, Vem = ?, Belopp = ?, Fastöverföring = ?, "Text" = ? WHERE (Löpnr=?)`,
+		fromAcc,
+		toAcc,
+		tType,
+		date,
+		what,
+		who,
+		strings.ReplaceAll(amount, ".", ","),
+		fixed,
+		comment,
+		lopnr)
+
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+	
+	fmt.Fprintf(w, "Transaktion %d uppdaterad.<br>", lopnr)
 }
 
 func CurrDate() string {
@@ -653,6 +712,7 @@ func registreraFastTransaktion(w http.ResponseWriter, transid int) {
 		log.Println("registreraFastTransaktion: SCAN ERROR")
 		log.Println(err)
 		log.Println("registreraFastTransaktion: Bail out")
+		fmt.Fprintf(w, "<tr>Bail out</tr>\n")
 		return
 	}
 
