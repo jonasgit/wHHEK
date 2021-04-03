@@ -619,8 +619,6 @@ func showFastaTransaktioner(w http.ResponseWriter, req *http.Request) {
 }
 
 func registreraFastTransaktion(w http.ResponseWriter, transid int) {
-	var CurrentDatum string
-	CurrentDatum = CurrDate()
 	fmt.Fprintf(w, "Registrerar transaktion#"+strconv.Itoa(transid))
 	if db == nil {
 		fmt.Fprintf(w, "registreraFastTransaktion: No database open<p>\n")
@@ -644,7 +642,7 @@ func registreraFastTransaktion(w http.ResponseWriter, transid int) {
 	var Vad []byte  // size 40
 	var Vem []byte  // size 40
 	var Löpnr []byte  // Autoinc Primary Key, index
-	var Kontrollnr int  // Integer
+	var Kontrollnr []byte  // Integer
 	var TillDatum []byte  // size 10
 	var Rakning []byte  // size 1
 	
@@ -654,6 +652,8 @@ func registreraFastTransaktion(w http.ResponseWriter, transid int) {
 	if err != nil {
 		log.Println("registreraFastTransaktion: SCAN ERROR")
 		log.Println(err)
+		log.Println("registreraFastTransaktion: Bail out")
+		return
 	}
 
 	sqlStmt := ""
@@ -665,7 +665,7 @@ func registreraFastTransaktion(w http.ResponseWriter, transid int) {
 	sqlStmt += "<td>" + toUtf8(HurOfta) + "</td>"
 	sqlStmt += "<td>" + toUtf8(Vad) + "</td>"
 	sqlStmt += "<td>" + toUtf8(Vem) + "</td>"
-	sqlStmt += "<td>" + strconv.Itoa(Kontrollnr) + "</td>"
+	sqlStmt += "<td>" + toUtf8(Kontrollnr) + "</td>"
 	sqlStmt += "<td>" + toUtf8(TillDatum) + "</td>"
 	sqlStmt += "<td>" + toUtf8(Rakning) + "</td>"
 	sqlStmt += "</tr>\n"
@@ -680,7 +680,7 @@ func registreraFastTransaktion(w http.ResponseWriter, transid int) {
 		sqlStatement := `
 INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
 VALUES (?,?,?,?,?,?,?,?)`
-		_, err = db.Exec(sqlStatement, toUtf8(FrånKonto), toUtf8(TillKonto), "Överföring", CurrentDatum, "---", toUtf8(Vem), strings.ReplaceAll(toUtf8(Belopp), ".", ","), "Fast transaktion wHHEK")
+		_, err = db.Exec(sqlStatement, toUtf8(FrånKonto), toUtf8(TillKonto), "Överföring", toUtf8(Datum), "---", toUtf8(Vem), strings.ReplaceAll(toUtf8(Belopp), ".", ","), "Fast transaktion wHHEK")
 		if err != nil {
 			panic(err)
 		}
@@ -690,7 +690,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 		sqlStmt += "<td>" + toUtf8(FrånKonto) + "</td>"
 		sqlStmt += "<td>" + toUtf8(TillKonto) + "</td>"
 		sqlStmt += "<td>" + "Överföring" + "</td>"
-		sqlStmt += "<td>" + CurrentDatum + "</td>"
+		sqlStmt += "<td>" + toUtf8(Datum) + "</td>"
 		sqlStmt += "<td>" + toUtf8(Vem) + "</td>"
 		sqlStmt += "<td>" + toUtf8(Belopp) + "</td>"
 		sqlStmt += "</tr>"
@@ -703,7 +703,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 		sqlStatement := `
 INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
 VALUES (?,?,?,?,?,?,?,?)`
-		_, err = db.Exec(sqlStatement, "---", toUtf8(TillKonto), "Insättning", CurrentDatum, toUtf8(Vad), toUtf8(Vem), strings.ReplaceAll(toUtf8(Belopp), ".", ","), "Fast transaktion wHHEK")
+		_, err = db.Exec(sqlStatement, "---", toUtf8(TillKonto), "Insättning", toUtf8(Datum), toUtf8(Vad), toUtf8(Vem), strings.ReplaceAll(toUtf8(Belopp), ".", ","), "Fast transaktion wHHEK")
 		if err != nil {
 			panic(err)
 		}
@@ -713,7 +713,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 		sqlStmt += "<td>" + toUtf8(TillKonto) + "</td>"
 		sqlStmt += "<td>" + "Insättning" + "</td>"
 		sqlStmt += "<td>" + toUtf8(Vad) + "</td>"
-		sqlStmt += "<td>" + CurrentDatum + "</td>"
+		sqlStmt += "<td>" + toUtf8(Datum) + "</td>"
 		sqlStmt += "<td>" + toUtf8(Vem) + "</td>"
 		sqlStmt += "<td>" + toUtf8(Belopp) + "</td>"
 		sqlStmt += "</tr>"
@@ -726,7 +726,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 		sqlStatement := `
 INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
 VALUES (?,?,?,?,?,?,?,?)`
-		_, err = db.Exec(sqlStatement, toUtf8(FrånKonto), toUtf8(TillKonto), "Fast Utgift", CurrentDatum, toUtf8(Vad), toUtf8(Vem), strings.ReplaceAll(toUtf8(Belopp), ".", ","), "Fast transaktion wHHEK")
+		_, err = db.Exec(sqlStatement, toUtf8(FrånKonto), toUtf8(TillKonto), "Fast Utgift", toUtf8(Datum), toUtf8(Vad), toUtf8(Vem), strings.ReplaceAll(toUtf8(Belopp), ".", ","), "Fast transaktion wHHEK")
 		if err != nil {
 			panic(err)
 		}
@@ -737,7 +737,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 		sqlStmt += "<td>" + toUtf8(TillKonto) + "</td>"
 		sqlStmt += "<td>" + "Fast Utgift" + "</td>"
 		sqlStmt += "<td>" + toUtf8(Vad) + "</td>"
-		sqlStmt += "<td>" + CurrentDatum + "</td>"
+		sqlStmt += "<td>" + toUtf8(Datum) + "</td>"
 		sqlStmt += "<td>" + toUtf8(Vem) + "</td>"
 		sqlStmt += "<td>" + toUtf8(Belopp) + "</td>"
 		sqlStmt += "</tr>"

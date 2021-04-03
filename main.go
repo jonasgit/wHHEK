@@ -111,7 +111,7 @@
 // In powershell:
 // $env:GOOS="linux"
 // $env:GOARCH="386"
-// go build -o wHHEK.elf32 main.go platser.go transaktioner.go personer.go konton.go
+// go build -o wHHEK.elf32 main.go platser.go transaktioner.go personer.go konton.go budget.go
 
 
 // Notes/references/hints for further development
