@@ -18,8 +18,8 @@
 // Prepare: go get github.com/mattn/go-sqlite3
 // Prepare: go get golang.org/x/text/encoding/charmap
 // Prepare: go get github.com/shopspring/decimal
-// Build: go build -o wHHEK.exe main.go jetdb.go platser.go transaktioner.go personer.go konton.go budget.go
-// Build release: go build -ldflags="-s -w" -o wHHEK.exe main.go jetdb.go platser.go transaktioner.go personer.go konton.go budget.go
+// Build: go build -o wHHEK.exe main.go jetdb.go platser.go transaktioner.go fastatransaktioner.go personer.go konton.go budget.go
+// Build release: go build -ldflags="-s -w" -o wHHEK.exe main.go jetdb.go platser.go transaktioner.go fastatransaktioner.go personer.go konton.go budget.go
 // Run: ./wHHEK.exe -help
 // Run: ./wHHEK.exe -optin=.
 
@@ -112,7 +112,7 @@
 // In powershell:
 // $env:GOOS="linux"
 // $env:GOARCH="386"
-// go build -o wHHEK.elf32 main.go nojetdb.go platser.go transaktioner.go personer.go konton.go budget.go
+// go build -o wHHEK.elf32 main.go nojetdb.go platser.go transaktioner.go fastatransaktioner.go personer.go konton.go budget.go
 
 
 // Notes/references/hints for further development
@@ -173,7 +173,6 @@ func hello(w http.ResponseWriter, req *http.Request) {
 func root(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<html>\n")
 	fmt.Fprintf(w, "<body>\n")
-	//fmt.Fprintf(w, "hello root<p>")
 	fmt.Fprintf(w, "Välj databas att arbeta med:<br>")
 
 	files, err := ioutil.ReadDir(".")
@@ -247,7 +246,7 @@ func checkÖverföringar(w http.ResponseWriter, db *sql.DB) {
 	currDate := currentTime.Format("2006-01-02")
 	antal := GetCountPendingÖverföringar(db, currDate)
 	if antal > 0 {
-		fmt.Fprintf(w, "<p>%d fasta transaktioner tills idag väntar på att hanteras. Gå till <a href=\"newtrans\">Nya transaktioner</a>.<p>\n", antal)
+		fmt.Fprintf(w, "<p>%d fasta transaktioner tills idag väntar på att hanteras. Gå till <a href=\"fixedtrans\">Fasta transaktioner</a>.<p>\n", antal)
 	}
 
 	now := time.Now()
@@ -259,7 +258,7 @@ func checkÖverföringar(w http.ResponseWriter, db *sql.DB) {
 	currDate = lastOfMonth.Format("2006-01-02")
 	antal = GetCountPendingÖverföringar(db, currDate)
 	if antal > 0 {
-		fmt.Fprintf(w, "<p>%d fasta transaktioner till hela denna månaden väntar på att hanteras. Gå till <a href=\"newtrans\">Nya transaktioner</a>.<p>\n", antal)
+		fmt.Fprintf(w, "<p>%d fasta transaktioner till hela denna månaden väntar på att hanteras. Gå till <a href=\"fixedtrans\">Fasta transaktioner</a>.<p>\n", antal)
 	}
 }
 
@@ -372,6 +371,7 @@ func generateSummary(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<a href=\"konton\">Konton</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"budget\">Budget</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"newtrans\">Ny transaktion</a><p>\n")
+	fmt.Fprintf(w, "<a href=\"fixedtrans\">Fasta transaktioner/överföringar</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"close\">Stäng databas</a><p>\n")
 	fmt.Fprintf(w, "</body>\n")
 	fmt.Fprintf(w, "</html>\n")
@@ -730,6 +730,7 @@ func main() {
 	http.HandleFunc("/open", opendb)
 	http.HandleFunc("/close", closedb)
 	http.HandleFunc("/newtrans", newtransaction)
+	http.HandleFunc("/fixedtrans", fixedtransaction)
 	//	http.HandleFunc("/addtrans", addtransaction)
 	http.HandleFunc("/monthly", monthly)
 	http.HandleFunc("/transactions", transactions)
