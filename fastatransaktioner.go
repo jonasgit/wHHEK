@@ -137,7 +137,7 @@ func addfixedtransaction(w http.ResponseWriter, req *http.Request) {
 }
 
 func registreraFastTransaktion(w http.ResponseWriter, transid int) {
-	fmt.Fprintf(w, "Läser ut transaktion#"+strconv.Itoa(transid))
+	fmt.Fprintf(w, "Läser ut fast transaktion#"+strconv.Itoa(transid))
 	if db == nil {
 		fmt.Fprintf(w, "registreraFastTransaktion: No database open<p>\n")
 		return

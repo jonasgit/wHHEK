@@ -153,6 +153,7 @@ var currentDatabase string = "NONE"
 var (
 	ctx context.Context
 )
+var srv *http.Server;
 
 func toUtf8(in_buf []byte) string {
 	buf := in_buf
@@ -361,6 +362,23 @@ func closedb(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "</html>\n")
 }
 
+func quitapp(w http.ResponseWriter, req *http.Request) {
+	fmt.Fprintf(w, "<!DOCTYPE html>\n")
+	fmt.Fprintf(w, "<html>\n")
+	fmt.Fprintf(w, "   <head>\n")
+	fmt.Fprintf(w, "      <title>HTML Meta Tag</title>\n")
+	fmt.Fprintf(w, "      <meta http-equiv = \"refresh\" content = \"10; url = /\" />\n")
+	fmt.Fprintf(w, "   </head>\n")
+	fmt.Fprintf(w, "   <body>\n")
+	if db != nil {
+		closedb(w, req)
+	}
+	fmt.Fprintf(w, "      <p>Avslutar. Hej då!</p>\n")
+	fmt.Fprintf(w, "   </body>\n")
+	fmt.Fprintf(w, "</html>\n")
+	srv.Shutdown(ctx);
+}
+
 func generateSummary(w http.ResponseWriter, req *http.Request) {
 	printAccounts(w, db)
 	checkÖverföringar(w, db)
@@ -373,6 +391,7 @@ func generateSummary(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<a href=\"newtrans\">Ny transaktion</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"fixedtrans\">Fasta transaktioner/överföringar</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"close\">Stäng databas</a><p>\n")
+	fmt.Fprintf(w, "<a href=\"quit\">Avsluta program</a><p>\n")
 	fmt.Fprintf(w, "</body>\n")
 	fmt.Fprintf(w, "</html>\n")
 }
@@ -729,6 +748,7 @@ func main() {
 	http.HandleFunc("/headers", headers)
 	http.HandleFunc("/open", opendb)
 	http.HandleFunc("/close", closedb)
+	http.HandleFunc("/quit", quitapp)
 	http.HandleFunc("/newtrans", newtransaction)
 	http.HandleFunc("/fixedtrans", fixedtransaction)
 	//	http.HandleFunc("/addtrans", addtransaction)
@@ -744,5 +764,16 @@ func main() {
 	ip, _ := externalIP()
 	fmt.Println("Öppna URL i webläsaren:  http://localhost:8090/")
 	fmt.Printf(" eller :  http://%s:8090/\n", ip)
-	log.Fatal(http.ListenAndServe(":8090", nil))
+	ctx = context.Background()
+	srv := &http.Server{
+		Addr:           ":8090",
+		Handler:        nil,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+	httpError := srv.ListenAndServe()
+	if httpError != nil {
+		log.Println("While serving HTTP: ", httpError)
+	}
 }
