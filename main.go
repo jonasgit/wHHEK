@@ -15,8 +15,8 @@
 // Prepare: install golang 32-bits (can't access access/jet/mdb driver using 64-bits)
 //   go1.16.3.windows-386.msi
 // Build development version: ./make.bat
-// Build release version: ./make release
-// Run unit tests: ./make test
+// Build release version: ./make.bat release
+// Run unit tests: ./make.bat test
 
 // Run: ./wHHEK.exe -help
 // Run: ./wHHEK.exe -optin=.
