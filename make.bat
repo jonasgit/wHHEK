@@ -10,8 +10,11 @@ IF NOT "%GOOS%"=="windows" (
 )
 
 IF NOT "%GOARCH%"=="386" (
-  ECHO "Only intended for 32-bit windows."
-  EXIT
+  ECHO Found 64-bit Go-compiler for Windows, disable JetDB/MDB.
+  SET JETFILE=nojetdb.go
+) else (
+  ECHO Found 32-bit Go-compiler for Windows, enable JetDB/MDB.
+  SET JETFILE=jetdb.go
 )
 
 IF "%ARG1%"=="test" (
@@ -37,8 +40,10 @@ go get github.com/shopspring/decimal
 
 ECHO Bygger...
 
-set SOURCEFILES=main.go jetdb.go platser.go transaktioner.go fastatransaktioner.go personer.go konton.go budget.go
+set SOURCEFILES=main.go platser.go transaktioner.go fastatransaktioner.go personer.go konton.go budget.go
 
-go %BUILDCMD% %LINKCMD% -o wHHEK.exe %SOURCEFILES% %TESTFILES%
+@echo on
+go %BUILDCMD% %LINKCMD% -o wHHEK.exe %SOURCEFILES% %JETFILE% %TESTFILES%
+@echo off
 
 ECHO Klar.
