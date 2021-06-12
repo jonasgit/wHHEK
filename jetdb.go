@@ -8,6 +8,9 @@ import (
 	_ "github.com/alexbrainman/odbc" // BSD-3-Clause License
 )
 
+// Global variables
+var JetDBSupport bool = true
+
 func openJetDB(filename string, ro bool) *sql.DB {
 	readonlyCommand := ""
 	if ro {

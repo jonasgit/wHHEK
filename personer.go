@@ -209,7 +209,7 @@ func hanterapersoner(w http.ResponseWriter, req *http.Request) {
 		}
 		updatePerson(w, lopnr, namn, birth, sex, db)
 	default:
-		fmt.Println("Okänd action: %s\n", formaction)
+		fmt.Println("Okänd action: ", formaction)
 	}
 	printPersoner(w, db)
 	printPersonerFooter(w, db)

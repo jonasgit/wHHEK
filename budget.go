@@ -300,7 +300,7 @@ func hanteraBudget(w http.ResponseWriter, req *http.Request) {
 	case "update":
 		updateBudget(w, lopnr, req, db)
 	default:
-		fmt.Println("Okänd action: %s\n", formaction)
+		fmt.Println("Okänd action: ", formaction)
 	}
 	printBudget(w, db)
 	printBudgetFooter(w, db)

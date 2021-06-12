@@ -311,7 +311,7 @@ func hanterakonton(w http.ResponseWriter, req *http.Request) {
 		}
 		updateKonto(w, lopnr, Benamning, StartSaldo, StartManad, db)
 	default:
-		fmt.Println("Okänd action: %s\n", formaction)
+		fmt.Println("Okänd action: ", formaction)
 	}
 	printKonton(w, db)
 	printKontonFooter(w, db)

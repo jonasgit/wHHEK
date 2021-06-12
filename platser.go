@@ -247,7 +247,7 @@ func hanteraplatser(w http.ResponseWriter, req *http.Request) {
 		}
 		updatePlats(w, lopnr, namn, gironum, acctype, refacc, db)
 	default:
-		fmt.Println("Okänd action: %s\n", formaction)
+		fmt.Println("Okänd action: ", formaction)
 	}
 	printPlatser(w, db)
 	printPlatserFooter(w, db)

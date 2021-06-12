@@ -13,13 +13,11 @@
 
 // Prepare: install git: Git-2.23.0-64-bit
 // Prepare: install golang 32-bits (can't access access/jet/mdb driver using 64-bits)
-//   go1.13.3.windows-386.msi
-// Prepare: go get github.com/alexbrainman/odbc
-// Prepare: go get github.com/mattn/go-sqlite3
-// Prepare: go get golang.org/x/text/encoding/charmap
-// Prepare: go get github.com/shopspring/decimal
-// Build: go build -o wHHEK.exe main.go jetdb.go platser.go transaktioner.go fastatransaktioner.go personer.go konton.go budget.go
-// Build release: go build -ldflags="-s -w" -o wHHEK.exe main.go jetdb.go platser.go transaktioner.go fastatransaktioner.go personer.go konton.go budget.go
+//   go1.16.3.windows-386.msi
+// Build development version: ./make.bat
+// Build release version: ./make release
+// Run unit tests: ./make test
+
 // Run: ./wHHEK.exe -help
 // Run: ./wHHEK.exe -optin=.
 
@@ -376,6 +374,7 @@ func quitapp(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "      <p>Avslutar. Hej då!</p>\n")
 	fmt.Fprintf(w, "   </body>\n")
 	fmt.Fprintf(w, "</html>\n")
+	time.Sleep(8 * time.Second)
 	srv.Shutdown(ctx);
 }
 
