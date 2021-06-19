@@ -19,7 +19,7 @@ IF NOT "%GOARCH%"=="386" (
 
 IF "%ARG1%"=="test" (
   SET BUILDCMD=test -v
-  set TESTFILES=main_test.go personer_test.go konton_test.go transaktioner_test.go
+  set TESTFILES=main_test.go personer_test.go konton_test.go transaktioner_test.go db_test.go
 ) else (
   SET BUILDCMD=build
   set TESTFILES=

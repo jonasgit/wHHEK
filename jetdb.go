@@ -1,9 +1,10 @@
 package main
 
+// TODO: testa https://github.com/mattn/go-adodb
+
 import (
 	"database/sql"
 	"log"
-	"os"
 
 	_ "github.com/alexbrainman/odbc" // BSD-3-Clause License
 )
@@ -25,7 +26,7 @@ func openJetDB(filename string, ro bool) *sql.DB {
 		databaseAccessCommand)
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(1)
+		return nil
 	}
 	return db
 }

@@ -3,7 +3,7 @@
 export JETFILE=nojetdb.go
 
 #  SET BUILDCMD=test -v
-#  set TESTFILES=main_test.go personer_test.go konton_test.go transaktioner_test.go
+#  set TESTFILES=main_test.go personer_test.go konton_test.go transaktioner_test.go db_test.go
 
 export BUILDCMD=build
 export TESTFILES=
