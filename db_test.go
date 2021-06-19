@@ -30,7 +30,7 @@ func TestOpenMDB(t *testing.T) {
 		// Delete file
 		err := os.Remove(filename)
 		if err != nil {
-			t.Log("Failed to remove file. Probably OK. ", err)
+			t.Error("Failed to remove file. ", err)
 		} else {
 			t.Log("OpenMDB testfile removed. OK.")
 		}
@@ -38,16 +38,14 @@ func TestOpenMDB(t *testing.T) {
 		t.Log("OpenMDB testfile did not exist. OK.")
 	}
 
-	// Create the file
-	out, err := os.Create(filename)
+	// Create and write file
+	err := ioutil.WriteFile(filename, TOMDB, 0644)
 	if err != nil {
-		t.Error("TestOpenMDB failed to create file: ",err)
+		t.Error("Failed to create file. ", err)
+	} else {
+		t.Log("OpenMDB testfile created. OK.")
 	}
-	defer out.Close()
-
-	// Write to file
-	err = ioutil.WriteFile(filename, TOMDB, 0644)
-
+	
 	// Check open succeeds
 	db = openJetDB(filename, false)
 	if db != nil {
