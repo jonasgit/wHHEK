@@ -12,6 +12,12 @@ import (
 	"strconv"
 )
 
+type person struct {
+	namn string
+	birth  int
+	sex string
+}
+
 func printPersoner(w http.ResponseWriter, db *sql.DB) {
 	res, err := db.Query("SELECT Namn,Född,Kön,Löpnr FROM Personer")
 
@@ -118,14 +124,33 @@ func addformPerson(w http.ResponseWriter, db *sql.DB) {
 	fmt.Fprintf(w, "<p>\n")
 }
 
+func skapaPerson(namn string, birth int, sex string) error {
+	if db == nil {
+		log.Fatal("skapaPerson anropad med db=nil");
+		os.Exit(2);
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	
+	_, err := db.ExecContext(ctx,
+		`INSERT INTO Personer(Namn, Född, Kön) VALUES (?, ?, ?)`, namn, birth, sex)
+	
+	if err != nil {
+		log.Fatal(err)
+	}
+	return err
+}
+
 func addPerson(w http.ResponseWriter, namn string, birth string, sex string, db *sql.DB) {
 	fmt.Println("addPerson namn: ", namn)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	_, err := db.ExecContext(ctx,
-		`INSERT INTO Personer(Namn, Född, Kön) VALUES (?, ?, ?)`, namn, birth, sex)
+	birthint, err := strconv.Atoi(birth)
+	if err != nil {
+		log.Fatal(err)
+		fmt.Fprintf(w, "Person ej tillagd, felaktigt födelseår.<br>")
+	}
+	
+	err = skapaPerson(namn, birthint, sex)
 
 	if err != nil {
 		log.Fatal(err)
@@ -231,4 +256,48 @@ func getPersonNames() []string {
 		names = append(names, toUtf8(Namn))
 	}
 	return names
+}
+
+func antalPersoner() int {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	res1 := db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM Personer`)
+
+	var antal int
+
+	err := res1.Scan(&antal)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+
+	return antal
+}
+
+func hämtaPerson(lopnr int) person {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	res1 := db.QueryRowContext(ctx,
+		`SELECT Namn,Född,Kön FROM Personer WHERE (Löpnr=?)`, lopnr)
+
+	var namn []byte  // size 50
+	var birth string // size 4 (år, 0 för Gemensamt)
+	var sex string   // size 10 (text: Gemensamt, Man, Kvinna)
+
+	err := res1.Scan(&namn, &birth, &sex)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+
+	var retperson person
+
+	retperson.namn = toUtf8(namn)
+	retperson.birth, err = strconv.Atoi(birth)
+	retperson.sex = sex
+
+	return retperson
 }

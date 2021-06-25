@@ -23,9 +23,7 @@ func FileExists (filepath string) bool {
 	return !fileinfo.IsDir()
 }
 
-func TestOpenMDB(t *testing.T) {
-	var filename string = "gotest.mdb"
-
+func SkapaTomMDB(t *testing.T, filename string) {
 	if FileExists(filename) {
 		// Delete file
 		err := os.Remove(filename)
@@ -37,7 +35,7 @@ func TestOpenMDB(t *testing.T) {
 	} else {
 		t.Log("OpenMDB testfile did not exist. OK.")
 	}
-
+	
 	// Create and write file
 	err := ioutil.WriteFile(filename, TOMDB, 0644)
 	if err != nil {
@@ -45,6 +43,12 @@ func TestOpenMDB(t *testing.T) {
 	} else {
 		t.Log("OpenMDB testfile created. OK.")
 	}
+}
+
+func TestOpenMDB(t *testing.T) {
+	var filename string = "gotest.mdb"
+
+	SkapaTomMDB(t, filename)
 	
 	// Check open succeeds
 	db = openJetDB(filename, false)
@@ -53,4 +57,5 @@ func TestOpenMDB(t *testing.T) {
 	} else {
 		t.Error("OpenMDB failed to open file.")
 	}
+	closeDB()
 }

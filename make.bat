@@ -17,8 +17,19 @@ IF NOT "%GOARCH%"=="386" (
   SET JETFILE=jetdb.go
 )
 
+IF "%ARG1%"=="setup" (
+  ECHO Hämtar beroenden...
+
+  go get github.com/alexbrainman/odbc
+  go get github.com/mattn/go-sqlite3
+  go get golang.org/x/text/encoding/charmap
+  go get github.com/shopspring/decimal
+  ECHO Klar.
+  EXIT
+)
+
 IF "%ARG1%"=="test" (
-  SET BUILDCMD=test -v
+  SET BUILDCMD=test -v -p 1
   set TESTFILES=main_test.go personer_test.go konton_test.go transaktioner_test.go db_test.go
 ) else (
   SET BUILDCMD=build
@@ -30,13 +41,6 @@ IF "%ARG1%"=="release" (
 ) else (
   SET LINKCMD=
 )
-
-ECHO Hämtar beroenden...
-
-go get github.com/alexbrainman/odbc
-go get github.com/mattn/go-sqlite3
-go get golang.org/x/text/encoding/charmap
-go get github.com/shopspring/decimal
 
 ECHO Bygger...
 

@@ -13,6 +13,9 @@ import (
 var JetDBSupport bool = true
 
 func openJetDB(filename string, ro bool) *sql.DB {
+	currentDatabase = "NONE"
+	dbtype = 0
+
 	readonlyCommand := ""
 	if ro {
 		readonlyCommand = "READONLY;"
@@ -28,5 +31,7 @@ func openJetDB(filename string, ro bool) *sql.DB {
 		log.Fatal(err)
 		return nil
 	}
+	currentDatabase = filename
+	dbtype = 1
 	return db
 }

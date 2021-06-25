@@ -165,6 +165,13 @@ func toUtf8(in_buf []byte) string {
 	return stringVal3
 }
 
+func unEscapeSQL(in_buf string) string {
+	// UnEscape chars for SQL
+	stringVal2 := strings.ReplaceAll(in_buf, "''", "'")
+	stringVal3 := strings.ReplaceAll(stringVal2, "\"\"", "\"")
+	return stringVal3
+}
+
 func hello(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "hello\n")
 }
@@ -226,10 +233,16 @@ func sanitizeFilename(fname string) string {
 }
 
 func openSqlite(filename string) *sql.DB {
+	currentDatabase = "NONE"
+	dbtype = 0
+
 	db, err := sql.Open("sqlite3", filename)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	currentDatabase = filename
+	dbtype = 2
 
 	return db
 }
@@ -308,14 +321,10 @@ func opendb(w http.ResponseWriter, req *http.Request) {
 	if strings.HasSuffix(strings.ToLower(filename), ".mdb") {
 		//fmt.Fprintf(w, "Trying to open Access/Jet<br>\n")
 		db = openJetDB(filename, false)
-		currentDatabase = filename
-		dbtype = 1
 	} else {
 		if strings.HasSuffix(strings.ToLower(filename), ".db") {
 			//fmt.Fprintf(w, "Trying to open sqlite3<br>\n")
 			db = openSqlite(filename)
-			currentDatabase = filename
-			dbtype = 2
 		} else {
 			fmt.Fprintf(w, "Bad filename: %s<br>\n", filename)
 		}
@@ -342,12 +351,16 @@ func opendb(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "</html>\n")
 }
 
-func closedb(w http.ResponseWriter, req *http.Request) {
+func closeDB() {
 	db.Close()
 	dbtype = 0
 	db = nil
 	currentDatabase = "NONE"
+}
 
+func closedb(w http.ResponseWriter, req *http.Request) {
+	closeDB();
+	
 	fmt.Fprintf(w, "<!DOCTYPE html>\n")
 	fmt.Fprintf(w, "<html>\n")
 	fmt.Fprintf(w, "   <head>\n")
