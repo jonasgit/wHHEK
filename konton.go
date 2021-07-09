@@ -12,7 +12,19 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/shopspring/decimal"  // MIT License
 )
+
+type konto struct {
+	KontoNummer string    // size 20
+	Benämning string      // size 40, index
+	Saldo decimal.Decimal // BCD / Decimal Precision 19
+	StartSaldo decimal.Decimal  // BCD / Decimal Precision 19
+	StartManad string     // size 10
+	SaldoArsskifte string // BCD / Decimal Precision 19
+	ArsskifteManad string // size 10
+}
 
 func printKonton(w http.ResponseWriter, db *sql.DB) {
 	res, err := db.Query("SELECT KontoNummer,Benämning,Saldo,StartSaldo,StartManad,Löpnr,SaldoArsskifte,ArsskifteManad FROM Konton")
@@ -216,23 +228,40 @@ func int2man(month int) string {
 	case 12:
 		return "Dec"
 	}
+
+	// Fail HARD!
+	log.Fatal("int2man: unknown month "+strconv.Itoa(month))
+	os.Exit(2)
 	return "???"
 }
 
-func addKonto(w http.ResponseWriter, Benamning string, StartSaldo string, StartManad string, db *sql.DB) {
+func addKonto(Benamning string, StartSaldo decimal.Decimal, StartManad string, db *sql.DB) {
 	fmt.Println("addKonto namn: ", Benamning)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	StartMan, _ := strconv.Atoi(StartManad)
+	//StartMan, _ := strconv.Atoi(StartManad)
+	startSaldo := strings.ReplaceAll(StartSaldo.String(), ".", ",")
 	_, err := db.ExecContext(ctx,
-		`INSERT INTO Konton(KontoNummer,Benämning,Saldo,StartSaldo,SaldoArsskifte,StartManad,ArsskifteManad) VALUES (?, ?, ?, ?, ?, ?, ?)`, 0, Benamning, strings.ReplaceAll(StartSaldo, ".", ","), strings.ReplaceAll(StartSaldo, ".", ","), strings.ReplaceAll(StartSaldo, ".", ","), int2man(StartMan), int2man(1))
+		`INSERT INTO Konton(KontoNummer,Benämning,Saldo,StartSaldo,SaldoArsskifte,StartManad,ArsskifteManad) VALUES (?, ?, ?, ?, ?, ?, ?)`, 0, Benamning, startSaldo, startSaldo, startSaldo, StartManad, int2man(1))
 
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(2)
 	}
+}
+
+func addKontow(w http.ResponseWriter, Benamning string, StartSaldo string, StartManad string, db *sql.DB) {
+	fmt.Println("addKonto namn: ", Benamning)
+
+	startSaldo, err := decimal.NewFromString(StartSaldo)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+	addKonto(Benamning, startSaldo, StartManad, db)
+
 	fmt.Fprintf(w, "Konto %s tillagd.<br>", Benamning)
 }
 
@@ -293,7 +322,7 @@ func hanterakonton(w http.ResponseWriter, req *http.Request) {
 		if len(req.FormValue("StartManad")) > 0 {
 			StartManad = req.FormValue("StartManad")
 		}
-		addKonto(w, Benamning, StartSaldo, StartManad, db)
+		addKontow(w, Benamning, StartSaldo, StartManad, db)
 	case "editform":
 		editformKonto(w, lopnr, db)
 	case "update":
@@ -333,4 +362,56 @@ func getAccNames() []string {
 		names = append(names, toUtf8(Benämning))
 	}
 	return names
+}
+
+func antalKonton() int {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	res1 := db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM Konton`)
+
+	var antal int
+
+	err := res1.Scan(&antal)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+
+	return antal
+}
+
+func hämtaKonto(lopnr int) konto {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	res1 := db.QueryRowContext(ctx,
+	        `SELECT KontoNummer,Benämning,Saldo,StartSaldo,StartManad,SaldoArsskifte,ArsskifteManad FROM Konton WHERE (Löpnr=?)`, lopnr)
+
+	var KontoNummer []byte    // size 20
+	var Benämning []byte      // size 40, index
+	var Saldo []byte          // BCD / Decimal Precision 19
+	var StartSaldo []byte     // BCD / Decimal Precision 19
+	var StartManad []byte     // size 10
+	var SaldoArsskifte []byte // BCD / Decimal Precision 19
+	var ArsskifteManad []byte // size 10
+
+	err := res1.Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &SaldoArsskifte, &ArsskifteManad)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+
+	var retkonto konto
+
+	retkonto.KontoNummer = toUtf8(KontoNummer)
+	retkonto.Benämning = toUtf8(Benämning)
+	retkonto.Saldo, err = decimal.NewFromString(toUtf8(Saldo))
+	retkonto.StartSaldo, err = decimal.NewFromString(toUtf8(StartSaldo))
+	retkonto.StartManad = toUtf8(StartManad)
+	retkonto.SaldoArsskifte = toUtf8(SaldoArsskifte)
+	retkonto.ArsskifteManad = toUtf8(ArsskifteManad)
+
+	return retkonto
 }
