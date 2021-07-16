@@ -236,7 +236,7 @@ func int2man(month int) string {
 }
 
 func addKonto(Benamning string, StartSaldo decimal.Decimal, StartManad string, db *sql.DB) {
-	fmt.Println("addKonto namn: ", Benamning)
+	//fmt.Println("addKonto namn: ", Benamning)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -244,7 +244,7 @@ func addKonto(Benamning string, StartSaldo decimal.Decimal, StartManad string, d
 	//StartMan, _ := strconv.Atoi(StartManad)
 	startSaldo := strings.ReplaceAll(StartSaldo.String(), ".", ",")
 	_, err := db.ExecContext(ctx,
-		`INSERT INTO Konton(KontoNummer,Benämning,Saldo,StartSaldo,SaldoArsskifte,StartManad,ArsskifteManad) VALUES (?, ?, ?, ?, ?, ?, ?)`, 0, Benamning, startSaldo, startSaldo, startSaldo, StartManad, int2man(1))
+		`INSERT INTO Konton(KontoNummer,Benämning,Saldo,StartSaldo,SaldoArsskifte,StartManad,ArsskifteManad) VALUES (?, ?, ?, ?, ?, ?, ?)`, 0, Benamning, startSaldo, startSaldo, startSaldo, StartManad, StartManad)
 
 	if err != nil {
 		log.Fatal(err)

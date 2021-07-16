@@ -14,6 +14,51 @@ func kontonInit(t *testing.T) {
 	db = openJetDB(filename, false)
 }
 
+func TestKontoTomMDB1(t *testing.T) {
+	kontonInit(t)
+
+	// Denna testen
+	antal := antalKonton()
+	
+	if antal != 1 {
+		t.Error("Antal konton != (1).")
+	} else {
+		t.Log("Antal konton ok.")
+	}
+	konto := hämtaKonto(1)
+	
+	if konto.Benämning != "Plånboken" {
+		t.Error("Kontonamn '"+"Plånboken"+"' != '"+konto.Benämning+"'.")
+	} else {
+		t.Log("Test namn ok.")
+	}
+	startsaldo, err := decimal.NewFromString("0")
+	if err != nil {
+		t.Error(err)
+	}
+	if !konto.StartSaldo.Equal(startsaldo) {
+		t.Error("Konto startsaldo '"+startsaldo.String()+"' != '"+konto.StartSaldo.String()+"'.")
+	} else {
+		t.Log("Test startsaldo ok.")
+	}
+	if !konto.Saldo.Equal(startsaldo) {
+		t.Error("Konto saldo '"+startsaldo.String()+"' != '"+konto.Saldo.String()+"'.")
+	} else {
+		t.Log("Test saldo ok.")
+	}
+	if konto.StartManad != "Jan" {
+		t.Error("Konto startmånad '"+"Jan"+"' != '"+konto.StartManad+"'.")
+	} else {
+		t.Log("Test startmånad ok.")
+	}
+	if konto.ArsskifteManad != "Jan" {
+		t.Error("Konto skiftesmånad '"+"Jan"+"' != '"+konto.ArsskifteManad+"'.")
+	} else {
+		t.Log("Test skiftesmånad ok.")
+	}
+	closeDB()
+}
+
 func TestKontoMDB1(t *testing.T) {
 	kontonInit(t)
 
@@ -99,6 +144,11 @@ func TestKontoMDB3(t *testing.T) {
 		t.Error("Konto startmånad '"+startmånad+"' != '"+konto.StartManad+"'.")
 	} else {
 		t.Log("Test startmånad ok.")
+	}
+	if konto.ArsskifteManad != startmånad {
+		t.Error("Konto skiftesmånad '"+startmånad+"' != '"+konto.ArsskifteManad+"'.")
+	} else {
+		t.Log("Test skiftesmånad ok.")
 	}
 
 	closeDB()

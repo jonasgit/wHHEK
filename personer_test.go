@@ -7,10 +7,44 @@ import (
 
 func personerInit(t *testing.T) {
 	// Förberedelser
-	var filename string = "gotest.mdb"
+	var filename string = "gotestp.mdb"
 
 	SkapaTomMDB(t, filename)
 	db = openJetDB(filename, false)
+}
+
+func TestPersonTomMDB1(t *testing.T) {
+	personerInit(t)
+
+	// Denna testen
+	antal := antalPersoner()
+	
+	if antal != 1 {
+		t.Error("Antal personer != 1.")
+	} else {
+		t.Log("Antal personer ok.")
+	}
+	namn := "Gemensamt"
+	birth := 0
+	sex := "Gemensamt"
+	person := hämtaPerson(1)
+	
+	if person.namn != namn {
+		t.Error("Personnamn '"+namn+"' != '"+person.namn+"'.")
+	} else {
+		t.Log("Test namn ok.")
+	}
+	if person.birth != birth {
+		t.Error("Person född '"+strconv.Itoa(birth)+"' != '"+strconv.Itoa(person.birth)+"'.")
+	} else {
+		t.Log("Test född ok.")
+	}
+	if person.sex != sex {
+		t.Error("Person kön '"+sex+"' != '"+person.sex+"'.")
+	} else {
+		t.Log("Test kön ok.")
+	}
+	closeDB()
 }
 
 func TestPersonMDB1(t *testing.T) {
@@ -76,7 +110,7 @@ func TestPersonMDB3(t *testing.T) {
 	}
 
 
-	namn  = "** \"\" ');  **"
+	namn  = "** \"\" ');  **"  // Note: ' ej tillåtet enligt HH
 	birth = 2000
 	sex   = "Kvinna"
 	skapaPerson(namn, birth, sex)

@@ -1,5 +1,12 @@
 @echo off
+REM Första gången      : ./make.bat setup
+REM Kör tester         : ./make.bat test
+REM Kör tester pratsamt: ./make.bat test verbose
+REM Bygg för användning: ./make.sh release
+REM Bygg för utveckling: ./make.sh
+
 SET ARG1=%1
+SET ARG2=%2
 
 FOR /F %%I IN ('go env GOOS') DO SET GOOS=%%I
 FOR /F %%I IN ('go env GOARCH') DO SET GOARCH=%%I
@@ -29,10 +36,14 @@ IF "%ARG1%"=="setup" (
 )
 
 IF "%ARG1%"=="test" (
-  SET BUILDCMD=test -v -p 1
+  IF "%ARG2%"=="verbose" (
+    SET BUILDCMD=test -v -p 1
+  ) else (
+    SET BUILDCMD=test -p 1
+  )
   set TESTFILES=main_test.go personer_test.go konton_test.go transaktioner_test.go db_test.go
 ) else (
-  SET BUILDCMD=build
+  SET BUILDCMD=build -o wHHEK.exe
   set TESTFILES=
 )
 
@@ -47,7 +58,7 @@ ECHO Bygger...
 set SOURCEFILES=main.go platser.go transaktioner.go fastatransaktioner.go personer.go konton.go budget.go
 
 @echo on
-go %BUILDCMD% %LINKCMD% -o wHHEK.exe %SOURCEFILES% %JETFILE% %TESTFILES%
+go %BUILDCMD% %LINKCMD% %SOURCEFILES% %JETFILE% %TESTFILES%
 @echo off
 
 ECHO Klar.
