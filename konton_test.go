@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/shopspring/decimal"  // MIT License
@@ -149,6 +150,38 @@ func TestKontoMDB3(t *testing.T) {
 		t.Error("Konto skiftesmånad '"+startmånad+"' != '"+konto.ArsskifteManad+"'.")
 	} else {
 		t.Log("Test skiftesmånad ok.")
+	}
+
+	closeDB()
+}
+
+func TestKontoMDB4(t *testing.T) {
+	kontonInit(t)
+
+	// Denna testen
+	namn := "Tom € Räksmörgås"
+	startsaldo, err := decimal.NewFromString("19.99")
+	if err != nil {
+		t.Error(err)
+	}
+	
+	startmånad := "Apr"
+	addKonto(namn, startsaldo, startmånad, db)
+
+	kontoid := hämtakontoID("Plånboken")
+	
+	if kontoid != 1 {
+		t.Error("Kontoid '"+"1"+"' != '"+strconv.Itoa(kontoid)+"'.")
+	} else {
+		t.Log("Test id 1 ok.")
+	}
+
+	kontoid = hämtakontoID(namn)
+	
+	if kontoid != 2 {
+		t.Error("Kontoid '"+"1"+"' != '"+strconv.Itoa(kontoid)+"'.")
+	} else {
+		t.Log("Test id 1 ok.")
 	}
 
 	closeDB()

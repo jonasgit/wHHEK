@@ -37,7 +37,7 @@ IF "%ARG1%"=="setup" (
 
 IF "%ARG1%"=="test" (
   IF "%ARG2%"=="verbose" (
-    SET BUILDCMD=test -v -p 1
+    SET BUILDCMD=test -p 1 -v
   ) else (
     SET BUILDCMD=test -p 1
   )

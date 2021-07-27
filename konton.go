@@ -281,6 +281,23 @@ func updateKonto(w http.ResponseWriter, lopnr int, Benamning string, StartSaldo 
 	fmt.Fprintf(w, "Konto %s uppdaterad.<br>", Benamning)
 }
 
+func updateKontoSaldo(Benamning string, Saldo string) {
+	lopnr := hämtakontoID(Benamning)
+	//fmt.Println("updateKontoSaldo lopnr: ", lopnr)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	_, err := db.ExecContext(ctx,
+		`UPDATE Konton SET Saldo = ? WHERE (Löpnr=?)`, strings.ReplaceAll(Saldo, ".", ","), lopnr)
+
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+	//fmt.Println("Konto uppdaterad, nytt saldo.", Benamning, Saldo)
+}
+
 func hanterakonton(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<html>\n")
 	fmt.Fprintf(w, "<head>\n")
@@ -382,6 +399,24 @@ func antalKonton() int {
 	return antal
 }
 
+func hämtakontoID(accName string) int {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	
+	res1 := db.QueryRowContext(ctx,
+		`select Löpnr
+  from konton
+  where benämning = ?`, accName)
+	var Löpnr int             // autoinc Primary Key
+	err := res1.Scan(&Löpnr)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+
+	return Löpnr
+}
+
 func hämtaKonto(lopnr int) konto {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -414,4 +449,80 @@ func hämtaKonto(lopnr int) konto {
 	retkonto.ArsskifteManad = toUtf8(ArsskifteManad)
 
 	return retkonto
+}
+
+func saldoKonto(accName string, endDate string) decimal.Decimal{
+	//	fmt.Println("saldoKonto: accName ", accName)
+	if endDate == "" {
+		endDate = "2999-12-31"
+	}
+	//fmt.Println("saldoKonto: endDate ", endDate)
+	
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var err error
+	var res *sql.Rows
+	
+	res1 := db.QueryRowContext(ctx,
+		`select startsaldo
+  from konton
+  where benämning = ?`, accName)
+	var rawStart []byte // size 16
+	err = res1.Scan(&rawStart)
+	res2 := toUtf8(rawStart)
+	startSaldo, err := decimal.NewFromString(res2)
+	currSaldo := startSaldo
+	//fmt.Println("saldoKonto: startsaldo ", currSaldo)
+
+	res, err = db.QueryContext(ctx,
+		`SELECT FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Löpnr,Saldo,Fastöverföring,Text from transaktioner
+  where (datum <= ?)
+    and ((tillkonto = ?)
+         or (frånkonto = ?))
+order by datum,löpnr`, endDate, accName, accName)
+
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+
+	var fromAcc []byte // size 40
+	var toAcc []byte   // size 40
+	var tType []byte   // size 40
+	var date []byte    // size 10
+	var what []byte    // size 40
+	var who []byte     // size 50
+	var amount []byte  // BCD / Decimal Precision 19
+	var nummer int     // Autoinc Primary Key, index
+	var saldo []byte   // BCD / Decimal Precision 19
+	var fixed bool     // Boolean
+	var comment []byte // size 60
+
+	for res.Next() {
+		err = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
+		decAmount, _ := decimal.NewFromString(toUtf8(amount))
+		//fmt.Println("saldoKonto: decAmount ", decAmount)
+		//fmt.Println("saldoKonto: toAcc ", toUtf8(toAcc))
+		//fmt.Println("saldoKonto: fromAcc ", toUtf8(fromAcc))
+		//fmt.Println("saldoKonto: tType ", toUtf8(tType))
+
+		if (accName == toUtf8(toAcc)) &&
+			((toUtf8(tType) == "Uttag") ||
+				(toUtf8(tType) == "Fast Inkomst") ||
+				(toUtf8(tType) == "Insättning") ||
+				(toUtf8(tType) == "Överföring")) {
+			currSaldo = currSaldo.Add(decAmount)
+			//fmt.Println("saldoKonto: add")
+		}
+		if (accName == toUtf8(fromAcc)) &&
+			((toUtf8(tType) == "Uttag") ||
+				(toUtf8(tType) == "Inköp") ||
+				(toUtf8(tType) == "Fast Utgift") ||
+				(toUtf8(tType) == "Överföring")) {
+			currSaldo = currSaldo.Sub(decAmount)
+			//fmt.Println("saldoKonto: sub")
+		}
+		//fmt.Println("saldoKonto: new saldo ", currSaldo)
+	}
+	return currSaldo
 }

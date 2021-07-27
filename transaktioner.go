@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/shopspring/decimal"  // MIT License
 )
 
 func printTransactions(w http.ResponseWriter, db *sql.DB, startDate string, endDate string, limitcomment string) {
@@ -321,6 +323,28 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "</html>\n")
 }
 
+func addTransaktionInsättning(toacc string, date string , what string, who string, summa decimal.Decimal, text string) {
+	var transtyp string = "Insättning"
+        var amount string = summa.String()
+	
+	// TODO: Check length of "text"
+	// TODO: Check date format
+	// TODO: Check toacc valid
+	// TODO: Check what valid
+	// TODO: Check who valid
+	
+	sqlStatement := `
+INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
+VALUES (?,?,?,?,?,?,?,?)`
+	_, err := db.Exec(sqlStatement, "---", toacc, transtyp, date, what, who, strings.ReplaceAll(amount, ".", ","), text)
+	if err != nil {
+		panic(err)
+	}
+
+        saldo := saldoKonto(toacc, "")
+	updateKontoSaldo(toacc, saldo.String())
+}
+
 func addtransaction(w http.ResponseWriter, req *http.Request) {
 	err := req.ParseForm()
 	if err != nil {
@@ -330,7 +354,14 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 	transtyp := req.FormValue("transtyp")
 	date := req.FormValue("date")
 	who := req.FormValue("who")
-	amount := req.FormValue("amount")
+	amountstr := req.FormValue("amount")
+	amountstr = strings.ReplaceAll(amountstr, ".", ",")
+	amount, err := decimal.NewFromString(amountstr)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+
 	text := req.FormValue("text")
 	fmt.Println("Val: ", transtyp)
 	fmt.Println("Val: ", date)
@@ -351,7 +382,7 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 		sqlStatement := `
 INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
 VALUES (?,?,?,?,?,?,?,?)`
-		_, err = db.Exec(sqlStatement, fromacc, place, transtyp, date, what, who, strings.ReplaceAll(amount, ".", ","), text)
+		_, err = db.Exec(sqlStatement, fromacc, place, transtyp, date, what, who, strings.ReplaceAll(amount.String(), ".", ","), text)
 		if err != nil {
 			panic(err)
 		}
@@ -364,7 +395,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 		sqlStmt += "<td>" + what + "</td>"
 		sqlStmt += "<td>" + date + "</td>"
 		sqlStmt += "<td>" + who + "</td>"
-		sqlStmt += "<td>" + amount + "</td>"
+		sqlStmt += "<td>" + amount.String() + "</td>"
 		sqlStmt += "<td>" + html.EscapeString(text) + "</td>\n"
 		sqlStmt += "</tr>"
 		fmt.Fprintf(w, "%s", sqlStmt)
@@ -377,14 +408,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 		fmt.Println("Val: ", what)
 
 		fmt.Fprintf(w, "Registrerar Insättning...<br> ")
-
-		sqlStatement := `
-INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
-VALUES (?,?,?,?,?,?,?,?)`
-		_, err = db.Exec(sqlStatement, "---", toacc, transtyp, date, what, who, strings.ReplaceAll(amount, ".", ","), text)
-		if err != nil {
-			panic(err)
-		}
+		addTransaktionInsättning(toacc, date, what, who, amount, text)
 
 		fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Konto</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
 		sqlStmt := "<tr>"
@@ -393,7 +417,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 		sqlStmt += "<td>" + what + "</td>"
 		sqlStmt += "<td>" + date + "</td>"
 		sqlStmt += "<td>" + who + "</td>"
-		sqlStmt += "<td>" + amount + "</td>"
+		sqlStmt += "<td>" + amount.String() + "</td>"
 		sqlStmt += "<td>" + html.EscapeString(text) + "</td>\n"
 		sqlStmt += "</tr>"
 		fmt.Fprintf(w, "%s", sqlStmt)
@@ -410,7 +434,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 		sqlStatement := `
 INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
 VALUES (?,?,?,?,?,?,?,?)`
-		_, err = db.Exec(sqlStatement, fromacc, "Plånboken", transtyp, date, "---", who, strings.ReplaceAll(amount, ".", ","), text)
+		_, err = db.Exec(sqlStatement, fromacc, "Plånboken", transtyp, date, "---", who, strings.ReplaceAll(amount.String(), ".", ","), text)
 		if err != nil {
 			panic(err)
 		}
@@ -421,7 +445,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 		sqlStmt += "<td>" + transtyp + "</td>"
 		sqlStmt += "<td>" + date + "</td>"
 		sqlStmt += "<td>" + who + "</td>"
-		sqlStmt += "<td>" + amount + "</td>"
+		sqlStmt += "<td>" + amount.String() + "</td>"
 		sqlStmt += "<td>" + html.EscapeString(text) + "</td>\n"
 		sqlStmt += "</tr>"
 		fmt.Fprintf(w, "%s", sqlStmt)
@@ -438,7 +462,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 		sqlStatement := `
 INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
 VALUES (?,?,?,?,?,?,?,?)`
-		_, err = db.Exec(sqlStatement, fromacc, toacc, transtyp, date, "---", who, strings.ReplaceAll(amount, ".", ","), text)
+		_, err = db.Exec(sqlStatement, fromacc, toacc, transtyp, date, "---", who, strings.ReplaceAll(amount.String(), ".", ","), text)
 		if err != nil {
 			panic(err)
 		}
@@ -450,7 +474,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 		sqlStmt += "<td>" + transtyp + "</td>"
 		sqlStmt += "<td>" + date + "</td>"
 		sqlStmt += "<td>" + who + "</td>"
-		sqlStmt += "<td>" + amount + "</td>"
+		sqlStmt += "<td>" + amount.String() + "</td>"
 		sqlStmt += "<td>" + html.EscapeString(text) + "</td>\n"
 		sqlStmt += "</tr>"
 		fmt.Fprintf(w, "%s", sqlStmt)
@@ -572,3 +596,20 @@ func updateTransaction(w http.ResponseWriter, lopnr int, req *http.Request, db *
 	fmt.Fprintf(w, "Transaktion %d uppdaterad.<br>", lopnr)
 }
 
+func antalTransaktioner() int {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	res1 := db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM Transaktioner`)
+
+	var antal int
+
+	err := res1.Scan(&antal)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+
+	return antal
+}
