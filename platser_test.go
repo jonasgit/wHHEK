@@ -118,6 +118,23 @@ func TestPlatserMDB3(t *testing.T) {
 	closeDB()
 }
 
-// TODO: test birth < 1900 should fail
-// TODO: test birth > 2200 should fail
-// TODO: test birth = -1 should fail
+func TestPlatserMDB4(t *testing.T) {
+	platserInit(t)
+
+	// Denna testen
+	namn := "Tom € Räksmörgås"
+	gironummer := "12345-7"
+	kontokort := false
+	skapaPlats(namn, gironummer, kontokort, "")
+	skapaPlats(namn, gironummer, kontokort, "") // This should fail and report error due to duplicated name
+
+	antal := antalPlatser()
+	
+	if antal != 1 {
+		t.Error("Antal platser != 1.")
+	} else {
+		t.Log("Antal platser ok.")
+	}
+
+	closeDB()
+}
