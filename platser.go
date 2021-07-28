@@ -12,6 +12,63 @@ import (
 	"strconv"
 )
 
+type Plats struct {
+	Namn string      // size
+	Gironummer string    // size
+	Typ bool // oanvänt?
+	RefKonto string  // size, != 0 betyder kontokortsföretag
+}
+
+func antalPlatser() int {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	res1 := db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM Platser`)
+
+	var antal int
+
+	err := res1.Scan(&antal)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+
+	return antal
+}
+
+func hämtaPlats(lopnr int) Plats {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	res1 := db.QueryRowContext(ctx,
+	        `SELECT Namn,Gironummer,Typ,RefKonto FROM Platser WHERE (Löpnr=?)`, lopnr)
+
+	var Namn []byte       // size 40
+	var Gironummer []byte // size 20
+	var Typ []byte        // size 2
+	var RefKonto []byte   // size 40
+
+	err := res1.Scan(&Namn, &Gironummer, &Typ, &RefKonto)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+
+	var retplats Plats
+
+	retplats.Namn = toUtf8(Namn)
+	retplats.Gironummer = toUtf8(Gironummer)
+	if toUtf8(Typ) == "true" {
+		retplats.Typ = true
+	} else {
+		retplats.Typ = false
+	}
+	retplats.RefKonto = toUtf8(RefKonto)
+
+	return retplats
+}
+
 func printPlatser(w http.ResponseWriter, db *sql.DB) {
 	res, err := db.Query("SELECT Namn,Gironummer,Typ,RefKonto,Löpnr FROM Platser")
 
@@ -139,9 +196,11 @@ func addformPlats(w http.ResponseWriter, db *sql.DB) {
 	fmt.Fprintf(w, "<p>\n")
 }
 
-func addPlats(w http.ResponseWriter, namn string, gironum string, acctype bool, refacc string, db *sql.DB) {
-	fmt.Println("addPlats namn: ", namn)
-
+func skapaPlats(namn string, gironum string, acctype bool, refacc string) error {
+	if db == nil {
+		log.Fatal("skapaPlats anropad med db=nil");
+		os.Exit(2);
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -160,6 +219,16 @@ func addPlats(w http.ResponseWriter, namn string, gironum string, acctype bool, 
 		log.Fatal(err)
 		os.Exit(2)
 	}
+
+	return err
+}
+
+
+func addPlats(w http.ResponseWriter, namn string, gironum string, acctype bool, refacc string, db *sql.DB) {
+	fmt.Println("addPlats namn: ", namn)
+
+	skapaPlats(namn, gironum, acctype, refacc)
+	
 	fmt.Fprintf(w, "Plats %s tillagd.<br>", namn)
 }
 

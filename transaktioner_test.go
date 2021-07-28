@@ -94,7 +94,7 @@ func _TestTransaktionMDB1(t *testing.T) {
 	closeDB()
 }
 
-func TestTransaktionMDB2(t *testing.T) {
+func _TestTransaktionMDB2(t *testing.T) {
 	transaktionInit(t)
 
 	// Denna testen
@@ -179,6 +179,106 @@ func TestTransaktionMDB2(t *testing.T) {
 		t.Log("Test efter saldo ok. "+saldoExpected.String())
 	}
 	
+	closeDB()
+}
+
+func TestTransaktionMDB3(t *testing.T) {
+	transaktionInit(t)
+
+	// Denna testen
+	// Kontrollera att vi utgår från startsaldo 0.00
+	// Gör insättning 1,20kr
+	// Gör inköp 0,10kr kontrollera att saldo blir 1,10kr
+	// Gör inköp 0,10kr 2ggr kontrollera att saldo blir 0,90kr
+	antal := antalTransaktioner()
+	
+	if antal != 0 {
+		t.Error("Antal transaktioner (0) != "+strconv.Itoa(antal))
+	} else {
+		t.Log("Antal transaktioner ok (0).")
+	}
+
+	saldoExpected := decimal.NewFromInt(0)
+	konto := hämtaKonto(1)
+	
+	if !konto.Saldo.Equal(saldoExpected) {
+		t.Error("Konto saldo '"+saldoExpected.String()+"' != '"+konto.Saldo.String()+"'.")
+	} else {
+		t.Log("Test saldo ok. 0.00")
+	}
+
+	plats := "TestPlats"
+	skapaPlats(plats, "123-4", true, "")
+
+	summa, err := decimal.NewFromString("1.2")
+	if err != nil {
+		t.Error(err)
+	}
+	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
+
+	antal = antalTransaktioner()
+	
+	if antal != 1 {
+		t.Error("Antal transaktioner (1) != "+strconv.Itoa(antal))
+	} else {
+		t.Log("Antal transaktioner ok (1).")
+	}
+
+	saldoExpected, err = decimal.NewFromString("1.2")
+	konto = hämtaKonto(1)
+	
+	if !konto.Saldo.Equal(saldoExpected) {
+		t.Error("Konto saldo '"+saldoExpected.String()+"' != '"+konto.Saldo.String()+"'.")
+	} else {
+		t.Log("Test saldo ok. 1.2")
+	}
+
+	saldo := saldoKonto("Plånboken", "2021-07-28")
+	if !saldo.Equal(saldoExpected) {
+		t.Error("Konto saldo efter '"+saldo.String()+"' != '"+saldoExpected.String()+"'.")
+	} else {
+		t.Log("Test efter saldo ok. "+saldoExpected.String())
+	}
+
+	summa, err = decimal.NewFromString("0.1")
+	if err != nil {
+		t.Error(err)
+	}
+	addTransaktionInköp("Plånboken", plats, "2021-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås")
+	konto = hämtaKonto(1)
+	
+	saldoExpected, err = decimal.NewFromString("1.1")
+	if !konto.Saldo.Equal(saldoExpected) {
+		t.Error("Konto saldo '"+saldoExpected.String()+"' != '"+konto.Saldo.String()+"'.")
+	} else {
+		t.Log("Test saldo ok. 1.1")
+	}
+
+	saldo = saldoKonto("Plånboken", "2021-07-28")
+	if !saldo.Equal(saldoExpected) {
+		t.Error("Konto saldo efter '"+saldo.String()+"' != '"+saldoExpected.String()+"'.")
+	} else {
+		t.Log("Test efter saldo ok. "+saldoExpected.String())
+	}
+
+	addTransaktionInköp("Plånboken", plats, "2021-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås")
+	addTransaktionInköp("Plånboken", plats, "2021-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås")
+	konto = hämtaKonto(1)
+	
+	saldoExpected, err = decimal.NewFromString("0.9")
+	if !konto.Saldo.Equal(saldoExpected) {
+		t.Error("Konto saldo '"+saldoExpected.String()+"' != '"+konto.Saldo.String()+"'.")
+	} else {
+		t.Log("Test saldo ok. 0.9")
+	}
+
+	saldo = saldoKonto("Plånboken", "2021-07-28")
+	if !saldo.Equal(saldoExpected) {
+		t.Error("Konto saldo efter '"+saldo.String()+"' != '"+saldoExpected.String()+"'.")
+	} else {
+		t.Log("Test efter saldo ok. "+saldoExpected.String())
+	}
+
 	closeDB()
 }
 

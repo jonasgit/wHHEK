@@ -345,6 +345,28 @@ VALUES (?,?,?,?,?,?,?,?)`
 	updateKontoSaldo(toacc, saldo.String())
 }
 
+func addTransaktionInköp(fromacc string, place string, date string , what string, who string, summa decimal.Decimal, text string) {
+	var transtyp string = "Inköp"
+        var amount string = summa.String()
+	
+	// TODO: Check length of "text"
+	// TODO: Check date format
+	// TODO: Check toacc valid
+	// TODO: Check what valid
+	// TODO: Check who valid
+	
+	sqlStatement := `
+INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
+VALUES (?,?,?,?,?,?,?,?)`
+	_, err := db.Exec(sqlStatement, fromacc, place, transtyp, date, what, who, strings.ReplaceAll(amount, ".", ","), text)
+	if err != nil {
+		panic(err)
+	}
+
+        saldo := saldoKonto(fromacc, "")
+	updateKontoSaldo(fromacc, saldo.String())
+}
+
 func addtransaction(w http.ResponseWriter, req *http.Request) {
 	err := req.ParseForm()
 	if err != nil {
@@ -379,13 +401,7 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 
 		fmt.Fprintf(w, "Registrerar Inköp...<br> ")
 
-		sqlStatement := `
-INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
-VALUES (?,?,?,?,?,?,?,?)`
-		_, err = db.Exec(sqlStatement, fromacc, place, transtyp, date, what, who, strings.ReplaceAll(amount.String(), ".", ","), text)
-		if err != nil {
-			panic(err)
-		}
+		addTransaktionInköp(fromacc, place, date, what, who, amount, text)
 
 		fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Frånkonto</th><th>Plats</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
 		sqlStmt := "<tr>"

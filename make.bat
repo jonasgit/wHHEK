@@ -41,7 +41,7 @@ IF "%ARG1%"=="test" (
   ) else (
     SET BUILDCMD=test -p 1
   )
-  set TESTFILES=main_test.go personer_test.go konton_test.go transaktioner_test.go db_test.go
+  set TESTFILES=main_test.go personer_test.go konton_test.go platser_test.go transaktioner_test.go db_test.go
 ) else (
   SET BUILDCMD=build -o wHHEK.exe
   set TESTFILES=
