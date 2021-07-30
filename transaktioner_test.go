@@ -8,16 +8,16 @@ import (
 	"github.com/shopspring/decimal"  // MIT License
 )
 
-func transaktionInit(t *testing.T) {
+func transaktionInit(t *testing.T, filnamn string) {
 	// Förberedelser
-	var filename string = "gotestt.mdb"
+	var filename string = "got"+filnamn+".mdb"
 
 	SkapaTomMDB(t, filename)
 	db = openJetDB(filename, false)
 }
 
 func TestTransaktionTomMDB1(t *testing.T) {
-	transaktionInit(t)
+	transaktionInit(t, "trt")
 
 	// Denna testen
 	antal := antalTransaktioner()
@@ -31,8 +31,8 @@ func TestTransaktionTomMDB1(t *testing.T) {
 	closeDB()
 }
 
-func _TestTransaktionMDB1(t *testing.T) {
-	transaktionInit(t)
+func TestTransaktionMDB1(t *testing.T) {
+	transaktionInit(t, "tr1")
 
 	// Denna testen
 	// Kontrollera att vi utgår från startsaldo 0.00
@@ -94,8 +94,8 @@ func _TestTransaktionMDB1(t *testing.T) {
 	closeDB()
 }
 
-func _TestTransaktionMDB2(t *testing.T) {
-	transaktionInit(t)
+func TestTransaktionMDB2(t *testing.T) {
+	transaktionInit(t, "tr2")
 
 	// Denna testen
 	// Gör insättning 0,10kr 9 ggr och kontrollerar att resultatet blir 0,90kr
@@ -183,7 +183,7 @@ func _TestTransaktionMDB2(t *testing.T) {
 }
 
 func TestTransaktionMDB3(t *testing.T) {
-	transaktionInit(t)
+	transaktionInit(t, "tr3")
 
 	// Denna testen
 	// Kontrollera att vi utgår från startsaldo 0.00
