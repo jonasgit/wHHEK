@@ -283,7 +283,12 @@ func printAccounts(w http.ResponseWriter, db *sql.DB) {
 	fmt.Fprintf(w, "</head>\n")
 	fmt.Fprintf(w, "<body>\n")
 
-	fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
+	fmt.Fprintf(w, "<h1>Databasnamn: %s</h1>\n", currentDatabase)
+
+	currentTime := time.Now()
+	currDate := currentTime.Format("2006-01-02")
+
+	fmt.Fprintf(w, "Dagens datum: %s<p>\n", currDate)
 
 	res, err := db.Query("SELECT KontoNummer,Benämning,Saldo,StartSaldo,StartManad,Löpnr,SaldoArsskifte,ArsskifteManad FROM Konton")
 
@@ -301,11 +306,16 @@ func printAccounts(w http.ResponseWriter, db *sql.DB) {
 	var SaldoArsskifte []byte // BCD / Decimal Precision 19
 	var ArsskifteManad []byte // size 10
 
-	fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Kontonamn</th><th>Saldo (kanske?)</th>\n")
+	fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Kontonamn</th><th>Saldo enligt databas</th><th>Saldo uträknat för idag</th><th>Saldo uträknat totalt</th>\n")
 	for res.Next() {
 		err = res.Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &Löpnr, &SaldoArsskifte, &ArsskifteManad)
 
-		fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td>\n", toUtf8(Benämning), toUtf8(Saldo))
+		acc := toUtf8(Benämning)
+		fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td>", acc, toUtf8(Saldo))
+		fmt.Fprintf(w, "<td>%s</td>", saldoKonto(acc, currDate))
+		fmt.Fprintf(w, "<td>%s</td>", saldoKonto(acc, ""))
+		fmt.Fprintf(w, "</tr>\n")
+
 	}
 	fmt.Fprintf(w, "</table>\n")
 }
@@ -343,7 +353,7 @@ func opendb(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "      <meta http-equiv = \"refresh\" content = \"0; url = /summary\" />\n")
 		fmt.Fprintf(w, "   </head>\n")
 		fmt.Fprintf(w, "   <body>\n")
-		fmt.Fprintf(w, "      <p>Hello HTML5!</p>\n")
+		fmt.Fprintf(w, "      <p>Arbetar...</p>\n")
 		fmt.Fprintf(w, "   </body>\n")
 		fmt.Fprintf(w, "</html>\n")
 	}
