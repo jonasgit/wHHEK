@@ -138,3 +138,12 @@ func TestPlatserMDB4(t *testing.T) {
 
 	closeDB()
 }
+
+// TODO: skapaplats borde validera gironummer.
+// 123-4 felaktigt
+// 123-0 ok
+// Ett bankgironummer består av 7 eller 8 siffror och den sista siffran i numret är en kontrollsiffra som beräknas enligt Luhn-algoritmen, dvs enligt samma princip som beräkning av kontrollsiffran till svenska personnummer och organisationsnummer (som vi tagit upp i tidigare blogginlägg). Ett plusgironummer består av 2 till 8 siffror och även här består den sista siffran av en kontrollsiffra som beräknas enligt Luhn-algoritmen.
+
+// TODO: Plats klassad som "Kontokortsföretag" ska ha Konto definierat
+
+// TODO: Flaggan Kontokortsföretag ska inte påverka kolumnen Typ

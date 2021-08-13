@@ -278,7 +278,7 @@ func printAccounts(w http.ResponseWriter, db *sql.DB) {
 	fmt.Fprintf(w, "<html>\n")
 	fmt.Fprintf(w, "<head>\n")
 	fmt.Fprintf(w, "<style>\n")
-	fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
+	fmt.Fprintf(w, "table,th,td { border: 1px solid black ; text-align: center }\n")
 	fmt.Fprintf(w, "</style>\n")
 	fmt.Fprintf(w, "</head>\n")
 	fmt.Fprintf(w, "<body>\n")
@@ -311,9 +311,25 @@ func printAccounts(w http.ResponseWriter, db *sql.DB) {
 		err = res.Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &Löpnr, &SaldoArsskifte, &ArsskifteManad)
 
 		acc := toUtf8(Benämning)
-		fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td>", acc, toUtf8(Saldo))
-		fmt.Fprintf(w, "<td>%s</td>", saldoKonto(acc, currDate))
-		fmt.Fprintf(w, "<td>%s</td>", saldoKonto(acc, ""))
+		dbSaldo , err2 := decimal.NewFromString(toUtf8(Saldo))
+		if err2 != nil {
+			log.Fatal(err)
+		}
+		fmt.Fprintf(w, "<tr><td>%s</td>", acc)
+		daySaldo, totSaldo := saldonKonto(acc, currDate)
+		if dbSaldo.Equals(daySaldo) && dbSaldo.Equals(totSaldo) {
+			fmt.Fprintf(w, "<td colspan=\"3\">%s</td>", dbSaldo)
+		} else if dbSaldo.Equals(daySaldo) {
+			fmt.Fprintf(w, "<td colspan=\"2\">%s</td>", dbSaldo)
+			fmt.Fprintf(w, "<td>%s</td>", totSaldo)
+		} else if daySaldo.Equals(totSaldo) {
+			fmt.Fprintf(w, "<td>%s</td>", dbSaldo)
+			fmt.Fprintf(w, "<td colspan=\"2\">%s</td>", totSaldo)
+		} else {
+			fmt.Fprintf(w, "<td>%s</td>", dbSaldo)
+			fmt.Fprintf(w, "<td>%s</td>", daySaldo)
+			fmt.Fprintf(w, "<td>%s</td>", totSaldo)
+		}
 		fmt.Fprintf(w, "</tr>\n")
 
 	}

@@ -526,3 +526,83 @@ order by datum,löpnr`, endDate, accName, accName)
 	}
 	return currSaldo
 }
+
+func saldonKonto(accName string, endDate string) (decimal.Decimal,decimal.Decimal){
+	//	fmt.Println("saldoKonto: accName ", accName)
+	//fmt.Println("saldoKonto: endDate ", endDate)
+	
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var err error
+	var res *sql.Rows
+	
+	res1 := db.QueryRowContext(ctx,
+		`select startsaldo
+  from konton
+  where benämning = ?`, accName)
+	var rawStart []byte // size 16
+	err = res1.Scan(&rawStart)
+	res2 := toUtf8(rawStart)
+	startSaldo, err := decimal.NewFromString(res2)
+	currSaldo := startSaldo
+	totSaldo := currSaldo
+	//fmt.Println("saldoKonto: startsaldo ", currSaldo)
+
+	res, err = db.QueryContext(ctx,
+		`SELECT FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Löpnr,Saldo,Fastöverföring,Text from transaktioner
+  where 
+         ((tillkonto = ?)
+         or (frånkonto = ?))
+order by datum,löpnr`, accName, accName)
+
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+
+	var fromAcc []byte // size 40
+	var toAcc []byte   // size 40
+	var tType []byte   // size 40
+	var date []byte    // size 10
+	var what []byte    // size 40
+	var who []byte     // size 50
+	var amount []byte  // BCD / Decimal Precision 19
+	var nummer int     // Autoinc Primary Key, index
+	var saldo []byte   // BCD / Decimal Precision 19
+	var fixed bool     // Boolean
+	var comment []byte // size 60
+
+	for res.Next() {
+		err = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
+		decAmount, _ := decimal.NewFromString(toUtf8(amount))
+		//fmt.Println("saldoKonto: decAmount ", decAmount)
+		//fmt.Println("saldoKonto: toAcc ", toUtf8(toAcc))
+		//fmt.Println("saldoKonto: fromAcc ", toUtf8(fromAcc))
+		//fmt.Println("saldoKonto: tType ", toUtf8(tType))
+
+		if (accName == toUtf8(toAcc)) &&
+			((toUtf8(tType) == "Uttag") ||
+				(toUtf8(tType) == "Fast Inkomst") ||
+				(toUtf8(tType) == "Insättning") ||
+				(toUtf8(tType) == "Överföring")) {
+			if toUtf8(date) <= endDate {
+				currSaldo = currSaldo.Add(decAmount)
+			}
+			totSaldo = currSaldo.Add(decAmount)
+			//fmt.Println("saldoKonto: add")
+		}
+		if (accName == toUtf8(fromAcc)) &&
+			((toUtf8(tType) == "Uttag") ||
+				(toUtf8(tType) == "Inköp") ||
+				(toUtf8(tType) == "Fast Utgift") ||
+				(toUtf8(tType) == "Överföring")) {
+			if toUtf8(date) <= endDate {
+				currSaldo = currSaldo.Sub(decAmount)
+			}
+			totSaldo = currSaldo.Sub(decAmount)
+			//fmt.Println("saldoKonto: sub")
+		}
+		//fmt.Println("saldoKonto: new saldo ", currSaldo)
+	}
+	return currSaldo, totSaldo
+}
