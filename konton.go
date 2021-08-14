@@ -528,7 +528,7 @@ order by datum,löpnr`, endDate, accName, accName)
 }
 
 func saldonKonto(accName string, endDate string) (decimal.Decimal,decimal.Decimal){
-	//	fmt.Println("saldoKonto: accName ", accName)
+	//fmt.Println("saldoKonto: accName ", accName)
 	//fmt.Println("saldoKonto: endDate ", endDate)
 	
 	ctx, cancel := context.WithCancel(context.Background())
@@ -588,7 +588,7 @@ order by datum,löpnr`, accName, accName)
 			if toUtf8(date) <= endDate {
 				currSaldo = currSaldo.Add(decAmount)
 			}
-			totSaldo = currSaldo.Add(decAmount)
+			totSaldo = totSaldo.Add(decAmount)
 			//fmt.Println("saldoKonto: add")
 		}
 		if (accName == toUtf8(fromAcc)) &&
@@ -599,10 +599,10 @@ order by datum,löpnr`, accName, accName)
 			if toUtf8(date) <= endDate {
 				currSaldo = currSaldo.Sub(decAmount)
 			}
-			totSaldo = currSaldo.Sub(decAmount)
+			totSaldo = totSaldo.Sub(decAmount)
 			//fmt.Println("saldoKonto: sub")
 		}
-		//fmt.Println("saldoKonto: new saldo ", currSaldo)
+		//fmt.Println("saldoKonto: new saldo ", currSaldo, " totSaldo ", totSaldo)
 	}
 	return currSaldo, totSaldo
 }

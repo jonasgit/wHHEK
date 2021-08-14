@@ -48,6 +48,7 @@
 
 // ROADMAP/TODO/The Future Is In Flux
 // ============
+// localize decimal.String()
 // escape & in all html. escapeHTML verkar inte fungera. Use template?
 // hantera fel: för lång text till comment
 // kommandorads help-option
@@ -93,11 +94,13 @@
 // REST-api: visa/redigera budget
 // Visa budget med jämförelse till resultat
 // REST-api: Visa budget med jämförelse till resultat
+// Hantera lösenordsskyddad databas
 // Byt till https/SSL
 // Kräv inloggning
 // Årsskiftesrutin inkl uppdatera budget på olika sätt
 // Graf som i månadsvyn, med valfri grupp av konton
 // Graf som i månadsvyn fast för senaste året, med valfri grupp av konton
+// Hantera kontokortsföretag
 // Visa lån
 // Lägg till nytt lån
 // Redigera lån
