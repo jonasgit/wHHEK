@@ -13,6 +13,6 @@ Detta programmet går att köra i Windows så länge det går att köra 32-bitar
 
 Status: "i sin linda".
 
-Installation: Bygg enligt kommentarer i början på filen main.go
+Installation: Bygg enligt kommentarer i början på filen main.go eller filen make.bat. Eller se om det finns en färdig exe-fil under Releases.
 
 Kör: Starta programmet i katalogen som har en mdb-fil.
