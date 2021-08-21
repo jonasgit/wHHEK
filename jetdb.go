@@ -1,3 +1,5 @@
+// +build windows,386
+
 package main
 
 // TODO: testa https://github.com/mattn/go-adodb

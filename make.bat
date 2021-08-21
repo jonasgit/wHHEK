@@ -16,13 +16,8 @@ IF NOT "%GOOS%"=="windows" (
   EXIT
 )
 
-IF NOT "%GOARCH%"=="386" (
-  ECHO Found 64-bit Go-compiler for Windows, disable JetDB/MDB.
-  SET JETFILE=nojetdb.go
-) else (
-  ECHO Found 32-bit Go-compiler for Windows, enable JetDB/MDB.
-  SET JETFILE=jetdb.go
-)
+DEL wHHEK.exe
+
 
 IF "%ARG1%"=="setup" (
   ECHO Hämtar beroenden...
@@ -41,10 +36,8 @@ IF "%ARG1%"=="test" (
   ) else (
     SET BUILDCMD=test -p 1
   )
-  set TESTFILES=main_test.go personer_test.go konton_test.go platser_test.go transaktioner_test.go db_test.go
 ) else (
   SET BUILDCMD=build -o wHHEK.exe
-  set TESTFILES=
 )
 
 IF "%ARG1%"=="release" (
@@ -55,10 +48,8 @@ IF "%ARG1%"=="release" (
 
 ECHO Bygger...
 
-set SOURCEFILES=main.go platser.go transaktioner.go fastatransaktioner.go personer.go konton.go budget.go
-
 @echo on
-go %BUILDCMD% %LINKCMD% %SOURCEFILES% %JETFILE% %TESTFILES%
+go %BUILDCMD% %LINKCMD%
 @echo off
 
 ECHO Klar.
