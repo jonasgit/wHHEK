@@ -17,10 +17,77 @@ import (
 	"github.com/shopspring/decimal"  // MIT License
 )
 
+type transaction struct {
+	lopnr int
+	fromAcc string
+	toAcc string
+	tType string
+	what string
+	date time.Time
+	who string
+	amount decimal.Decimal
+	comment string
+	fixed bool
+}
+
+func getTransactionsInDateRange(db *sql.DB, kontonamn string, startDate string, endDate string) []transaction {
+	//fmt.Println("printTransactions startDate:", startDate)
+	//fmt.Println("printTransactions endDate:", endDate)
+	//fmt.Println("printTransactions kontonamn:", kontonamn)
+
+	
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var err error
+	var res *sql.Rows
+
+	res, err = db.QueryContext(ctx,
+		`SELECT FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Löpnr,Saldo,Fastöverföring,Text from transaktioner
+  where (datum < ?) and (datum >= ?) and ((FrånKonto = ?) or (TillKonto = ?))
+order by datum,löpnr`, endDate, startDate, kontonamn, kontonamn)
+        if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+
+	var fromAcc []byte // size 40
+	var toAcc []byte   // size 40
+	var tType []byte   // size 40
+	var date []byte    // size 10
+	var what []byte    // size 40
+	var who []byte     // size 50
+	var amount []byte  // BCD / Decimal Precision 19
+	var nummer int     // Autoinc Primary Key, index
+	var saldo []byte   // BCD / Decimal Precision 19
+	var fixed bool     // Boolean
+	var comment []byte // size 60
+
+	var result []transaction
+
+	for res.Next() {
+		var record transaction
+		err = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
+
+		record.lopnr = nummer
+		record.fromAcc = toUtf8(fromAcc)
+		record.toAcc = toUtf8(toAcc)
+		record.tType = toUtf8(tType)
+		record.what = toUtf8(what)
+		record.date, err = time.Parse("2006-01-02", toUtf8(date))
+		record.who = toUtf8(who)
+		record.amount, err = decimal.NewFromString(toUtf8(amount))
+		record.comment = toUtf8(comment)
+		record.fixed = fixed
+
+		result = append(result, record)
+	}
+	return result
+}
+
 func printTransactions(w http.ResponseWriter, db *sql.DB, startDate string, endDate string, limitcomment string) {
-	fmt.Println("printTransactions startDate:", startDate)
-	fmt.Println("printTransactions endDate:", endDate)
-	fmt.Println("printTransactions comment:", limitcomment)
+	//fmt.Println("printTransactions startDate:", startDate)
+	//fmt.Println("printTransactions endDate:", endDate)
+	//fmt.Println("printTransactions comment:", limitcomment)
 
 	fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
 

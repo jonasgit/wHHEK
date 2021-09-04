@@ -431,6 +431,7 @@ func generateSummary(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<a href=\"budget\">Budget</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"newtrans\">Ny transaktion</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"fixedtrans\">Fasta transaktioner/överföringar</a><p>\n")
+	fmt.Fprintf(w, "<a href=\"acccmp\">Avstämning mot nerladdat kontoutdrag</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"close\">Stäng databas</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"quit\">Avsluta program</a><p>\n")
 	fmt.Fprintf(w, "</body>\n")
@@ -800,6 +801,7 @@ func main() {
 	http.HandleFunc("/konton", hanterakonton)
 	http.HandleFunc("/budget", hanteraBudget)
 	http.HandleFunc("/summary", generateSummary)
+	http.HandleFunc("/acccmp", compareaccount)
 	http.HandleFunc("/", root)
 
 	ip, _ := externalIP()
