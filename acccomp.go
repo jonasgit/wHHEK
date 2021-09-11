@@ -90,7 +90,7 @@ func finddaterange(records [][]string, filtyp string) (string, string) {
 		headlines = 1
 	case "swedbcsv":
 		headlines = 2
-	case "resursxls":
+	case "resursxlsx":
 		headlines = 1
 	default:
 		log.Fatal("Okänd filtyp")
@@ -106,7 +106,7 @@ func finddaterange(records [][]string, filtyp string) (string, string) {
 				date = rad[0]
 			case "swedbcsv":
 				date = rad[6]
-			case "resursxls":
+			case "resursxlsx":
 				date = rad[0]
 			default:
 				log.Fatal("Okänd filtyp")
@@ -188,7 +188,7 @@ func findAmount(rad []string, filtyp string) string {
 		return rad[4]
 	case "swedbcsv":
 		return rad[10]
-	case "resursxls":
+	case "resursxlsx":
 		return rad[4]
 	default:
 		log.Fatal("Okänd filtyp")
@@ -202,7 +202,7 @@ func findDateCol(rad []string, filtyp string) string {
 		return rad[0]
 	case "swedbcsv":
 		return rad[6]
-	case "resursxls":
+	case "resursxlsx":
 		return rad[0]
 	default:
 		log.Fatal("Okänd filtyp")
@@ -217,7 +217,7 @@ func matchaUtdrag(records [][]string, dbtrans []transaction, kontonamn string, f
 		headlines = 1
 	case "swedbcsv":
 		headlines = 2
-	case "resursxls":
+	case "resursxlsx":
 		headlines = 1
 	default:
 		log.Fatal("Okänd filtyp")
@@ -309,7 +309,7 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 		records = readCsvFile(filen)
 	case "swedbcsv":
 		records = readCsvFile(filen)
-	case "resursxls":
+	case "resursxlsx":
 		records = readXlsxFile(filen)
 	default:
 		log.Fatal("Okänd filtyp")
@@ -465,7 +465,7 @@ func compareaccount(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "  <select name=\"filtyp\" id=\"filtyp\">")
 		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "komplettcsv", "KomplettBank CSV")
 		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "swedbcsv", "Swedbank/Sparbankerna CSV")
-		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "resursxls", "Resursbank/Fordkortet XLS")
+		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "resursxlsx", "Resursbank/Fordkortet XLSX")
 		fmt.Fprintf(w, "  </select><br>\n")
 
 		fmt.Fprintf(w, "<input type=\"file\" name=\"uploadfile\" />")
