@@ -26,6 +26,8 @@ IF "%ARG1%"=="setup" (
   go get github.com/mattn/go-sqlite3
   go get golang.org/x/text/encoding/charmap
   go get github.com/shopspring/decimal
+  go get github.com/extrame/xls
+  go get github.com/xuri/excelize/v2
   ECHO Klar.
   EXIT
 )

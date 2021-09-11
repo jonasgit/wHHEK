@@ -16,12 +16,45 @@ import (
 	
 	"golang.org/x/text/encoding/charmap"
 	"github.com/shopspring/decimal"  // MIT License
+	"github.com/extrame/xls"  // Apache-2.0 License
+	"github.com/xuri/excelize/v2" //  BSD-3-Clause License 
 )
 
 type matchning struct {
 	dblopnr int
 	utdragid int
  	klassning int  // 0 = ingen match, 1=perfekt match, 2=ungefärlig match
+}
+
+func readXlsFile(f multipart.File) (res [][]string) {
+	w, err := xls.OpenReader(f, "iso-8859-1")
+	if err != nil {
+		log.Fatal(err)
+	}
+	res = w.ReadAllCells(100000)
+	return res
+}
+
+func readXlsxFile(filen multipart.File) (res [][]string)  {
+	f, err := excelize.OpenReader(filen)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	
+	// Get all the rows in the Sheet1.
+	rows, err := f.GetRows("Transaktioner")
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, row := range rows {
+		var record []string
+		for _, colCell := range row {
+			record = append(record, colCell)
+		}
+		res = append(res, record)
+	}
+	return res
 }
 
 func readCsvFile(f multipart.File) [][]string {
@@ -57,6 +90,8 @@ func finddaterange(records [][]string, filtyp string) (string, string) {
 		headlines = 1
 	case "swedbcsv":
 		headlines = 2
+	case "resursxls":
+		headlines = 1
 	default:
 		log.Fatal("Okänd filtyp")
 	}		
@@ -71,6 +106,8 @@ func finddaterange(records [][]string, filtyp string) (string, string) {
 				date = rad[0]
 			case "swedbcsv":
 				date = rad[6]
+			case "resursxls":
+				date = rad[0]
 			default:
 				log.Fatal("Okänd filtyp")
 			}
@@ -151,6 +188,8 @@ func findAmount(rad []string, filtyp string) string {
 		return rad[4]
 	case "swedbcsv":
 		return rad[10]
+	case "resursxls":
+		return rad[4]
 	default:
 		log.Fatal("Okänd filtyp")
 	}
@@ -163,6 +202,8 @@ func findDateCol(rad []string, filtyp string) string {
 		return rad[0]
 	case "swedbcsv":
 		return rad[6]
+	case "resursxls":
+		return rad[0]
 	default:
 		log.Fatal("Okänd filtyp")
 	}		
@@ -176,6 +217,8 @@ func matchaUtdrag(records [][]string, dbtrans []transaction, kontonamn string, f
 		headlines = 1
 	case "swedbcsv":
 		headlines = 2
+	case "resursxls":
+		headlines = 1
 	default:
 		log.Fatal("Okänd filtyp")
 	}		
@@ -266,6 +309,8 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 		records = readCsvFile(filen)
 	case "swedbcsv":
 		records = readCsvFile(filen)
+	case "resursxls":
+		records = readXlsxFile(filen)
 	default:
 		log.Fatal("Okänd filtyp")
 	}		
@@ -420,6 +465,7 @@ func compareaccount(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "  <select name=\"filtyp\" id=\"filtyp\">")
 		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "komplettcsv", "KomplettBank CSV")
 		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "swedbcsv", "Swedbank/Sparbankerna CSV")
+		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "resursxls", "Resursbank/Fordkortet XLS")
 		fmt.Fprintf(w, "  </select><br>\n")
 
 		fmt.Fprintf(w, "<input type=\"file\" name=\"uploadfile\" />")

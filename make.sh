@@ -16,6 +16,7 @@ ECHO Hämtar beroenden...
 go get github.com/mattn/go-sqlite3
 go get golang.org/x/text/encoding/charmap
 go get github.com/shopspring/decimal
+go get github.com/extrame/xls
 
 ECHO Bygger...
 
