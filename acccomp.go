@@ -46,14 +46,34 @@ func readCsvFile(f multipart.File) [][]string {
 	return res
 }
 
-func finddaterange(records [][]string) (string, string) {
+func finddaterange(records [][]string, filtyp string) (string, string) {
 	var firstdate string = "2999-12-31"
-	var lastdate string = "1900-01-01"
+	var lastdate string = "1100-01-01"
+
+	var headlines = 0
+	
+	switch filtyp {
+	case "komplettcsv":
+		headlines = 1
+	case "swedbcsv":
+		headlines = 2
+	default:
+		log.Fatal("Okänd filtyp")
+	}		
+
 	for radnr, rad := range records {
-		if radnr == 0 {
+		if radnr < headlines {
 			// ignore header
 		} else {
-			date := rad[0]
+			var date string
+			switch filtyp {
+			case "komplettcsv":
+				date = rad[0]
+			case "swedbcsv":
+				date = rad[6]
+			default:
+				log.Fatal("Okänd filtyp")
+			}
 			if date < firstdate {
 				firstdate = date
 			}
@@ -74,13 +94,13 @@ func radnrInAvst(radnr int, avst []matchning) (lopnr int, radnrInAvst bool, klas
 	return -1, false, 0
 }
 
-func lopnrInAvst(lopnr int, avst []matchning) (lopnrInAvst bool, klassning int) {
+func lopnrInAvst(lopnr int, avst []matchning) (radnr int, lopnrInAvst bool, klassning int) {
 	for _, rad := range avst {
 		if rad.dblopnr == lopnr {
-			return true, rad.klassning
+			return rad.utdragid, true, rad.klassning
 		}
 	}
-	return false, 0
+	return -1, false, 0
 }
 
 func DateWithinRange(date time.Time, dateRangeBase time.Time, rangeval int) (bool, error) {
@@ -97,9 +117,9 @@ func DateWithinRange(date time.Time, dateRangeBase time.Time, rangeval int) (boo
 	return false, nil
 }
 
-func lopnrNotUsed(lopnr int , result []matchning) bool {
+func transNotMatched(radnr int, lopnr int , result []matchning) bool {
 	for _, rad := range result {
-		if rad.dblopnr == lopnr {
+		if (rad.dblopnr == lopnr) || (rad.utdragid == radnr) {
 			return false
 		}
 	}
@@ -108,6 +128,9 @@ func lopnrNotUsed(lopnr int , result []matchning) bool {
 
 func amountEquals(dbrad transaction, amount decimal.Decimal, kontonamn string) bool {
 	if dbrad.tType == "Inköp" {
+		return dbrad.amount.Equals(amount.Neg())
+	}
+	if dbrad.tType == "Fast Utgift" {
 		return dbrad.amount.Equals(amount.Neg())
 	}
 	if dbrad.tType == "Insättning" {
@@ -122,26 +145,62 @@ func amountEquals(dbrad transaction, amount decimal.Decimal, kontonamn string) b
 	return dbrad.amount.Equals(amount)
 }
 
-func matchaUtdrag(records [][]string, dbtrans []transaction, kontonamn string) (result []matchning) {
+func findAmount(rad []string, filtyp string) string {
+	switch filtyp {
+	case "komplettcsv":
+		return rad[4]
+	case "swedbcsv":
+		return rad[10]
+	default:
+		log.Fatal("Okänd filtyp")
+	}
+	return "-1"
+}
+
+func findDateCol(rad []string, filtyp string) string {
+	switch filtyp {
+	case "komplettcsv":
+		return rad[0]
+	case "swedbcsv":
+		return rad[6]
+	default:
+		log.Fatal("Okänd filtyp")
+	}		
+	return "-1"
+}
+
+func matchaUtdrag(records [][]string, dbtrans []transaction, kontonamn string, filtyp string) (result []matchning) {
+	var headlines = 0
+	switch filtyp {
+	case "komplettcsv":
+		headlines = 1
+	case "swedbcsv":
+		headlines = 2
+	default:
+		log.Fatal("Okänd filtyp")
+	}		
+
 	// Pass 1: Exakt matchning
-	var firstline bool = true
 	for radnr, rad := range records {
-		if firstline {
-			firstline = false
+		if radnr < headlines {
+			// ignore header
 		} else {
-			amountstrs := strings.Split(rad[4], " ")
+			amountcol := findAmount(rad, filtyp)
+			amountstrs := strings.Split(amountcol, " ")
 			amountstr := strings.Replace(amountstrs[0], ",", ".", 1)
+			//fmt.Println("matchar amount ", amountstr, " ", amountcol)
 			rad_amount, err := decimal.NewFromString(amountstr)
 			if err != nil {
 				log.Fatal("matcha:", err)
 			}
-			raddate, err := time.Parse("2006-01-02", rad[0])
+			datecol := findDateCol(rad, filtyp)
+			raddate, err := time.Parse("2006-01-02", datecol)
 			
 			for _, dbrad := range dbtrans {
 				if amountEquals(dbrad, rad_amount, kontonamn) {
 					//if dbrad.amount.Equals(rad_amount.Abs()) {
 					if raddate == dbrad.date {
-						if lopnrNotUsed(dbrad.lopnr, result) {
+						if transNotMatched(radnr, dbrad.lopnr, result) {
 							var match matchning
 							match.dblopnr = dbrad.lopnr
 							match.utdragid = radnr
@@ -157,18 +216,19 @@ func matchaUtdrag(records [][]string, dbtrans []transaction, kontonamn string) (
 	}
 	
 	// Pass 2: Fuzzy matchning
-	firstline = true
 	for radnr, rad := range records {
-		if firstline {
-			firstline = false
+		if radnr < headlines {
+			// ignore header
 		} else {
-			amountstrs := strings.Split(rad[4], " ")
+			amountcol := findAmount(rad, filtyp)
+			amountstrs := strings.Split(amountcol, " ")
 			amountstr := strings.Replace(amountstrs[0], ",", ".", 1)
 			rad_amount, err := decimal.NewFromString(amountstr)
 			if err != nil {
 				log.Fatal("matcha fuzzy:", err)
 			}
-			raddate, err := time.Parse("2006-01-02", rad[0])
+			datecol := findDateCol(rad, filtyp)
+			raddate, err := time.Parse("2006-01-02", datecol)
 			
 			for _, dbrad := range dbtrans {
 				//if dbrad.amount.Equals(rad_amount.Abs()) {
@@ -179,7 +239,7 @@ func matchaUtdrag(records [][]string, dbtrans []transaction, kontonamn string) (
 					}
 
 					if inRange {
-						if lopnrNotUsed(dbrad.lopnr, result) {
+						if transNotMatched(radnr, dbrad.lopnr, result) {
 							var match matchning
 							match.dblopnr = dbrad.lopnr
 							match.utdragid = radnr
@@ -200,8 +260,16 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 	fmt.Println("printavstämning kontonamn:", kontonamn)
 	fmt.Println("printavstämning filtyp:", filtyp)
 
-	records := readCsvFile(filen)
-	firstdatestr, lastdatestr := finddaterange(records)
+	var records [][]string
+	switch filtyp {
+	case "komplettcsv":
+		records = readCsvFile(filen)
+	case "swedbcsv":
+		records = readCsvFile(filen)
+	default:
+		log.Fatal("Okänd filtyp")
+	}		
+	firstdatestr, lastdatestr := finddaterange(records, filtyp)
 	firstdate,err := time.Parse("2006-01-02", firstdatestr)
 	if err != nil {
 		log.Fatal(err)
@@ -211,6 +279,7 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 		log.Fatal(err)
 	}
 	fmt.Fprintf(w, "Datum från %s till %s<p>", firstdate.Format("2006-01-02"), lastdate.Format("2006-01-02"))
+	fmt.Println("Datum från ", firstdate.Format("2006-01-02"), " till ", lastdate.Format("2006-01-02"))
 	// expand date range for use in database
 	firstdate = firstdate.AddDate(0, 0, -10)
 	lastdate = lastdate.AddDate(0, 0, +10)
@@ -218,7 +287,7 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 	
 	dbtrans := getTransactionsInDateRange(db, kontonamn, firstdate.Format("2006-01-02"), lastdate.Format("2006-01-02"))
 
-	avst := matchaUtdrag(records, dbtrans, kontonamn)
+	avst := matchaUtdrag(records, dbtrans, kontonamn, filtyp)
 	
 	fmt.Fprintf(w, "<table style=\"width:100%%\">")
 	fmt.Fprintf(w, "<tr>Transaktioner från bankens fil</tr>")
@@ -258,7 +327,7 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 	for _, rad := range dbtrans {
 		fmt.Fprintf(w, "<tr>")
 		
-		lopnrInAvst, klassning := lopnrInAvst(rad.lopnr, avst)
+		radnr, lopnrInAvst, klassning := lopnrInAvst(rad.lopnr, avst)
 		if lopnrInAvst {
 			if klassning == 1 {
 				fmt.Fprintf(w, "<td bgcolor=\"green\">%d</td>", rad.lopnr)
@@ -270,6 +339,8 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 		} else {
 			fmt.Fprintf(w, "<td>%d</td>", rad.lopnr)
 		}
+		fmt.Fprintf(w, "<td>%d</td>", radnr)
+
 		fmt.Fprintf(w, "<td>%s</td>", rad.fromAcc)
 		fmt.Fprintf(w, "<td>%s</td>", rad.toAcc)
 		fmt.Fprintf(w, "<td>%s</td>", rad.tType)
@@ -348,6 +419,7 @@ func compareaccount(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "  <label for=\"filtyp\">Filtyp:</label>")
 		fmt.Fprintf(w, "  <select name=\"filtyp\" id=\"filtyp\">")
 		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "komplettcsv", "KomplettBank CSV")
+		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "swedbcsv", "Swedbank/Sparbankerna CSV")
 		fmt.Fprintf(w, "  </select><br>\n")
 
 		fmt.Fprintf(w, "<input type=\"file\" name=\"uploadfile\" />")
