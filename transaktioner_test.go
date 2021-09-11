@@ -372,6 +372,57 @@ func TestTransaktionMDB4(t *testing.T) {
 	closeDB()
 }
 
+func TestTransaktionMDB5(t *testing.T) {
+	transaktionInit(t, "tr5")
+
+	// Denna testen
+	// Kommentar klarar citat-tecken
+	antal := antalTransaktioner()
+	
+	if antal != 0 {
+		t.Error("Antal transaktioner (0) != "+strconv.Itoa(antal))
+	} else {
+		t.Log("Antal transaktioner ok (0).")
+	}
+
+	saldoExpected := decimal.NewFromInt(0)
+	konto := hämtaKonto(1)
+	
+	if !konto.Saldo.Equal(saldoExpected) {
+		t.Error("Konto saldo '"+saldoExpected.String()+"' != '"+konto.Saldo.String()+"'.")
+	} else {
+		t.Log("Test saldo ok. 0.00")
+	}
+
+	plats := "TestPlats"
+	skapaPlats(plats, "123-0", true, "")
+
+	summa, err := decimal.NewFromString("1.2")
+	if err != nil {
+		t.Error(err)
+	}
+	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom '€' \"Räksmörgås\"")
+
+	antal = antalTransaktioner()
+	
+	if antal != 1 {
+		t.Error("Antal transaktioner (1) != "+strconv.Itoa(antal))
+	} else {
+		t.Log("Antal transaktioner ok (1).")
+	}
+
+	saldoExpected, err = decimal.NewFromString("1.2")
+	trans := hämtaTransaktion(1)
+	
+	if trans.comment != "Tom '€' \"Räksmörgås\"" {
+		t.Error("Transaktion text '"+"Tom '€' \"Räksmörgås\""+"' != '"+trans.comment+"'.")
+	} else {
+		t.Log("Test Text ok.", "Tom '€' \"Räksmörgås\"")
+	}
+
+	closeDB()
+}
+
 
 /*  Ett test:
         var n float64 = 0

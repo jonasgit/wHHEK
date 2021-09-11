@@ -41,9 +41,14 @@ func readXlsxFile(filen multipart.File) (res [][]string)  {
 		fmt.Println(err)
 		return
 	}
-	
+	// Get all Sheets
+	var sheetname string
+	for index, name := range f.GetSheetMap() {
+		fmt.Println("Found sheetname: ", index, name)
+		sheetname = name
+	}
 	// Get all the rows in the Sheet1.
-	rows, err := f.GetRows("Transaktioner")
+	rows, err := f.GetRows(sheetname)
 	if err != nil {
 		log.Fatal(err)
 	}

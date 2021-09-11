@@ -696,3 +696,49 @@ func antalTransaktioner() int {
 
 	return antal
 }
+
+func hämtaTransaktion(lopnr int) (result transaction) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var err error
+	var res *sql.Rows
+	
+	res, err = db.QueryContext(ctx,
+		`SELECT FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Löpnr,Saldo,Fastöverföring,Text from transaktioner
+  where Löpnr = ?`, lopnr)
+        if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+	
+	var fromAcc []byte // size 40
+	var toAcc []byte   // size 40
+	var tType []byte   // size 40
+	var date []byte    // size 10
+	var what []byte    // size 40
+	var who []byte     // size 50
+	var amount []byte  // BCD / Decimal Precision 19
+	var nummer int     // Autoinc Primary Key, index
+	var saldo []byte   // BCD / Decimal Precision 19
+	var fixed bool     // Boolean
+	var comment []byte // size 60
+	
+	for res.Next() {
+		var record transaction
+		err = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
+		
+		record.lopnr = nummer
+		record.fromAcc = toUtf8(fromAcc)
+		record.toAcc = toUtf8(toAcc)
+		record.tType = toUtf8(tType)
+		record.what = toUtf8(what)
+		record.date, err = time.Parse("2006-01-02", toUtf8(date))
+		record.who = toUtf8(who)
+		record.amount, err = decimal.NewFromString(toUtf8(amount))
+		record.comment = toUtf8(comment)
+		record.fixed = fixed
+		
+		result = record
+	}
+	return result
+}
