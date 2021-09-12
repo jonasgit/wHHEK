@@ -97,6 +97,8 @@ func finddaterange(records [][]string, filtyp string) (string, string) {
 		headlines = 2
 	case "resursxlsx":
 		headlines = 1
+	case "revolutcsv":
+		headlines = 1
 	default:
 		log.Fatal("Okänd filtyp")
 	}		
@@ -105,17 +107,7 @@ func finddaterange(records [][]string, filtyp string) (string, string) {
 		if radnr < headlines {
 			// ignore header
 		} else {
-			var date string
-			switch filtyp {
-			case "komplettcsv":
-				date = rad[0]
-			case "swedbcsv":
-				date = rad[6]
-			case "resursxlsx":
-				date = rad[0]
-			default:
-				log.Fatal("Okänd filtyp")
-			}
+			date := findDateCol(rad, filtyp)
 			if date < firstdate {
 				firstdate = date
 			}
@@ -195,6 +187,8 @@ func findAmount(rad []string, filtyp string) string {
 		return rad[10]
 	case "resursxlsx":
 		return rad[4]
+	case "revolutcsv":
+		return rad[5]
 	default:
 		log.Fatal("Okänd filtyp")
 	}
@@ -209,6 +203,9 @@ func findDateCol(rad []string, filtyp string) string {
 		return rad[6]
 	case "resursxlsx":
 		return rad[0]
+	case "revolutcsv":
+		strs := strings.Split(rad[2], " ")
+		return strs[0]
 	default:
 		log.Fatal("Okänd filtyp")
 	}		
@@ -223,6 +220,8 @@ func matchaUtdrag(records [][]string, dbtrans []transaction, kontonamn string, f
 	case "swedbcsv":
 		headlines = 2
 	case "resursxlsx":
+		headlines = 1
+	case "revolutcsv":
 		headlines = 1
 	default:
 		log.Fatal("Okänd filtyp")
@@ -316,6 +315,8 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 		records = readCsvFile(filen)
 	case "resursxlsx":
 		records = readXlsxFile(filen)
+	case "revolutcsv":
+		records = readCsvFile(filen)
 	default:
 		log.Fatal("Okänd filtyp")
 	}		
@@ -471,6 +472,7 @@ func compareaccount(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "komplettcsv", "KomplettBank CSV")
 		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "swedbcsv", "Swedbank/Sparbankerna CSV")
 		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "resursxlsx", "Resursbank/Fordkortet XLSX")
+		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "revolutcsv", "Revolut CSV(Excel)")
 		fmt.Fprintf(w, "  </select><br>\n")
 
 		fmt.Fprintf(w, "<input type=\"file\" name=\"uploadfile\" />")
