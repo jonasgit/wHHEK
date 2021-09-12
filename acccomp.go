@@ -73,13 +73,22 @@ func readXlsxFile(filen multipart.File) (res [][]string)  {
 	return res
 }
 
-func readCsvFile(f multipart.File) [][]string {
+func readCsvFile(f multipart.File, filtyp string) [][]string {
 	var res [][]string
-	r := charmap.ISO8859_1.NewDecoder().Reader(f)
+	var r io.Reader
+	if filtyp == "okq8csv" {
+		r = f
+	} else {
+		r = charmap.ISO8859_1.NewDecoder().Reader(f)
+	}
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		textline := scanner.Text()
 		rcsv := csv.NewReader(strings.NewReader(textline))
+		if filtyp == "okq8csv" {
+			rcsv.Comma = ';'
+			rcsv.LazyQuotes = true
+		}
 		for {
 			record, err := rcsv.Read()
 			if err == io.EOF {
@@ -206,10 +215,57 @@ func findAmount(rad []string, filtyp string) string {
 		return rad[5]
 	case "eurocardxls":
 		return rad[6]
+	case "okq8csv":
+		return rad[3]
 	default:
 		log.Fatal("Okänd filtyp")
 	}
 	return "-1"
+}
+
+// parse from string "29 feb 2006" to type time.Time
+func parseDate_swe(datum string) time.Time {
+	var date time.Time
+	strs := strings.Split(datum, " ")
+	day, err := strconv.Atoi(strs[0])
+	year, err := strconv.Atoi(strs[2])
+	var month time.Month = 0
+	switch strs[1] {
+	case "jan":
+		month = 1
+	case "feb":
+		month = 2
+	case "mar":
+		month = 3
+	case "apr":
+		month = 4
+	case "maj":
+		month = 5
+	case "jun":
+		month = 6
+	case "jul":
+		month = 7
+	case "aug":
+		month = 8
+	case "sep":
+		month = 9
+	case "okt":
+		month = 10
+	case "nov":
+		month = 11
+	case "dec":
+		month = 12
+	default:
+		log.Fatal("Okänd månad:", strs[1])
+	}
+
+	location, err := time.LoadLocation("Europe/Stockholm")
+	if err != nil {
+		panic(err)
+	}
+
+	date = time.Date(year, month, day, 12, 0, 0, 0, location)
+	return date
 }
 
 func findDateCol(rad []string, filtyp string) string {
@@ -229,6 +285,10 @@ func findDateCol(rad []string, filtyp string) string {
 			log.Fatal(err)
 		}
 		return Excel_DAY(days)
+	case "okq8csv":
+		dateraw := rad[0]
+		date := parseDate_swe(dateraw)
+		return date.Format("2006-01-02")
 	default:
 		log.Fatal("Okänd filtyp")
 	}		
@@ -248,6 +308,8 @@ func bankheadlines(filtyp string) int {
 		headlines = 1
 	case "eurocardxls":
 		headlines = 5
+	case "okq8csv":
+		headlines = 1
 	default:
 		log.Fatal("Okänd filtyp")
 	}
@@ -338,19 +400,21 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 	var records [][]string
 	switch filtyp {
 	case "komplettcsv":
-		records = readCsvFile(filen)
+		records = readCsvFile(filen, filtyp)
 	case "swedbcsv":
-		records = readCsvFile(filen)
+		records = readCsvFile(filen, filtyp)
 	case "resursxlsx":
 		records = readXlsxFile(filen)
 	case "revolutcsv":
-		records = readCsvFile(filen)
+		records = readCsvFile(filen, filtyp)
 	case "eurocardxls":
 		records = readXlsFile(filen)
 		// last line is summary, remove it for now
 		if len(records) > 0 {
 			records = records[:len(records)-1]
 		}
+	case "okq8csv":
+		records = readCsvFile(filen, filtyp)
 	default:
 		log.Fatal("Okänd filtyp")
 	}
@@ -517,6 +581,7 @@ func compareaccount(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "resursxlsx", "Resursbank/Fordkortet Xlsx")
 		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "revolutcsv", "Revolut CSV(Excel)")
 		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "eurocardxls", "Eurocard Xls")
+		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "okq8csv", "OKQ8 CSV")
 		fmt.Fprintf(w, "  </select><br>\n")
 
 		fmt.Fprintf(w, "<input type=\"file\" name=\"uploadfile\" />")
