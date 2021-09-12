@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"mime/multipart"
+	"strconv"
 	"strings"
 	"time"
 	
@@ -32,6 +33,16 @@ func readXlsFile(f multipart.File) (res [][]string) {
 		log.Fatal(err)
 	}
 	res = w.ReadAllCells(100000)
+
+	/*	for radnr, rad := range res {
+		fmt.Print("XLS Radnr:", radnr)
+
+		for colnr, data := range rad {
+			fmt.Print("XLS Colnr:", colnr, " data: ", data)
+		}
+		fmt.Println("")
+	}
+	*/
 	return res
 }
 
@@ -88,20 +99,7 @@ func finddaterange(records [][]string, filtyp string) (string, string) {
 	var firstdate string = "2999-12-31"
 	var lastdate string = "1100-01-01"
 
-	var headlines = 0
-	
-	switch filtyp {
-	case "komplettcsv":
-		headlines = 1
-	case "swedbcsv":
-		headlines = 2
-	case "resursxlsx":
-		headlines = 1
-	case "revolutcsv":
-		headlines = 1
-	default:
-		log.Fatal("Okänd filtyp")
-	}		
+	headlines := bankheadlines(filtyp)
 
 	for radnr, rad := range records {
 		if radnr < headlines {
@@ -137,6 +135,15 @@ func lopnrInAvst(lopnr int, avst []matchning) (radnr int, lopnrInAvst bool, klas
 	return -1, false, 0
 }
 
+func Excel_DAY(serial_number int) string {
+	date, err := time.Parse("2006-01-02", "1900-01-01")
+	if err != nil {
+		log.Fatal(err)
+	}
+	date = date.AddDate(0, 0, serial_number-2)
+	return date.Format("2006-01-02")
+}
+
 func DateWithinRange(date time.Time, dateRangeBase time.Time, rangeval int) (bool, error) {
 	lowDate := dateRangeBase.AddDate(0, 0, -rangeval)  // minus range days
 	hiDate := dateRangeBase.AddDate(0, 0, rangeval) // plus range days
@@ -160,9 +167,13 @@ func transNotMatched(radnr int, lopnr int , result []matchning) bool {
 	return true
 }
 
-func amountEquals(dbrad transaction, amount decimal.Decimal, kontonamn string) bool {
+func amountEquals(dbrad transaction, amount decimal.Decimal, kontonamn string, filtyp string) bool {
 	if dbrad.tType == "Inköp" {
-		return dbrad.amount.Equals(amount.Neg())
+		if filtyp == "eurocardxls" {
+			return dbrad.amount.Equals(amount)
+		} else {
+			return dbrad.amount.Equals(amount.Neg())
+		}
 	}
 	if dbrad.tType == "Fast Utgift" {
 		return dbrad.amount.Equals(amount.Neg())
@@ -171,7 +182,11 @@ func amountEquals(dbrad transaction, amount decimal.Decimal, kontonamn string) b
 		return dbrad.amount.Equals(amount)
 	}
 	if (dbrad.tType == "Överföring") && (dbrad.fromAcc == kontonamn) {
-		return dbrad.amount.Equals(amount.Neg())
+		if filtyp == "eurocardxls" {
+			return dbrad.amount.Equals(amount)
+		} else {
+			return dbrad.amount.Equals(amount.Neg())
+		}
 	}
 	if (dbrad.tType == "Överföring") && (dbrad.toAcc == kontonamn) {
 		return dbrad.amount.Equals(amount)
@@ -189,6 +204,8 @@ func findAmount(rad []string, filtyp string) string {
 		return rad[4]
 	case "revolutcsv":
 		return rad[5]
+	case "eurocardxls":
+		return rad[6]
 	default:
 		log.Fatal("Okänd filtyp")
 	}
@@ -206,13 +223,19 @@ func findDateCol(rad []string, filtyp string) string {
 	case "revolutcsv":
 		strs := strings.Split(rad[2], " ")
 		return strs[0]
+	case "eurocardxls":
+		days, err := strconv.Atoi(rad[0])
+		if err != nil {
+			log.Fatal(err)
+		}
+		return Excel_DAY(days)
 	default:
 		log.Fatal("Okänd filtyp")
 	}		
 	return "-1"
 }
 
-func matchaUtdrag(records [][]string, dbtrans []transaction, kontonamn string, filtyp string) (result []matchning) {
+func bankheadlines(filtyp string) int {
 	var headlines = 0
 	switch filtyp {
 	case "komplettcsv":
@@ -223,9 +246,16 @@ func matchaUtdrag(records [][]string, dbtrans []transaction, kontonamn string, f
 		headlines = 1
 	case "revolutcsv":
 		headlines = 1
+	case "eurocardxls":
+		headlines = 5
 	default:
 		log.Fatal("Okänd filtyp")
-	}		
+	}
+	return headlines
+}
+
+func matchaUtdrag(records [][]string, dbtrans []transaction, kontonamn string, filtyp string) (result []matchning) {
+	headlines := bankheadlines(filtyp)
 
 	// Pass 1: Exakt matchning
 	for radnr, rad := range records {
@@ -242,10 +272,9 @@ func matchaUtdrag(records [][]string, dbtrans []transaction, kontonamn string, f
 			}
 			datecol := findDateCol(rad, filtyp)
 			raddate, err := time.Parse("2006-01-02", datecol)
-			
+			//fmt.Println("matchar datum ", datecol, " ", raddate)
 			for _, dbrad := range dbtrans {
-				if amountEquals(dbrad, rad_amount, kontonamn) {
-					//if dbrad.amount.Equals(rad_amount.Abs()) {
+				if amountEquals(dbrad, rad_amount, kontonamn, filtyp) {
 					if raddate == dbrad.date {
 						if transNotMatched(radnr, dbrad.lopnr, result) {
 							var match matchning
@@ -278,8 +307,7 @@ func matchaUtdrag(records [][]string, dbtrans []transaction, kontonamn string, f
 			raddate, err := time.Parse("2006-01-02", datecol)
 			
 			for _, dbrad := range dbtrans {
-				//if dbrad.amount.Equals(rad_amount.Abs()) {
-				if amountEquals(dbrad, rad_amount, kontonamn) {
+				if amountEquals(dbrad, rad_amount, kontonamn, filtyp) {
 					inRange, err := DateWithinRange(raddate, dbrad.date, 10)
 					if err != nil {
 						log.Fatal(err)
@@ -317,9 +345,16 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 		records = readXlsxFile(filen)
 	case "revolutcsv":
 		records = readCsvFile(filen)
+	case "eurocardxls":
+		records = readXlsFile(filen)
+		// last line is summary, remove it for now
+		if len(records) > 0 {
+			records = records[:len(records)-1]
+		}
 	default:
 		log.Fatal("Okänd filtyp")
-	}		
+	}
+	fmt.Println("Read file. Antal rader:", len(records))
 	firstdatestr, lastdatestr := finddaterange(records, filtyp)
 	firstdate,err := time.Parse("2006-01-02", firstdatestr)
 	if err != nil {
@@ -335,6 +370,7 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 	firstdate = firstdate.AddDate(0, 0, -10)
 	lastdate = lastdate.AddDate(0, 0, +10)
 	
+	headlines := bankheadlines(filtyp)
 	
 	dbtrans := getTransactionsInDateRange(db, kontonamn, firstdate.Format("2006-01-02"), lastdate.Format("2006-01-02"))
 
@@ -344,7 +380,7 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 	fmt.Fprintf(w, "<tr>Transaktioner från bankens fil</tr>")
 	for radnr, rad := range records {
 		fmt.Fprintf(w, "<tr>")
-		if radnr == 0 { 
+		if radnr < headlines { 
 			fmt.Fprintf(w, "<th>Radnr</th>")
 			fmt.Fprintf(w, "<th>Matchande löpnr</th>")
 			for _, data := range rad {
@@ -354,7 +390,14 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 			fmt.Fprintf(w, "<td>%d</td>", radnr)
 			lopnr, radnrInAvst, klassning := radnrInAvst(radnr, avst)
 			fmt.Fprintf(w, "<td>%d</td>", lopnr)
-			for _, data := range rad {
+			for colnr, data := range rad {
+				if filtyp == "eurocardxls" && colnr<2 {
+					days, err := strconv.Atoi(data)
+					if err != nil {
+						log.Fatal(err)
+					}
+					data = Excel_DAY(days)
+				}
 				if radnrInAvst {
 					if klassning == 1 {
 						fmt.Fprintf(w, "<td bgcolor=\"green\">%s</td>",data)
@@ -471,8 +514,9 @@ func compareaccount(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "  <select name=\"filtyp\" id=\"filtyp\">")
 		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "komplettcsv", "KomplettBank CSV")
 		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "swedbcsv", "Swedbank/Sparbankerna CSV")
-		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "resursxlsx", "Resursbank/Fordkortet XLSX")
+		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "resursxlsx", "Resursbank/Fordkortet Xlsx")
 		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "revolutcsv", "Revolut CSV(Excel)")
+		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "eurocardxls", "Eurocard Xls")
 		fmt.Fprintf(w, "  </select><br>\n")
 
 		fmt.Fprintf(w, "<input type=\"file\" name=\"uploadfile\" />")
