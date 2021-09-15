@@ -14,6 +14,9 @@ func transaktionInit(t *testing.T, filnamn string) {
 
 	SkapaTomMDB(t, filename)
 	db = openJetDB(filename, false)
+	if db == nil {
+ 		t.Fatal("Ingen databas.")
+	}
 }
 
 func TestTransaktionTomMDB1(t *testing.T) {

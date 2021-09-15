@@ -48,14 +48,17 @@ func SkapaTomMDB(t *testing.T, filename string) {
 func TestOpenMDB(t *testing.T) {
 	var filename string = "gotest.mdb"
 
+	if !JetDBSupport {
+ 		t.Error("MDB/JetDB not supported.")
+	}
 	SkapaTomMDB(t, filename)
 	
 	// Check open succeeds
 	db = openJetDB(filename, false)
 	if db != nil {
 		t.Log("OpenMDB succeeded.")
+		closeDB()
 	} else {
-		t.Error("OpenMDB failed to open file.")
+ 		t.Error("OpenMDB failed to open file.")
 	}
-	closeDB()
 }

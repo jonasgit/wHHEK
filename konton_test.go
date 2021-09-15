@@ -13,6 +13,9 @@ func kontonInit(t *testing.T) {
 
 	SkapaTomMDB(t, filename)
 	db = openJetDB(filename, false)
+	if db == nil {
+ 		t.Fatal("Ingen databas.")
+	}
 }
 
 func TestKontoTomMDB1(t *testing.T) {
@@ -22,7 +25,7 @@ func TestKontoTomMDB1(t *testing.T) {
 	antal := antalKonton()
 	
 	if antal != 1 {
-		t.Error("Antal konton != (1).")
+ 		t.Error("Antal konton != (1).")
 	} else {
 		t.Log("Antal konton ok.")
 	}

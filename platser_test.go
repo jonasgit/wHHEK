@@ -13,6 +13,9 @@ func platserInit(t *testing.T) {
 
 	SkapaTomMDB(t, filename)
 	db = openJetDB(filename, false)
+	if db == nil {
+ 		t.Fatal("Ingen databas.")
+	}
 }
 
 func TestPlatserTomMDB1(t *testing.T) {

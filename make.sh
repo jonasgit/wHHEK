@@ -1,28 +1,47 @@
 #!/bin/bash
 
-export JETFILE=nojetdb.go
-
-#  SET BUILDCMD=test -v
-#  set TESTFILES=main_test.go personer_test.go konton_test.go transaktioner_test.go db_test.go
-
 export BUILDCMD=build
-export TESTFILES=
 
 #  SET LINKCMD=-ldflags="-s -w"
 export LINKCMD=
 
-ECHO Hämtar beroenden...
+echo $0 $1 $2
+if [[ "$1" = "setup" ]]
+then
+    ECHO Hämtar beroenden...
+    
+    go get github.com/mattn/go-sqlite3
+    go get golang.org/x/text/encoding/charmap
+    go get github.com/shopspring/decimal
+    go get github.com/extrame/xls
+    go get github.com/xuri/excelize/v2
 
-go get github.com/mattn/go-sqlite3
-go get golang.org/x/text/encoding/charmap
-go get github.com/shopspring/decimal
-go get github.com/extrame/xls
+    exit 0
+fi
+
+if [[ "$1" = "test" ]]
+then
+    if [[ "$2" = "verbose" ]]
+    then
+	export BUILDCMD="test -p 1 -v"
+    else
+	export BUILDCMD="test -p 1"
+    fi
+else
+    export BUILDCMD="build -o wHHEK"
+fi
+
+if [[ "$1" = "release" ]]
+then
+    export LINKCMD="-ldflags -s -ldflags -w"
+else
+    export LINKCMD=
+fi
 
 ECHO Bygger...
 
-export SOURCEFILES="main.go platser.go transaktioner.go fastatransaktioner.go personer.go konton.go budget.go"
+set -x
+go $BUILDCMD $LINKCMD
+set +x
 
-go $BUILDCMD $LINKCMD -o wHHEK $SOURCEFILES $JETFILE $TESTFILES
-
-ECHO Klar.
-
+echo Klar.
