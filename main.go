@@ -235,21 +235,6 @@ func sanitizeFilename(fname string) string {
 	return fname
 }
 
-func openSqlite(filename string) *sql.DB {
-	currentDatabase = "NONE"
-	dbtype = 0
-
-	db, err := sql.Open("sqlite3", filename)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	currentDatabase = filename
-	dbtype = 2
-
-	return db
-}
-
 func GetCountPendingÖverföringar(db *sql.DB, currDate string) int {
 	var cnt int
 	_ = db.QueryRow(`select count(*) from Överföringar WHERE Datum <= ?`, currDate).Scan(&cnt)

@@ -9,7 +9,11 @@ Hogia Hemekonomi är ett 16-bitars windowsprogram som visserligen fungerar i Win
 
 Detta programmet fungerar med både med mdb-filer och sqlite3. Det finns en konverterare till sqlite3 på https://github.com/jonasgit/hhek2sqlite
 
-Detta programmet går att köra i Windows så länge det går att köra 32-bitars program dvs Windows 10 64-bitars är ok under lång tid. Konverterar man till sqlite så bör det gå att köra även på Mac, i Linux och kravet på 32-bitars program i Windows försvinner, men inte testat.
+Gränssnittet är webbaserat, dvs programmet körs i bakgrunden och användare interagerar via webläsaren.
+
+Detta programmet går att köra i Windows så länge det går att köra 32-bitars program dvs Windows 10 64-bitars är ok. End of life för Windows 10 ser för närvarande ut att vara hösten 2025 men även Windows 11 ska kunna köra 32-bitars program.
+
+Konverterar man till sqlite så bör det gå att köra även på Mac, i Linux och kravet på 32-bitars program i Windows försvinner, men inte testat.
 
 Status: "i sin linda".
 
