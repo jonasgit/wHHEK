@@ -34,7 +34,7 @@ func SkapaTomMDB(t *testing.T, filename string) {
 
 func TestOpenMDB(t *testing.T) {
 	var filename string = "gotest.mdb"
-
+	
 	if !JetDBSupport {
  		t.Log("MDB/JetDB not supported.")
 		return
@@ -53,30 +53,30 @@ func TestOpenMDB(t *testing.T) {
 
 func TestOpenDB(t *testing.T) {
 	var filename string = "gotest."
-
+	
 	if JetDBSupport {
-	  filename = filename + "mdb"
- 	  SkapaTomMDB(t, filename)
-	
-	  // Check open succeeds
-	  db = openJetDB(filename, false)
-	  if db != nil {
-	    t.Log("OpenMDB succeeded.")
-	    closeDB()
-	  } else {
-	    t.Error("OpenMDB failed to open file.")
-	  }
+		filename = filename + "mdb"
+		SkapaTomMDB(t, filename)
+		
+		// Check open succeeds
+		db = openJetDB(filename, false)
+		if db != nil {
+			t.Log("OpenMDB succeeded.")
+			closeDB()
+		} else {
+			t.Error("OpenMDB failed to open file.")
+		}
 	} else {
-	  filename = filename + "db"
- 	  SkapaTomDB(filename)
-	
-	  // Check open succeeds
-	  db = openSqlite(filename)
-	  if db != nil {
-	    t.Log("OpenDB succeeded.")
-	    closeDB()
-	  } else {
-	    t.Error("OpenDB failed to open file.")
-	  }
+		filename = filename + "db"
+		SkapaTomDB(filename)
+		
+		// Check open succeeds
+		db = openSqlite(filename)
+		if db != nil {
+			t.Log("OpenDB succeeded.")
+			closeDB()
+		} else {
+			t.Error("OpenDB failed to open file.")
+		}
 	}
 }

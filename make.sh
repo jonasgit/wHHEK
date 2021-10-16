@@ -15,7 +15,7 @@ then
     go get github.com/shopspring/decimal
     go get github.com/extrame/xls
     go get github.com/xuri/excelize/v2
-
+    
     exit 0
 fi
 

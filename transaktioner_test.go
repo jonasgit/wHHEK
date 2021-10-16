@@ -4,14 +4,14 @@ package main
 import (
 	"strconv"
 	"testing"
-
+	
 	"github.com/shopspring/decimal"  // MIT License
 )
 
 func transaktionInit(t *testing.T, filnamn string) {
 	// Förberedelser
 	var filename string = "got"+filnamn+".mdb"
-
+	
 	SkapaTomMDB(t, filename)
 	db = openJetDB(filename, false)
 	if db == nil {
@@ -21,7 +21,7 @@ func transaktionInit(t *testing.T, filnamn string) {
 
 func TestTransaktionTomMDB1(t *testing.T) {
 	transaktionInit(t, "trt")
-
+	
 	// Denna testen
 	antal := antalTransaktioner()
 	
@@ -30,13 +30,13 @@ func TestTransaktionTomMDB1(t *testing.T) {
 	} else {
 		t.Log("Antal transaktioner ok (0).")
 	}
-
+	
 	closeDB()
 }
 
 func TestTransaktionMDB1(t *testing.T) {
 	transaktionInit(t, "tr1")
-
+	
 	// Denna testen
 	// Kontrollera att vi utgår från startsaldo 0.00
 	// Gör insättning 0,10kr och kontrollerar att resultatet blir 0,10kr
@@ -47,7 +47,7 @@ func TestTransaktionMDB1(t *testing.T) {
 	} else {
 		t.Log("Antal transaktioner ok (0).")
 	}
-
+	
 	saldoExpected := decimal.NewFromInt(0)
 	konto := hämtaKonto(1)
 	
@@ -56,13 +56,13 @@ func TestTransaktionMDB1(t *testing.T) {
 	} else {
 		t.Log("Test saldo ok. 0.00")
 	}
-
+	
 	summa, err := decimal.NewFromString("0.1")
 	if err != nil {
 		t.Error(err)
 	}
 	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
-
+	
 	antal = antalTransaktioner()
 	
 	if antal != 1 {
@@ -70,7 +70,7 @@ func TestTransaktionMDB1(t *testing.T) {
 	} else {
 		t.Log("Antal transaktioner ok (1).")
 	}
-
+	
 	saldoExpected, err = decimal.NewFromString("0.1")
 	konto = hämtaKonto(1)
 	
@@ -79,27 +79,27 @@ func TestTransaktionMDB1(t *testing.T) {
 	} else {
 		t.Log("Test saldo ok. 0.1")
 	}
-
+	
 	saldo := saldoKonto("Plånboken", "2020-07-27")
 	if !saldo.Equal(decimal.NewFromInt(0)) {
 		t.Error("Konto saldo innan '"+"0,00"+"' != '"+saldo.String()+"'.")
 	} else {
 		t.Log("Test innan saldo ok.")
 	}
-
+	
 	saldo = saldoKonto("Plånboken", "2021-07-28")
 	if !saldo.Equal(saldoExpected) {
 		t.Error("Konto saldo efter '"+saldo.String()+"' != '"+saldoExpected.String()+"'.")
 	} else {
 		t.Log("Test efter saldo ok. "+saldoExpected.String())
 	}
-
+	
 	closeDB()
 }
 
 func TestTransaktionMDB2(t *testing.T) {
 	transaktionInit(t, "tr2")
-
+	
 	// Denna testen
 	// Gör insättning 0,10kr 9 ggr och kontrollerar att resultatet blir 0,90kr
 	// Gör insättning 0,10kr 2 ggr och kontrollerar att resultatet blir 1,10kr
@@ -116,7 +116,7 @@ func TestTransaktionMDB2(t *testing.T) {
 	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
 	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
 	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
-
+	
 	antal := antalTransaktioner()
 	
 	if antal != 9 {
@@ -124,7 +124,7 @@ func TestTransaktionMDB2(t *testing.T) {
 	} else {
 		t.Log("Antal transaktioner ok (9).")
 	}
-
+	
 	saldoExpected, err := decimal.NewFromString("0.9")
 	konto := hämtaKonto(1)
 	
@@ -133,14 +133,14 @@ func TestTransaktionMDB2(t *testing.T) {
 	} else {
 		t.Log("Test saldo ok. 0.9")
 	}
-
+	
 	saldo := saldoKonto("Plånboken", "2020-07-27")
 	if !saldo.Equal(decimal.NewFromInt(0)) {
 		t.Error("Konto saldo innan '"+"0,00"+"' != '"+saldo.String()+"'.")
 	} else {
 		t.Log("Test innan saldo ok.")
 	}
-
+	
 	saldo = saldoKonto("Plånboken", "2021-07-28")
 	if !saldo.Equal(saldoExpected) {
 		t.Error("Konto saldo efter '"+saldo.String()+"' != '"+saldoExpected.String()+"'.")
@@ -150,7 +150,7 @@ func TestTransaktionMDB2(t *testing.T) {
 	
 	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
 	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
-
+	
 	antal = antalTransaktioner()
 	
 	if antal != 11 {
@@ -158,7 +158,7 @@ func TestTransaktionMDB2(t *testing.T) {
 	} else {
 		t.Log("Antal transaktioner ok (11).")
 	}
-
+	
 	saldoExpected, err = decimal.NewFromString("1.1")
 	konto = hämtaKonto(1)
 	
@@ -167,14 +167,14 @@ func TestTransaktionMDB2(t *testing.T) {
 	} else {
 		t.Log("Test saldo ok. 1.1")
 	}
-
+	
 	saldo = saldoKonto("Plånboken", "2020-07-27")
 	if !saldo.Equal(decimal.NewFromInt(0)) {
 		t.Error("Konto saldo innan '"+saldo.String()+"' != '"+"0.00"+"'.")
 	} else {
 		t.Log("Test innan saldo ok.")
 	}
-
+	
 	saldo = saldoKonto("Plånboken", "2021-07-28")
 	if !saldo.Equal(saldoExpected) {
 		t.Error("Konto saldo efter '"+saldo.String()+"' != '"+saldoExpected.String()+"'.")
@@ -187,7 +187,7 @@ func TestTransaktionMDB2(t *testing.T) {
 
 func TestTransaktionMDB3(t *testing.T) {
 	transaktionInit(t, "tr3")
-
+	
 	// Denna testen
 	// Kontrollera att vi utgår från startsaldo 0.00
 	// Gör insättning 1,20kr
@@ -200,7 +200,7 @@ func TestTransaktionMDB3(t *testing.T) {
 	} else {
 		t.Log("Antal transaktioner ok (0).")
 	}
-
+	
 	saldoExpected := decimal.NewFromInt(0)
 	konto := hämtaKonto(1)
 	
@@ -209,16 +209,16 @@ func TestTransaktionMDB3(t *testing.T) {
 	} else {
 		t.Log("Test saldo ok. 0.00")
 	}
-
+	
 	plats := "TestPlats"
 	skapaPlats(plats, "123-4", true, "")
-
+	
 	summa, err := decimal.NewFromString("1.2")
 	if err != nil {
 		t.Error(err)
 	}
 	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
-
+	
 	antal = antalTransaktioner()
 	
 	if antal != 1 {
@@ -226,7 +226,7 @@ func TestTransaktionMDB3(t *testing.T) {
 	} else {
 		t.Log("Antal transaktioner ok (1).")
 	}
-
+	
 	saldoExpected, err = decimal.NewFromString("1.2")
 	konto = hämtaKonto(1)
 	
@@ -235,14 +235,14 @@ func TestTransaktionMDB3(t *testing.T) {
 	} else {
 		t.Log("Test saldo ok. 1.2")
 	}
-
+	
 	saldo := saldoKonto("Plånboken", "2021-07-28")
 	if !saldo.Equal(saldoExpected) {
 		t.Error("Konto saldo efter '"+saldo.String()+"' != '"+saldoExpected.String()+"'.")
 	} else {
 		t.Log("Test efter saldo ok. "+saldoExpected.String())
 	}
-
+	
 	summa, err = decimal.NewFromString("0.1")
 	if err != nil {
 		t.Error(err)
@@ -256,14 +256,14 @@ func TestTransaktionMDB3(t *testing.T) {
 	} else {
 		t.Log("Test saldo ok. 1.1")
 	}
-
+	
 	saldo = saldoKonto("Plånboken", "2021-07-28")
 	if !saldo.Equal(saldoExpected) {
 		t.Error("Konto saldo efter '"+saldo.String()+"' != '"+saldoExpected.String()+"'.")
 	} else {
 		t.Log("Test efter saldo ok. "+saldoExpected.String())
 	}
-
+	
 	addTransaktionInköp("Plånboken", plats, "2021-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås")
 	addTransaktionInköp("Plånboken", plats, "2021-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås")
 	konto = hämtaKonto(1)
@@ -274,20 +274,20 @@ func TestTransaktionMDB3(t *testing.T) {
 	} else {
 		t.Log("Test saldo ok. 0.9")
 	}
-
+	
 	saldo = saldoKonto("Plånboken", "2021-07-28")
 	if !saldo.Equal(saldoExpected) {
 		t.Error("Konto saldo efter '"+saldo.String()+"' != '"+saldoExpected.String()+"'.")
 	} else {
 		t.Log("Test efter saldo ok. "+saldoExpected.String())
 	}
-
+	
 	closeDB()
 }
 
 func TestTransaktionMDB4(t *testing.T) {
 	transaktionInit(t, "tr4")
-
+	
 	// Denna testen
 	// Kontrollera att vi utgår från startsaldo 0.00
 	// Gör insättning 1,20kr idag
@@ -299,7 +299,7 @@ func TestTransaktionMDB4(t *testing.T) {
 	} else {
 		t.Log("Antal transaktioner ok (0).")
 	}
-
+	
 	saldoExpected := decimal.NewFromInt(0)
 	konto := hämtaKonto(1)
 	
@@ -308,16 +308,16 @@ func TestTransaktionMDB4(t *testing.T) {
 	} else {
 		t.Log("Test saldo ok. 0.00")
 	}
-
+	
 	plats := "TestPlats"
 	skapaPlats(plats, "123-0", true, "")
-
+	
 	summa, err := decimal.NewFromString("1.2")
 	if err != nil {
 		t.Error(err)
 	}
 	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
-
+	
 	antal = antalTransaktioner()
 	
 	if antal != 1 {
@@ -325,7 +325,7 @@ func TestTransaktionMDB4(t *testing.T) {
 	} else {
 		t.Log("Antal transaktioner ok (1).")
 	}
-
+	
 	saldoExpected, err = decimal.NewFromString("1.2")
 	konto = hämtaKonto(1)
 	
@@ -334,14 +334,14 @@ func TestTransaktionMDB4(t *testing.T) {
 	} else {
 		t.Log("Test saldo ok. 1.2")
 	}
-
+	
 	saldo := saldoKonto("Plånboken", "2021-07-28")
 	if !saldo.Equal(saldoExpected) {
 		t.Error("Konto saldo efter '"+saldo.String()+"' != '"+saldoExpected.String()+"'.")
 	} else {
 		t.Log("Test efter saldo ok. "+saldoExpected.String())
 	}
-
+	
 	summa, err = decimal.NewFromString("0.1")
 	if err != nil {
 		t.Error(err)
@@ -355,7 +355,7 @@ func TestTransaktionMDB4(t *testing.T) {
 	} else {
 		t.Log("Test saldo ok. 1.1")
 	}
-
+	
 	saldoExpected, err = decimal.NewFromString("1.2")
 	saldo = saldoKonto("Plånboken", "2021-07-28")
 	if !saldo.Equal(saldoExpected) {
@@ -371,13 +371,13 @@ func TestTransaktionMDB4(t *testing.T) {
 	} else {
 		t.Log("Test efter saldo ok. "+saldoExpected.String())
 	}
-
+	
 	closeDB()
 }
 
 func TestTransaktionMDB5(t *testing.T) {
 	transaktionInit(t, "tr5")
-
+	
 	// Denna testen
 	// Kommentar klarar citat-tecken
 	antal := antalTransaktioner()
@@ -387,7 +387,7 @@ func TestTransaktionMDB5(t *testing.T) {
 	} else {
 		t.Log("Antal transaktioner ok (0).")
 	}
-
+	
 	saldoExpected := decimal.NewFromInt(0)
 	konto := hämtaKonto(1)
 	
@@ -396,16 +396,16 @@ func TestTransaktionMDB5(t *testing.T) {
 	} else {
 		t.Log("Test saldo ok. 0.00")
 	}
-
+	
 	plats := "TestPlats"
 	skapaPlats(plats, "123-0", true, "")
-
+	
 	summa, err := decimal.NewFromString("1.2")
 	if err != nil {
 		t.Error(err)
 	}
 	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom '€' \"Räksmörgås\"")
-
+	
 	antal = antalTransaktioner()
 	
 	if antal != 1 {
@@ -413,7 +413,7 @@ func TestTransaktionMDB5(t *testing.T) {
 	} else {
 		t.Log("Antal transaktioner ok (1).")
 	}
-
+	
 	saldoExpected, err = decimal.NewFromString("1.2")
 	trans := hämtaTransaktion(1)
 	
@@ -422,7 +422,7 @@ func TestTransaktionMDB5(t *testing.T) {
 	} else {
 		t.Log("Test Text ok.", "Tom '€' \"Räksmörgås\"")
 	}
-
+	
 	closeDB()
 }
 

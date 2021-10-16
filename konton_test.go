@@ -3,14 +3,14 @@ package main
 import (
 	"strconv"
 	"testing"
-
+	
 	"github.com/shopspring/decimal"  // MIT License
 )
 
 func kontonInit(t *testing.T) {
 	// Förberedelser
 	var filename string = "gotestk.mdb"
-
+	
 	SkapaTomMDB(t, filename)
 	db = openJetDB(filename, false)
 	if db == nil {
@@ -20,7 +20,7 @@ func kontonInit(t *testing.T) {
 
 func TestKontoTomMDB1(t *testing.T) {
 	kontonInit(t)
-
+	
 	// Denna testen
 	antal := antalKonton()
 	
@@ -65,14 +65,14 @@ func TestKontoTomMDB1(t *testing.T) {
 
 func TestKontoMDB1(t *testing.T) {
 	kontonInit(t)
-
+	
 	// Denna testen
 	startsaldo, err := decimal.NewFromString("0.0")
 	if err != nil {
 		t.Error(err)
 	}
 	addKonto("Kontonamn1", startsaldo, "jan", db)
-
+	
 	antal := antalKonton()
 	
 	if antal != 2 {
@@ -85,7 +85,7 @@ func TestKontoMDB1(t *testing.T) {
 
 func TestKontoMDB2(t *testing.T) {
 	kontonInit(t)
-
+	
 	// Denna testen
 	startsaldo, err := decimal.NewFromString("0.0")
 	if err != nil {
@@ -103,7 +103,7 @@ func TestKontoMDB2(t *testing.T) {
 	}
 	addKonto("Kontonamn3", startsaldo, "jul", db)
 	addKonto("Kontonamn4", startsaldo, "dec", db)
-
+	
 	antal := antalKonton()
 	
 	if antal != 5 {
@@ -116,7 +116,7 @@ func TestKontoMDB2(t *testing.T) {
 
 func TestKontoMDB3(t *testing.T) {
 	kontonInit(t)
-
+	
 	// Denna testen
 	namn := "Tom € Räksmörgås"
 	startsaldo, err := decimal.NewFromString("19.99")
@@ -126,7 +126,7 @@ func TestKontoMDB3(t *testing.T) {
 	
 	startmånad := "Apr"
 	addKonto(namn, startsaldo, startmånad, db)
-
+	
 	konto := hämtaKonto(2)
 	
 	if konto.Benämning != namn {
@@ -154,13 +154,13 @@ func TestKontoMDB3(t *testing.T) {
 	} else {
 		t.Log("Test skiftesmånad ok.")
 	}
-
+	
 	closeDB()
 }
 
 func TestKontoMDB4(t *testing.T) {
 	kontonInit(t)
-
+	
 	// Denna testen
 	namn := "Tom € Räksmörgås"
 	startsaldo, err := decimal.NewFromString("19.99")
@@ -170,7 +170,7 @@ func TestKontoMDB4(t *testing.T) {
 	
 	startmånad := "Apr"
 	addKonto(namn, startsaldo, startmånad, db)
-
+	
 	kontoid := hämtakontoID("Plånboken")
 	
 	if kontoid != 1 {
@@ -178,7 +178,7 @@ func TestKontoMDB4(t *testing.T) {
 	} else {
 		t.Log("Test id 1 ok.")
 	}
-
+	
 	kontoid = hämtakontoID(namn)
 	
 	if kontoid != 2 {
@@ -186,7 +186,7 @@ func TestKontoMDB4(t *testing.T) {
 	} else {
 		t.Log("Test id 1 ok.")
 	}
-
+	
 	closeDB()
 }
 

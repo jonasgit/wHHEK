@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-
+	
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -27,15 +27,15 @@ func FileExists (filepath string) bool {
 func openSqlite(filename string) *sql.DB {
 	currentDatabase = "NONE"
 	dbtype = 0
-
+	
 	db, err := sql.Open("sqlite3", filename)
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	
 	currentDatabase = filename
 	dbtype = 2
-
+	
 	return db
 }
 

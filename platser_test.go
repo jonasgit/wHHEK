@@ -10,7 +10,7 @@ import (
 func platserInit(t *testing.T) {
 	// Förberedelser
 	var filename string = "gotestpl.mdb"
-
+	
 	SkapaTomMDB(t, filename)
 	db = openJetDB(filename, false)
 	if db == nil {
@@ -20,7 +20,7 @@ func platserInit(t *testing.T) {
 
 func TestPlatserTomMDB1(t *testing.T) {
 	platserInit(t)
-
+	
 	// Denna testen
 	antal := antalPlatser()
 	
@@ -34,10 +34,10 @@ func TestPlatserTomMDB1(t *testing.T) {
 
 func TestPlatserMDB1(t *testing.T) {
 	platserInit(t)
-
+	
 	// Denna testen
 	skapaPlats("Platsnamnet", "12345-7", false, "")
-
+	
 	antal := antalPlatser()
 	
 	if antal != 1 {
@@ -50,13 +50,13 @@ func TestPlatserMDB1(t *testing.T) {
 
 func TestPlatserMDB2(t *testing.T) {
 	platserInit(t)
-
+	
 	// Denna testen
 	skapaPlats("Platsnamn1", "12345-7", false, "")
 	skapaPlats("Platsnamn2", "", false, "")
 	skapaPlats("Platsnamn3", "", false, "")
 	skapaPlats("Platsnamn4", "12345-7", true, "")
-
+	
 	antal := antalPlatser()
 	
 	if antal != 4 {
@@ -69,13 +69,13 @@ func TestPlatserMDB2(t *testing.T) {
 
 func TestPlatserMDB3(t *testing.T) {
 	platserInit(t)
-
+	
 	// Denna testen
 	namn := "Tom € Räksmörgås"
 	gironummer := "12345-7"
 	kontokort := false
 	skapaPlats(namn, gironummer, kontokort, "")
-
+	
 	plats := hämtaPlats(1)
 	
 	if plats.Namn != namn {
@@ -93,12 +93,12 @@ func TestPlatserMDB3(t *testing.T) {
 	} else {
 		t.Log("Test kontokort ok.")
 	}
-
+	
 	namn = "Tom2 € Räksmörgås"
 	gironummer = " "
 	kontokort = false
 	skapaPlats(namn, gironummer, kontokort, "")
-
+	
 	plats = hämtaPlats(2)
 	
 	if plats.Namn != namn {
@@ -116,21 +116,20 @@ func TestPlatserMDB3(t *testing.T) {
 	} else {
 		t.Log("Test kontokort ok.")
 	}
-
-
+	
 	closeDB()
 }
 
 func TestPlatserMDB4(t *testing.T) {
 	platserInit(t)
-
+	
 	// Denna testen
 	namn := "Tom € Räksmörgås"
 	gironummer := "12345-7"
 	kontokort := false
 	skapaPlats(namn, gironummer, kontokort, "")
 	// TODO: skapaPlats(namn, gironummer, kontokort, "") // This should fail and report error due to duplicated name
-
+	
 	antal := antalPlatser()
 	
 	if antal != 1 {
@@ -138,7 +137,7 @@ func TestPlatserMDB4(t *testing.T) {
 	} else {
 		t.Log("Antal platser ok.")
 	}
-
+	
 	closeDB()
 }
 

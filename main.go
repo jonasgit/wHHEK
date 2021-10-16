@@ -262,6 +262,9 @@ func checkÖverföringar(w http.ResponseWriter, db *sql.DB) {
 	}
 }
 
+func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
+}
+
 func printAccounts(w http.ResponseWriter, db *sql.DB) {
 	fmt.Fprintf(w, "<html>\n")
 	fmt.Fprintf(w, "<head>\n")
