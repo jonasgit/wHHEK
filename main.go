@@ -282,13 +282,13 @@ func checkÖverföringar(w http.ResponseWriter, db *sql.DB) {
 	}
 }
 
-func printAccounts(w http.ResponseWriter, db *sql.DB) {
+func printSummaryHead(w http.ResponseWriter, db *sql.DB) {
 	fmt.Fprintf(w, "<html>\n")
 	fmt.Fprintf(w, "<head>\n")
 	fmt.Fprintf(w, "<title>wHHEK</title>\n")
 	fmt.Fprintf(w, "<!-- Load htmx -->\n")
 	fmt.Fprintf(w, "<script src=\"/htmx.js\"></script>\n")
-
+	
 	fmt.Fprintf(w, "<style>\n")
 	fmt.Fprintf(w, "table,th,td { border: 1px solid black ; text-align: center }\n")
 	fmt.Fprintf(w, "</style>\n")
@@ -301,7 +301,9 @@ func printAccounts(w http.ResponseWriter, db *sql.DB) {
 	currDate := currentTime.Format("2006-01-02")
 	
 	fmt.Fprintf(w, "Dagens datum: %s<p>\n", currDate)
+}
 
+func printAccounts(w http.ResponseWriter, db *sql.DB) {
 	fmt.Fprintf(w, "<div hx-get=\"/r/main/accounts\" hx-trigger=\"load\">\n")
 	fmt.Fprintf(w, "  <img class=\"htmx-indicator\" width=\"150\" src=\"/img/bars.svg\"/>\n")
 	fmt.Fprintf(w, "</div>\n")
@@ -438,8 +440,9 @@ func quitapp(w http.ResponseWriter, req *http.Request) {
 }
 
 func generateSummary(w http.ResponseWriter, req *http.Request) {
-	printAccounts(w, db)
+	printSummaryHead(w, db)
 	checkÖverföringar(w, db)
+	fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><td>\n")
 	fmt.Fprintf(w, "<a href=\"monthly\">Månads kontoutdrag</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"transactions\">Transaktionslista</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"platser\">Platser</a><p>\n")
@@ -451,6 +454,9 @@ func generateSummary(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<a href=\"acccmp\">Avstämning mot nerladdat kontoutdrag</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"close\">Stäng databas</a><p>\n")
 	fmt.Fprintf(w, "<a href=\"quit\">Avsluta program</a><p>\n")
+	fmt.Fprintf(w, "</td><td>\n")
+	printAccounts(w, db)
+	fmt.Fprintf(w, "</td></tr></table>\n")
 	fmt.Fprintf(w, "</body>\n")
 	fmt.Fprintf(w, "</html>\n")
 }
