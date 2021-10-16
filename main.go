@@ -129,6 +129,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	_ "embed"
 	"errors"
 	"fmt"
 	"golang.org/x/text/encoding/charmap"
@@ -210,8 +211,27 @@ func root(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "</html>\n")
 }
 
+//go:embed htmx.min.js
+var htmxjs []byte
+func htmx(w http.ResponseWriter, req *http.Request) {
+	w.Write(htmxjs)
+}
+
+//go:embed bars.svg
+var barssvg []byte
+func imgbars(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "image/svg+xml")
+
+	w.Write(barssvg)
+}
+
 func restapi(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "Rest API not implemented yet.\n")
+	if req.URL.String() == "/r/main/accounts" {
+		printSummaryTable(w, db)
+	} else {
+		fmt.Fprintf(w, "Rest API not implemented yet.\n")
+		fmt.Fprintf(w, "Requested URL "+req.URL.String()+"\n")
+	}
 }
 
 func headers(w http.ResponseWriter, req *http.Request) {
@@ -248,11 +268,11 @@ func checkÖverföringar(w http.ResponseWriter, db *sql.DB) {
 	if antal > 0 {
 		fmt.Fprintf(w, "<p>%d fasta transaktioner tills idag väntar på att hanteras. Gå till <a href=\"fixedtrans\">Fasta transaktioner</a>.<p>\n", antal)
 	}
-
+	
 	now := time.Now()
 	currentYear, currentMonth, _ := now.Date()
 	currentLocation := now.Location()
-
+	
 	firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, currentLocation)
 	lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
 	currDate = lastOfMonth.Format("2006-01-02")
@@ -262,32 +282,42 @@ func checkÖverföringar(w http.ResponseWriter, db *sql.DB) {
 	}
 }
 
-func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
-}
-
 func printAccounts(w http.ResponseWriter, db *sql.DB) {
 	fmt.Fprintf(w, "<html>\n")
 	fmt.Fprintf(w, "<head>\n")
+	fmt.Fprintf(w, "<title>wHHEK</title>\n")
+	fmt.Fprintf(w, "<!-- Load htmx -->\n")
+	fmt.Fprintf(w, "<script src=\"/htmx.js\"></script>\n")
+
 	fmt.Fprintf(w, "<style>\n")
 	fmt.Fprintf(w, "table,th,td { border: 1px solid black ; text-align: center }\n")
 	fmt.Fprintf(w, "</style>\n")
 	fmt.Fprintf(w, "</head>\n")
 	fmt.Fprintf(w, "<body>\n")
-
+	
 	fmt.Fprintf(w, "<h1>Databasnamn: %s</h1>\n", currentDatabase)
+	
+	currentTime := time.Now()
+	currDate := currentTime.Format("2006-01-02")
+	
+	fmt.Fprintf(w, "Dagens datum: %s<p>\n", currDate)
 
+	fmt.Fprintf(w, "<div hx-get=\"/r/main/accounts\" hx-trigger=\"load\">\n")
+	fmt.Fprintf(w, "  <img class=\"htmx-indicator\" width=\"150\" src=\"/img/bars.svg\"/>\n")
+	fmt.Fprintf(w, "</div>\n")
+}
+
+func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 	currentTime := time.Now()
 	currDate := currentTime.Format("2006-01-02")
 
-	fmt.Fprintf(w, "Dagens datum: %s<p>\n", currDate)
-
 	res, err := db.Query("SELECT KontoNummer,Benämning,Saldo,StartSaldo,StartManad,Löpnr,SaldoArsskifte,ArsskifteManad FROM Konton")
-
+	
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(2)
 	}
-
+	
 	var KontoNummer []byte    // size 20
 	var Benämning []byte      // size 40, index
 	var Saldo []byte          // BCD / Decimal Precision 19
@@ -296,11 +326,11 @@ func printAccounts(w http.ResponseWriter, db *sql.DB) {
 	var Löpnr []byte          // autoinc Primary Key
 	var SaldoArsskifte []byte // BCD / Decimal Precision 19
 	var ArsskifteManad []byte // size 10
-
+	
 	fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Kontonamn</th><th>Saldo enligt databas</th><th>Saldo uträknat för idag</th><th>Saldo uträknat totalt</th>\n")
 	for res.Next() {
 		err = res.Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &Löpnr, &SaldoArsskifte, &ArsskifteManad)
-
+		
 		acc := toUtf8(Benämning)
 		dbSaldo , err2 := decimal.NewFromString(toUtf8(Saldo))
 		if err2 != nil {
@@ -322,7 +352,6 @@ func printAccounts(w http.ResponseWriter, db *sql.DB) {
 			fmt.Fprintf(w, "<td>%s</td>", totSaldo)
 		}
 		fmt.Fprintf(w, "</tr>\n")
-
 	}
 	fmt.Fprintf(w, "</table>\n")
 }
@@ -774,7 +803,9 @@ func getTypeOutNames() []string {
 
 func main() {
 	http.HandleFunc("/hello", hello)
-	http.HandleFunc("/r", restapi)
+	http.HandleFunc("/r/", restapi)
+	http.HandleFunc("/htmx.js", htmx)
+	http.HandleFunc("/img/bars.svg", imgbars)
 	http.HandleFunc("/headers", headers)
 	http.HandleFunc("/open", opendb)
 	http.HandleFunc("/close", closedb)
