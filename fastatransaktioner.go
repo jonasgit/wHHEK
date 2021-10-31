@@ -12,7 +12,24 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/shopspring/decimal"  // MIT License
 )
+
+type fixedtransaction struct {
+	lopnr int
+	vernum int
+	fromAcc string
+	toAcc string
+	what string
+	date time.Time
+	todate time.Time
+	who string
+	amount decimal.Decimal
+	HurOfta	string
+	comment string
+	rakning bool
+}
 
 func CurrDate() string {
 	now := time.Now()
@@ -132,12 +149,135 @@ func addfixedtransaction(w http.ResponseWriter, req *http.Request) {
 	if transtyp == "FastTrans" {
 		transid := req.FormValue("transid")
 		transidnum, _ := strconv.Atoi(transid)
-		registreraFastTransaktion(w, transidnum)
+		registreraFastTransaktionHTML(w, transidnum)
 		fmt.Fprintf(w, "<p>\n")
 	}
 }
 
-func registreraFastTransaktion(w http.ResponseWriter, transid int) {
+func registreraFastTransaktion(transid int) {
+	log.Println("Läser ut fast transaktion#"+strconv.Itoa(transid))
+	if db == nil {
+		log.Println("registreraFastTransaktion: No database open")
+		return
+	}
+
+	// Retrieve repeating transaction
+	var res *sql.Rows
+	res, err := db.Query("SELECT FrånKonto,TillKonto,Belopp,Datum,HurOfta,Vad,Vem,Löpnr,Kontrollnr,TillDatum,Rakning FROM Överföringar WHERE Löpnr = ?", transid)
+	if err != nil {
+		log.Println("registreraFastTransaktion: SELECT ERROR")
+		log.Println(err)
+		return
+	}
+	
+	var FrånKonto []byte  // size 40
+	var TillKonto []byte  // size 40
+	var Belopp []byte  // BCD / Decimal Precision 19
+	var Datum []byte  // size 10
+	var HurOfta []byte  // size 15
+	var Vad []byte  // size 40
+	var Vem []byte  // size 40
+	var Löpnr []byte  // Autoinc Primary Key, index
+	var Kontrollnr []byte  // Integer
+	var TillDatum []byte  // size 10
+	var Rakning []byte  // size 1
+	
+	res.Next()
+	err = res.Scan(&FrånKonto, &TillKonto, &Belopp, &Datum, &HurOfta, &Vad, &Vem, &Löpnr, &Kontrollnr, &TillDatum, &Rakning)
+	if err != nil {
+		log.Println("registreraFastTransaktion: SCAN ERROR")
+		log.Println(err)
+		log.Println("registreraFastTransaktion: Bail out")
+		return
+	}
+
+	sqlStmt := ""
+	sqlStmt += "<tr><td>" + toUtf8(Löpnr) + "</td>"
+	sqlStmt += "<td>" + toUtf8(FrånKonto) + "</td>"
+	sqlStmt += "<td>" + toUtf8(TillKonto) + "</td>"
+	sqlStmt += "<td>" + toUtf8(Belopp) + "</td>"
+	sqlStmt += "<td>" + toUtf8(Datum) + "</td>"
+	sqlStmt += "<td>" + toUtf8(HurOfta) + "</td>"
+	sqlStmt += "<td>" + toUtf8(Vad) + "</td>"
+	sqlStmt += "<td>" + toUtf8(Vem) + "</td>"
+	sqlStmt += "<td>" + toUtf8(Kontrollnr) + "</td>"
+	sqlStmt += "<td>" + toUtf8(TillDatum) + "</td>"
+	sqlStmt += "<td>" + toUtf8(Rakning) + "</td>"
+	sqlStmt += "</tr>\n"
+
+	// Register transaction
+	if toUtf8(Vad) == "---" {
+		// Fasta överföringar
+		log.Println("Registrerar Överföring...")
+		
+		sqlStatement := `
+INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
+VALUES (?,?,?,?,?,?,?,?)`
+		_, err = db.Exec(sqlStatement, toUtf8(FrånKonto), toUtf8(TillKonto), "Överföring", toUtf8(Datum), "---", toUtf8(Vem), strings.ReplaceAll(toUtf8(Belopp), ".", ","), "Fast transaktion wHHEK")
+		if err != nil {
+			panic(err)
+		}
+	} else if toUtf8(FrånKonto) == "---" {
+		// Fasta inkomster
+		log.Println("Registrerar Insättning...")
+		
+		sqlStatement := `
+INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
+VALUES (?,?,?,?,?,?,?,?)`
+		_, err = db.Exec(sqlStatement, "---", toUtf8(TillKonto), "Insättning", toUtf8(Datum), toUtf8(Vad), toUtf8(Vem), strings.ReplaceAll(toUtf8(Belopp), ".", ","), "Fast transaktion wHHEK")
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		// Fasta utgifter
+		log.Println("Registrerar Fast Utgift...")
+		
+		sqlStatement := `
+INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
+VALUES (?,?,?,?,?,?,?,?)`
+		_, err = db.Exec(sqlStatement, toUtf8(FrånKonto), toUtf8(TillKonto), "Fast Utgift", toUtf8(Datum), toUtf8(Vad), toUtf8(Vem), strings.ReplaceAll(toUtf8(Belopp), ".", ","), "Fast transaktion wHHEK")
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	// Update repeating transaction
+	var newDatum string;
+	switch toUtf8(HurOfta) {
+        case "Varannan vecka":
+		newDatum = IncrDate(toUtf8(Datum), 2, 0)
+	case "1":
+		fallthrough
+	case "Varje månad":
+		newDatum = IncrDate(toUtf8(Datum), 0, 1)
+	case "2":
+		fallthrough
+	case "Varannan månad":
+		newDatum = IncrDate(toUtf8(Datum), 0, 2)
+	case "3":
+		fallthrough
+        case "Varje kvartal":
+		newDatum = IncrDate(toUtf8(Datum), 0, 3)
+	case "6":
+		fallthrough
+	case "Varje halvår":
+		newDatum = IncrDate(toUtf8(Datum), 0, 6)
+	case "12":
+		fallthrough
+	case "Varje år":
+		newDatum = IncrDate(toUtf8(Datum), 0, 12)
+	default:
+		log.Fatal("Okänd periodicitet: "+toUtf8(HurOfta))
+		os.Exit(2)
+	}
+	sqlStatement := `UPDATE Överföringar SET Datum = ? WHERE Löpnr = ?`
+	_, err = db.Exec(sqlStatement, newDatum, transid)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func registreraFastTransaktionHTML(w http.ResponseWriter, transid int) {
 	fmt.Fprintf(w, "Läser ut fast transaktion#"+strconv.Itoa(transid))
 	if db == nil {
 		fmt.Fprintf(w, "registreraFastTransaktion: No database open<p>\n")
@@ -304,7 +444,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 	fmt.Fprintf(w, "<p>\n")
 }
 
-func fixedtransaction(w http.ResponseWriter, req *http.Request) {
+func fixedtransactionHTML(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<html>\n")
 	fmt.Fprintf(w, "<head>\n")
 	fmt.Fprintf(w, "<style>\n")
@@ -339,4 +479,72 @@ func antalFastaTransaktioner() int {
 	}
 
 	return antal
+}
+
+func skapaFastUtgift(vad string, konto string, vem string, plats string, summa decimal.Decimal, datum string, periodisering bool, uppdaterabudget bool, action string, hurofta string) error {
+	if db == nil {
+		log.Fatal("skapaFastUtgift anropad med db=nil");
+		os.Exit(2);
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	_, err := db.ExecContext(ctx,
+		`INSERT INTO Överföringar (FrånKonto,TillKonto,Belopp,Datum,HurOfta, Vad, Vem, Kontrollnr, TillDatum, Rakning) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, konto, plats, summa, datum, hurofta, vad, vem, 1, "---", false)
+
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+
+	return err
+}
+
+func hämtaFastTransaktion(lopnr int) (result fixedtransaction) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var err error
+	var res *sql.Rows
+	
+	res, err = db.QueryContext(ctx, `SELECT FrånKonto,TillKonto,Belopp,Datum,HurOfta,Vad,Vem,Löpnr,Kontrollnr,TillDatum,Rakning FROM Överföringar
+  where Löpnr = ?`, lopnr)
+        if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+	
+	var FrånKonto []byte  // size 40
+	var TillKonto []byte  // size 40
+	var Belopp []byte  // BCD / Decimal Precision 19
+	var Datum []byte  // size 10
+	var HurOfta []byte  // size 15
+	var Vad []byte  // size 40
+	var Vem []byte  // size 40
+	var Löpnr []byte  // Autoinc Primary Key, index
+	var Kontrollnr int  // Integer
+	var TillDatum []byte  // size 10
+	var Rakning []byte  // size 1
+	
+	for res.Next() {
+		var record fixedtransaction
+		err = res.Scan(&FrånKonto, &TillKonto, &Belopp, &Datum, &HurOfta, &Vad, &Vem, &Löpnr, &Kontrollnr, &TillDatum, &Rakning)
+		
+		record.lopnr, err = strconv.Atoi(toUtf8(Löpnr))
+		record.vernum = Kontrollnr
+		record.fromAcc = toUtf8(FrånKonto)
+		record.toAcc = toUtf8(TillKonto)
+		record.what = toUtf8(Vad)
+		record.date, err = time.Parse("2006-01-02", toUtf8(Datum))
+		record.who = toUtf8(Vem)
+		record.amount, err = decimal.NewFromString(toUtf8(Belopp))
+		record.HurOfta = toUtf8(HurOfta)
+		record.rakning, err = strconv.ParseBool(toUtf8(Rakning))
+		if toUtf8(TillDatum) == "---" {
+			//record.todate = nil
+		} else {
+			record.todate, err = time.Parse("2006-01-02", toUtf8(TillDatum))
+		}
+		result = record
+	}
+	return result
 }

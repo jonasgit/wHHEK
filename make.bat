@@ -32,6 +32,13 @@ IF "%ARG1%"=="setup" (
   EXIT
 )
 
+IF "%ARG1%"=="clean" (
+  del *~
+  del #*#
+  del .#*
+  EXIT
+)
+
 IF "%ARG1%"=="test" (
   IF "%ARG2%"=="verbose" (
     SET BUILDCMD=test -p 1 -v
