@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -320,4 +321,22 @@ func fixedtransaction(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
 	fmt.Fprintf(w, "</body>\n")
 	fmt.Fprintf(w, "</html>\n")
+}
+
+func antalFastaTransaktioner() int {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	res1 := db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM Överföringar`)
+
+	var antal int
+
+	err := res1.Scan(&antal)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+
+	return antal
 }
