@@ -305,3 +305,53 @@ func hanteraBudget(w http.ResponseWriter, req *http.Request) {
 	printBudget(w, db)
 	printBudgetFooter(w, db)
 }
+
+func antalBudgetposter(db *sql.DB) int {
+	if db == nil {
+		log.Println("antalBudgetposter db=nil")
+	}
+	
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	res1 := db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM Budget`)
+
+	var antal int
+
+	err := res1.Scan(&antal)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+
+	return antal
+}
+
+func getAllBudgetposter(db *sql.DB) []([2]string) {
+	if db == nil {
+		log.Println("getAllBudgetposter db=nil")
+	}
+	
+	res, err := db.Query("SELECT Typ,Inkomst FROM Budget ORDER BY Inkomst ASC, Typ ASC")
+
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+
+	var Typ []byte  // size 40
+	var Inkomst []byte  // size 1
+
+	var result []([2]string)
+	for res.Next() {
+		var record [2]string
+
+		err = res.Scan(&Typ,&Inkomst)
+
+		record[0] = toUtf8(Typ)
+		record[1] = toUtf8(Inkomst)
+		result = append(result, record)
+	}
+	return result
+}
