@@ -35,6 +35,30 @@ func TestFastTransaktionTomMDB1(t *testing.T) {
 	closeDB()
 }
 
+func compareDates(t *testing.T, t1 time.Time, t2 time.Time) bool {
+	/*	t.Log("t1.Year: ", t1.Year())
+	t.Log("t1.Month: ", int(t1.Month()))
+	t.Log("t1.Day: ", t1.Day())
+	t.Log("t2.Year: ", t2.Year())
+	t.Log("t2.Month: ", int(t2.Month()))
+	t.Log("t2.Day: ", t2.Day())*/
+	
+	if t1.Year() != t2.Year() {
+		//t.Log("False")
+		return false
+	}
+	if int(t1.Month()) != int(t2.Month()) {
+		//t.Log("False")
+		return false
+	}
+	if t1.Day() != t2.Day() {
+		//t.Log("False")
+		return false
+	}
+	t.Log("True")
+	return true
+}
+
 func TestFastTransaktionTomMDB2(t *testing.T) {
 	// Förbered test
 	fasttransaktionInit(t, "ftrt2")
@@ -48,7 +72,6 @@ func TestFastTransaktionTomMDB2(t *testing.T) {
 	}
 
 	// Denna testen: Fast utgift, månadsvis, testa datum slut på månad
-
 	// Skapa ny fast transaktion, datum 2021-01-31, månadsvis
 	summa := decimal.NewFromInt(1)
 
@@ -78,10 +101,10 @@ func TestFastTransaktionTomMDB2(t *testing.T) {
 	// Kontrollera resultatet, nästa datum = 2021-02-28
 	ft := hämtaFastTransaktion(1)
 	expectedDate, _ := time.Parse("2006-01-02", "2021-02-28")
-	if ft.date != expectedDate {
-		t.Error("Förväntat datum 2021-02-28 != ", ft.date)
-	} else {
+	if compareDates(t, ft.date, expectedDate) {
 		t.Log("Förväntat datum ok (2021-02-28).")
+	} else {
+		t.Error("Förväntat datum 2021-02-28 != ", ft.date)
 	}
 	// Registrera denna 1 gång
 	registreraFastTransaktion(1)
@@ -101,11 +124,99 @@ func TestFastTransaktionTomMDB2(t *testing.T) {
 	} else {
 		t.Log("Antal transaktioner ok (3).")
 	}
-	expectedDate, _ = time.Parse("2006-01-02", "2021-03-28")
-	if ft.date != expectedDate {
-		t.Error("Förväntat datum 2021-02-28 != ", ft.date)
+	expectedDate, _ = time.Parse("2006-01-02", "2021-04-28")
+	ft = hämtaFastTransaktion(1)
+	if compareDates(t, ft.date, expectedDate) {
+		t.Log("Förväntat datum ok (2021-04-28).")
 	} else {
+		t.Error("Förväntat datum 2021-04-28 != ", ft.date)
+	}
+
+	currentTime := time.Now()
+	currDate := currentTime.Format("2006-01-02")
+	_, totSaldo := saldonKonto("Plånboken", currDate)
+	expSaldo := decimal.NewFromInt(-3)
+	if totSaldo.Equal(expSaldo) {
+		t.Log("Förväntat saldo ok (-3,00).")
+	} else {
+		t.Error("Förväntat saldo -3,00 != ", totSaldo, expSaldo)
+	}
+
+	closeDB()
+}
+
+func TestFastTransaktionTomMDB3(t *testing.T) {
+	// Förbered test
+	fasttransaktionInit(t, "ftrt3")
+	skapaPlats("Mack", "", false, "")
+
+	antal := antalTransaktioner()
+	if antal != 0 {
+		t.Error("Antal transaktioner != (0).")
+	} else {
+		t.Log("Antal transaktioner ok (0).")
+	}
+
+	// Denna testen: Fast utgift, kvartalsvis, testa datum slut på månad
+
+	// Skapa ny fast transaktion, datum 2020-11-30, kvartalsvis
+	summa := decimal.NewFromInt(1)
+
+	skapaFastUtgift("Bil", "Plånboken", "Gemensamt", "Mack", summa, "2020-11-30", false, false, "registrera", "Varje kvartal")
+
+	antal = antalFastaTransaktioner()
+	if antal != 1 {
+		t.Error("Antal fasta transaktioner != (1).")
+	} else {
+		t.Log("Antal fasta transaktioner ok (1).")
+	}
+	
+	// Registrera denna 1 gång
+	registreraFastTransaktion(1)
+	antal = antalFastaTransaktioner()
+	if antal != 1 {
+		t.Error("Antal fasta transaktioner != (1).")
+	} else {
+		t.Log("Antal fasta transaktioner ok (1).")
+	}
+	antal = antalTransaktioner()
+	if antal != 1 {
+		t.Error("Antal transaktioner != (1).")
+	} else {
+		t.Log("Antal transaktioner ok (1).")
+	}
+	// Kontrollera resultatet, nästa datum = 2021-02-28
+	ft := hämtaFastTransaktion(1)
+	expectedDate, _ := time.Parse("2006-01-02", "2021-02-28")
+	if compareDates(t, ft.date, expectedDate) {
 		t.Log("Förväntat datum ok (2021-02-28).")
+	} else {
+		t.Error("Förväntat datum 2021-02-28 != ", ft.date)
+	}
+	// Registrera denna 1 gång
+	registreraFastTransaktion(1)
+	antal = antalTransaktioner()
+	if antal != 2 {
+		t.Error("Antal transaktioner != (2).")
+	} else {
+		t.Log("Antal transaktioner ok (2).")
+	}
+	// Kontrollera resultatet, nästa datum = 2021-05-28
+	// Registrera denna 1 gång
+	registreraFastTransaktion(1)
+	antal = antalTransaktioner()
+	// Kontrollera resultatet, datum = 2021-05-28, saldo -3kr
+	if antal != 3 {
+		t.Error("Antal transaktioner != (3).")
+	} else {
+		t.Log("Antal transaktioner ok (3).")
+	}
+	expectedDate, _ = time.Parse("2006-01-02", "2021-08-28")
+	ft = hämtaFastTransaktion(1)
+	if compareDates(t, ft.date, expectedDate) {
+		t.Log("Förväntat datum ok (2021-08-28).")
+	} else {
+		t.Error("Förväntat datum 2021-08-28 != ", ft.date)
 	}
 
 	currentTime := time.Now()

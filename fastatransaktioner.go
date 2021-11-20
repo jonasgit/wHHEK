@@ -38,9 +38,9 @@ func CurrDate() string {
 }
 
 func IncrDate(datum string, veckor int, månader int) string {
-	fmt.Println("IncrDate datum:", datum)
+	/* fmt.Println("IncrDate datum:", datum)
 	fmt.Println("IncrDate veckor:", veckor)
-	fmt.Println("IncrDate månader:", månader)
+	fmt.Println("IncrDate månader:", månader) */
 
 	year, _ := strconv.Atoi(datum[0:4])
 	var month time.Month
@@ -60,13 +60,38 @@ func IncrDate(datum string, veckor int, månader int) string {
 	case 12: month = time.December
 	}
 	day, _ := strconv.Atoi(datum[8:10])
-	t := time.Date(year, month, day, 12, 0, 0, 0, time.Local) // Note: should be CET
-	fmt.Println("IncrDate t.year:", t.Year())
+	location, err := time.LoadLocation("CET")
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+	t := time.Date(year, month, day, 12, 0, 0, 0, location)
+	/* fmt.Println("IncrDate t.year:", t.Year())
 	fmt.Println("IncrDate t.month:", t.Month())
-	fmt.Println("IncrDate t.day:", t.Day())
+	fmt.Println("IncrDate t.day:", t.Day()) */
 	nytt := t.AddDate(0, månader, veckor*7)
+	//fix date at end of month spilling over to next month
+	if månader != 0  {
+		if veckor != 0 {
+			log.Fatal("Inte tillåtet med både veckor och månader")
+			os.Exit(2)
+		}
+		if nytt.Day() != day {
+			nytt = BeginningOfMonth(nytt)
+			nytt = nytt.AddDate(0, 0, -1)
+		}
+	}
+	
 	fmt.Println("IncrDate nytt datum:", nytt.Format("2006-01-02"))
 	return nytt.Format("2006-01-02")
+}
+
+func BeginningOfMonth(date time.Time)  (time.Time) {
+    return date.AddDate(0, 0, -date.Day() + 1)
+}
+
+func EndOfMonth(date time.Time) (time.Time) {
+    return date.AddDate(0, 1, -date.Day())
 }
 
 func showFastaTransaktioner(w http.ResponseWriter, req *http.Request) {
