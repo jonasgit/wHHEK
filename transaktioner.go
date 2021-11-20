@@ -447,16 +447,15 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 	amountstr = strings.ReplaceAll(amountstr, ".", ",")
 	amount, err := decimal.NewFromString(amountstr)
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(2)
+		log.Println("OK: addtransaction, trasig/saknar amount ", amountstr, err)
 	}
 
 	text := req.FormValue("text")
-	fmt.Println("Val: ", transtyp)
-	fmt.Println("Val: ", date)
-	fmt.Println("Val: ", who)
-	fmt.Println("Val: ", amount)
-	fmt.Println("Val: ", text)
+	fmt.Println("Val tt: ", transtyp)
+	fmt.Println("Val d: ", date)
+	fmt.Println("Val w: ", who)
+	fmt.Println("Val a: ", amount)
+	fmt.Println("Val t: ", text)
 
 	if transtyp == "Inköp" {
 		fromacc := req.FormValue("fromacc")
