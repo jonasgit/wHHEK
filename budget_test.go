@@ -19,7 +19,10 @@ func budgetInit(t *testing.T, filnamn string) {
 
 func TestBudgetTomMDB1(t *testing.T) {
 	budgetInit(t, "bdg1")
-	
+	if db == nil {
+ 		t.Fatal("Ingen databas.")
+	}
+
 	// Denna testen
 	antal := antalBudgetposter(db)
 	

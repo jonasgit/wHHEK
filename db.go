@@ -53,15 +53,10 @@ func SkapaTomDB(filename string) {
 	}
 	
 	// Create file
-	openSqlite(filename)
-        db, err := sql.Open("sqlite3", filename)
- 	if err != nil {
-		fmt.Println("Failed to create file. ", err)
-	} else {
-		fmt.Println("SkapTomDB file created. OK.")
-	}
+	db = openSqlite(filename)
+
  	if db == nil {
-		fmt.Println("Failed to create database. ", err)
+		fmt.Println("Failed to create database. ")
 	} else {
 		fmt.Println("SkapTomDB database created. OK.")
 	}
@@ -70,6 +65,12 @@ func SkapaTomDB(filename string) {
 }
 
 func InitiateDB(db *sql.DB) {
+ 	if db == nil {
+		fmt.Println("InitiateDB: No DB.")
+		return
+	}
+	fmt.Println("InitiateDB: Started.")
+
 	sqlStmt := `
   create table Personer (Löpnr integer not null primary key AUTOINCREMENT, Namn text, Född INTEGER, Kön text);
   delete from Personer;
@@ -226,10 +227,17 @@ func InitiateDB(db *sql.DB) {
 	/* Data for table Transaktioner */
 	
 	/* Data for table Överföringar */
+	
+	fmt.Println("InitiateDB: Done.")
 }
 
 func InsertRow(sqlStmt string) {
-	_, err := db.Exec(sqlStmt)
+ 	if db == nil {
+		fmt.Println("InsertRow: No DB.")
+		return
+	}
+
+        _, err := db.Exec(sqlStmt)
 	if err != nil {
 		log.Printf("%q: %s\n", err, sqlStmt)
 		return
