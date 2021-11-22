@@ -392,8 +392,14 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 
 func addTransaktionInsättning(toacc string, date string , what string, who string, summa decimal.Decimal, text string) {
 	var transtyp string = "Insättning"
-        var amount string = summa.String()
-	
+        var amount string = "NONE"
+
+	if JetDBSupport {
+           amount = strings.ReplaceAll(summa.String(), ".", ",")
+	} else {
+           amount = summa.String()
+	}
+ 	log.Println("ny insättning: ", toacc, date, amount, text)
 	// TODO: Check length of "text"
 	// TODO: Check date format
 	// TODO: Check toacc valid
@@ -403,18 +409,26 @@ func addTransaktionInsättning(toacc string, date string , what string, who stri
 	sqlStatement := `
 INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
 VALUES (?,?,?,?,?,?,?,?)`
-	_, err := db.Exec(sqlStatement, "---", toacc, transtyp, date, what, who, strings.ReplaceAll(amount, ".", ","), text)
+	_, err := db.Exec(sqlStatement, "---", toacc, transtyp, date, what, who, amount, text)
 	if err != nil {
 		panic(err)
 	}
 
-        saldo := saldoKonto(toacc, "")
+        saldo := saldoKonto(db, toacc, "")
+ 	log.Println("nytt saldo: ", toacc, saldo)
 	updateKontoSaldo(toacc, saldo.String())
 }
 
 func addTransaktionInköp(fromacc string, place string, date string , what string, who string, summa decimal.Decimal, text string) {
 	var transtyp string = "Inköp"
-        var amount string = summa.String()
+        var amount string = "NONE"
+
+	if JetDBSupport {
+           amount = strings.ReplaceAll(summa.String(), ".", ",")
+	} else {
+           amount = summa.String()
+	}
+ 	log.Println("nytt inköp: ", fromacc, date, amount)
 	
 	// TODO: Check length of "text"
 	// TODO: Check date format
@@ -425,12 +439,12 @@ func addTransaktionInköp(fromacc string, place string, date string , what strin
 	sqlStatement := `
 INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
 VALUES (?,?,?,?,?,?,?,?)`
-	_, err := db.Exec(sqlStatement, fromacc, place, transtyp, date, what, who, strings.ReplaceAll(amount, ".", ","), text)
+	_, err := db.Exec(sqlStatement, fromacc, place, transtyp, date, what, who, amount, text)
 	if err != nil {
 		panic(err)
 	}
 
-        saldo := saldoKonto(fromacc, "")
+        saldo := saldoKonto(db, fromacc, "")
 	updateKontoSaldo(fromacc, saldo.String())
 }
 
@@ -678,7 +692,7 @@ func updateTransaction(w http.ResponseWriter, lopnr int, req *http.Request, db *
 	fmt.Fprintf(w, "Transaktion %d uppdaterad.<br>", lopnr)
 }
 
-func antalTransaktioner() int {
+func antalTransaktioner(db *sql.DB) int {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

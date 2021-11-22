@@ -124,7 +124,7 @@ func addformPerson(w http.ResponseWriter, db *sql.DB) {
 	fmt.Fprintf(w, "<p>\n")
 }
 
-func skapaPerson(namn string, birth int, sex string) error {
+func skapaPerson(db *sql.DB, namn string, birth int, sex string) error {
 	if db == nil {
 		log.Fatal("skapaPerson anropad med db=nil");
 		os.Exit(2);
@@ -150,7 +150,7 @@ func addPerson(w http.ResponseWriter, namn string, birth string, sex string, db 
 		fmt.Fprintf(w, "Person ej tillagd, felaktigt födelseår.<br>")
 	}
 	
-	err = skapaPerson(namn, birthint, sex)
+	err = skapaPerson(db, namn, birthint, sex)
 
 	if err != nil {
 		log.Fatal(err)
@@ -258,7 +258,7 @@ func getPersonNames() []string {
 	return names
 }
 
-func antalPersoner() int {
+func antalPersoner(db *sql.DB) int {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

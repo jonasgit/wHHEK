@@ -1,25 +1,37 @@
 package main
 
 import (
+	"database/sql"
 	"strconv"
 	"testing"
 	
 	"github.com/shopspring/decimal"  // MIT License
 )
 
-func kontonInit(t *testing.T) {
+func kontonInit(t *testing.T, filnamn string) *sql.DB {
 	// Förberedelser
-	var filename string = "gotestk.mdb"
 	
-	SkapaTomMDB(t, filename)
-	db = openJetDB(filename, false)
+ 	if JetDBSupport {
+	      	var filename string = "got"+filnamn+".mdb"
+	        t.Log("Jet Supported.")
+
+		SkapaTomMDB(t, filename)
+		db = openJetDB(filename, false)
+	} else {
+	      	var filename string = "got"+filnamn+".db"
+	        t.Log("Jet NOT Supported.")
+		SkapaTomDB(filename)
+		db = openSqlite(filename)
+	}
+
 	if db == nil {
  		t.Fatal("Ingen databas.")
 	}
+	return db
 }
 
-func TestKontoTomMDB1(t *testing.T) {
-	kontonInit(t)
+func TestKontoTomDB1(t *testing.T) {
+	db := kontonInit(t, "kon1")
 	
 	// Denna testen
 	antal := antalKonton()
@@ -29,7 +41,7 @@ func TestKontoTomMDB1(t *testing.T) {
 	} else {
 		t.Log("Antal konton ok.")
 	}
-	konto := hämtaKonto(1)
+	konto := hämtaKonto(db, 1)
 	
 	if konto.Benämning != "Plånboken" {
 		t.Error("Kontonamn '"+"Plånboken"+"' != '"+konto.Benämning+"'.")
@@ -63,8 +75,8 @@ func TestKontoTomMDB1(t *testing.T) {
 	closeDB()
 }
 
-func TestKontoMDB1(t *testing.T) {
-	kontonInit(t)
+func TestKontoDB1(t *testing.T) {
+	db := kontonInit(t, "kon2")
 	
 	// Denna testen
 	startsaldo, err := decimal.NewFromString("0.0")
@@ -83,8 +95,8 @@ func TestKontoMDB1(t *testing.T) {
 	closeDB()
 }
 
-func TestKontoMDB2(t *testing.T) {
-	kontonInit(t)
+func TestKontoDB2(t *testing.T) {
+	db := kontonInit(t, "kon3")
 	
 	// Denna testen
 	startsaldo, err := decimal.NewFromString("0.0")
@@ -114,8 +126,8 @@ func TestKontoMDB2(t *testing.T) {
 	closeDB()
 }
 
-func TestKontoMDB3(t *testing.T) {
-	kontonInit(t)
+func TestKontoDB3(t *testing.T) {
+	db := kontonInit(t, "kon4")
 	
 	// Denna testen
 	namn := "Tom € Räksmörgås"
@@ -127,7 +139,7 @@ func TestKontoMDB3(t *testing.T) {
 	startmånad := "Apr"
 	addKonto(namn, startsaldo, startmånad, db)
 	
-	konto := hämtaKonto(2)
+	konto := hämtaKonto(db, 2)
 	
 	if konto.Benämning != namn {
 		t.Error("Kontonamn '"+namn+"' != '"+konto.Benämning+"'.")
@@ -158,8 +170,8 @@ func TestKontoMDB3(t *testing.T) {
 	closeDB()
 }
 
-func TestKontoMDB4(t *testing.T) {
-	kontonInit(t)
+func TestKontoDB4(t *testing.T) {
+	db := kontonInit(t, "kon5")
 	
 	// Denna testen
 	namn := "Tom € Räksmörgås"
@@ -171,7 +183,7 @@ func TestKontoMDB4(t *testing.T) {
 	startmånad := "Apr"
 	addKonto(namn, startsaldo, startmånad, db)
 	
-	kontoid := hämtakontoID("Plånboken")
+	kontoid := hämtakontoID(db, "Plånboken")
 	
 	if kontoid != 1 {
 		t.Error("Kontoid '"+"1"+"' != '"+strconv.Itoa(kontoid)+"'.")
@@ -179,7 +191,7 @@ func TestKontoMDB4(t *testing.T) {
 		t.Log("Test id 1 ok.")
 	}
 	
-	kontoid = hämtakontoID(namn)
+	kontoid = hämtakontoID(db, namn)
 	
 	if kontoid != 2 {
 		t.Error("Kontoid '"+"1"+"' != '"+strconv.Itoa(kontoid)+"'.")

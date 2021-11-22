@@ -4,7 +4,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"os"
 	
@@ -44,21 +43,21 @@ func SkapaTomDB(filename string) {
 		// Delete file
 		err := os.Remove(filename)
 		if err != nil {
-			fmt.Println("Failed to remove file. ", err)
+			log.Println("Failed to remove file. ", err)
 		} else {
-			fmt.Println("SkapaTomDB file removed. OK.")
+			log.Println("SkapaTomDB file removed. OK.")
 		}
 	} else {
-		fmt.Println("SkapaTomDB file did not exist. OK.")
+		log.Println("SkapaTomDB file did not exist. OK.")
 	}
 	
 	// Create file
 	db = openSqlite(filename)
 
  	if db == nil {
-		fmt.Println("Failed to create database. ")
+		log.Println("Failed to create database. ")
 	} else {
-		fmt.Println("SkapTomDB database created. OK.")
+		log.Println("SkapTomDB database created. OK.")
 	}
 
 	InitiateDB(db)
@@ -66,10 +65,10 @@ func SkapaTomDB(filename string) {
 
 func InitiateDB(db *sql.DB) {
  	if db == nil {
-		fmt.Println("InitiateDB: No DB.")
+		log.Println("InitiateDB: No DB.")
 		return
 	}
-	fmt.Println("InitiateDB: Started.")
+	log.Println("InitiateDB: Started.")
 
 	sqlStmt := `
   create table Personer (Löpnr integer not null primary key AUTOINCREMENT, Namn text, Född INTEGER, Kön text);
@@ -228,12 +227,12 @@ func InitiateDB(db *sql.DB) {
 	
 	/* Data for table Överföringar */
 	
-	fmt.Println("InitiateDB: Done.")
+	log.Println("InitiateDB: Done.")
 }
 
 func InsertRow(sqlStmt string) {
  	if db == nil {
-		fmt.Println("InsertRow: No DB.")
+		log.Println("InsertRow: No DB.")
 		return
 	}
 

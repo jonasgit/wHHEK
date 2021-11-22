@@ -3,18 +3,29 @@
 package main
 
 import (
+	"database/sql"
 	"testing"
 )
 
-func budgetInit(t *testing.T, filnamn string) {
+func budgetInit(t *testing.T, filnamn string) *sql.DB {
 	// Förberedelser
-	var filename string = "got"+filnamn+".mdb"
+	if JetDBSupport {
+	        t.Log("Jet Supported.")
+		var filename string = "got"+filnamn+".mdb"
+		SkapaTomMDB(t, filename)
+		db = openJetDB(filename, false)
+	} else {
+	        t.Log("Jet NOT Supported.")
+		var filename string = "got"+filnamn+".db"
+		SkapaTomDB(filename)
+		db = openSqlite(filename)
+	}
 	
-	SkapaTomMDB(t, filename)
-	db = openJetDB(filename, false)
 	if db == nil {
  		t.Fatal("Ingen databas.")
 	}
+
+	return db
 }
 
 func TestBudgetTomMDB1(t *testing.T) {

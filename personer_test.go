@@ -3,26 +3,37 @@
 package main
 
 import (
+	"database/sql"
 	"testing"
 	"strconv"
 )
 
-func personerInit(t *testing.T) {
+func personerInit(t *testing.T, filnamn string) *sql.DB {
 	// Förberedelser
-	var filename string = "gotestp.mdb"
-	
-	SkapaTomMDB(t, filename)
-	db = openJetDB(filename, false)
+ 	if JetDBSupport {
+	      	var filename string = "got"+filnamn+".mdb"
+	        t.Log("Jet Supported.")
+
+		SkapaTomMDB(t, filename)
+		db = openJetDB(filename, false)
+	} else {
+	      	var filename string = "got"+filnamn+".db"
+	        t.Log("Jet NOT Supported.")
+		SkapaTomDB(filename)
+		db = openSqlite(filename)
+	}
+
 	if db == nil {
  		t.Fatal("Ingen databas.")
 	}
+	return db
 }
 
-func TestPersonTomMDB1(t *testing.T) {
-	personerInit(t)
+func TestPersonTomDB1(t *testing.T) {
+	db = personerInit(t, "prs1")
 	
 	// Denna testen
-	antal := antalPersoner()
+	antal := antalPersoner(db)
 	
 	if antal != 1 {
 		t.Error("Antal personer != 1.")
@@ -52,13 +63,13 @@ func TestPersonTomMDB1(t *testing.T) {
 	closeDB()
 }
 
-func TestPersonMDB1(t *testing.T) {
-	personerInit(t)
+func TestPersonDB1(t *testing.T) {
+	db = personerInit(t, "prs2")
 	
 	// Denna testen
-	skapaPerson("Namn Person", 1994, "Man")
+	skapaPerson(db, "Namn Person", 1994, "Man")
 	
-	antal := antalPersoner()
+	antal := antalPersoner(db)
 	
 	if antal != 2 {
 		t.Error("Antal personer != (1+1).")
@@ -68,16 +79,16 @@ func TestPersonMDB1(t *testing.T) {
 	closeDB()
 }
 
-func TestPersonMDB2(t *testing.T) {
-	personerInit(t)
+func TestPersonDB2(t *testing.T) {
+	db = personerInit(t, "prs3")
 	
 	// Denna testen
-	skapaPerson("Namn Person", 1994, "Man")
-	skapaPerson("Namn Person", 1996, "Kvinna")
-	skapaPerson("Namn Person", 2004, "Man")
-	skapaPerson("Namn Person", 2006, "Kvinna")
+	skapaPerson(db, "Namn Person", 1994, "Man")
+	skapaPerson(db, "Namn Person", 1996, "Kvinna")
+	skapaPerson(db, "Namn Person", 2004, "Man")
+	skapaPerson(db, "Namn Person", 2006, "Kvinna")
 	
-	antal := antalPersoner()
+	antal := antalPersoner(db)
 	
 	if antal != 5 {
 		t.Error("Antal personer != (1+4).")
@@ -87,14 +98,14 @@ func TestPersonMDB2(t *testing.T) {
 	closeDB()
 }
 
-func TestPersonMDB3(t *testing.T) {
-	personerInit(t)
+func TestPersonDB3(t *testing.T) {
+	db = personerInit(t, "prs4")
 	
 	// Denna testen
 	namn := "Tom € Räksmörgås"
 	birth := 1999
 	sex := "Man"
-	skapaPerson(namn, birth, sex)
+	skapaPerson(db, namn, birth, sex)
 	
 	person := hämtaPerson(2)
 	
@@ -118,7 +129,7 @@ func TestPersonMDB3(t *testing.T) {
 	namn  = "** \"\" ');  **"  // Note: ' ej tillåtet enligt HH
 	birth = 2000
 	sex   = "Kvinna"
-	skapaPerson(namn, birth, sex)
+	skapaPerson(db, namn, birth, sex)
 	
 	person = hämtaPerson(3)
 	

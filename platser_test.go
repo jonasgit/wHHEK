@@ -3,26 +3,36 @@
 package main
 
 import (
+	"database/sql"
 	"strconv"
 	"testing"
 )
 
-func platserInit(t *testing.T) {
+func platserInit(t *testing.T, filnamn string) *sql.DB {
 	// Förberedelser
-	var filename string = "gotestpl.mdb"
-	
-	SkapaTomMDB(t, filename)
-	db = openJetDB(filename, false)
+	if JetDBSupport {
+	        t.Log("Jet Supported.")
+		var filename string = "got"+filnamn+".mdb"
+		SkapaTomMDB(t, filename)
+		db = openJetDB(filename, false)
+	} else {
+	        t.Log("Jet NOT Supported.")
+		var filename string = "got"+filnamn+".db"
+		SkapaTomDB(filename)
+		db = openSqlite(filename)
+	}
+
 	if db == nil {
  		t.Fatal("Ingen databas.")
 	}
+	return db
 }
 
-func TestPlatserTomMDB1(t *testing.T) {
-	platserInit(t)
+func TestPlatserTomDB1(t *testing.T) {
+	db = platserInit(t, "pl1")
 	
 	// Denna testen
-	antal := antalPlatser()
+	antal := antalPlatser(db)
 	
 	if antal != 0 {
 		t.Error("Antal platser != 0.")
@@ -32,13 +42,13 @@ func TestPlatserTomMDB1(t *testing.T) {
 	closeDB()
 }
 
-func TestPlatserMDB1(t *testing.T) {
-	platserInit(t)
+func TestPlatserDB1(t *testing.T) {
+	db = platserInit(t, "pl2")
 	
 	// Denna testen
-	skapaPlats("Platsnamnet", "12345-7", false, "")
+	skapaPlats(db, "Platsnamnet", "12345-7", false, "")
 	
-	antal := antalPlatser()
+	antal := antalPlatser(db)
 	
 	if antal != 1 {
 		t.Error("Antal platser != 1.")
@@ -48,16 +58,16 @@ func TestPlatserMDB1(t *testing.T) {
 	closeDB()
 }
 
-func TestPlatserMDB2(t *testing.T) {
-	platserInit(t)
+func TestPlatserDB2(t *testing.T) {
+	db = platserInit(t, "pl3")
 	
 	// Denna testen
-	skapaPlats("Platsnamn1", "12345-7", false, "")
-	skapaPlats("Platsnamn2", "", false, "")
-	skapaPlats("Platsnamn3", "", false, "")
-	skapaPlats("Platsnamn4", "12345-7", true, "")
+	skapaPlats(db, "Platsnamn1", "12345-7", false, "")
+	skapaPlats(db, "Platsnamn2", "", false, "")
+	skapaPlats(db, "Platsnamn3", "", false, "")
+	skapaPlats(db, "Platsnamn4", "12345-7", true, "")
 	
-	antal := antalPlatser()
+	antal := antalPlatser(db)
 	
 	if antal != 4 {
 		t.Error("Antal platser != 4.")
@@ -67,16 +77,16 @@ func TestPlatserMDB2(t *testing.T) {
 	closeDB()
 }
 
-func TestPlatserMDB3(t *testing.T) {
-	platserInit(t)
+func TestPlatserDB3(t *testing.T) {
+	db = platserInit(t, "pl4")
 	
 	// Denna testen
 	namn := "Tom € Räksmörgås"
 	gironummer := "12345-7"
 	kontokort := false
-	skapaPlats(namn, gironummer, kontokort, "")
+	skapaPlats(db, namn, gironummer, kontokort, "")
 	
-	plats := hämtaPlats(1)
+	plats := hämtaPlats(db, 1)
 	
 	if plats.Namn != namn {
 		t.Error("Platsnamn '"+namn+"' != '"+plats.Namn+"'.")
@@ -97,9 +107,9 @@ func TestPlatserMDB3(t *testing.T) {
 	namn = "Tom2 € Räksmörgås"
 	gironummer = " "
 	kontokort = false
-	skapaPlats(namn, gironummer, kontokort, "")
+	skapaPlats(db, namn, gironummer, kontokort, "")
 	
-	plats = hämtaPlats(2)
+	plats = hämtaPlats(db, 2)
 	
 	if plats.Namn != namn {
 		t.Error("Platsnamn '"+namn+"' != '"+plats.Namn+"'.")
@@ -120,17 +130,17 @@ func TestPlatserMDB3(t *testing.T) {
 	closeDB()
 }
 
-func TestPlatserMDB4(t *testing.T) {
-	platserInit(t)
+func TestPlatserDB4(t *testing.T) {
+	db = platserInit(t, "pl5")
 	
 	// Denna testen
 	namn := "Tom € Räksmörgås"
 	gironummer := "12345-7"
 	kontokort := false
-	skapaPlats(namn, gironummer, kontokort, "")
+	skapaPlats(db, namn, gironummer, kontokort, "")
 	// TODO: skapaPlats(namn, gironummer, kontokort, "") // This should fail and report error due to duplicated name
 	
-	antal := antalPlatser()
+	antal := antalPlatser(db)
 	
 	if antal != 1 {
 		t.Error("Antal platser != 1.")

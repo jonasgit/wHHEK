@@ -236,13 +236,19 @@ func int2man(month int) string {
 }
 
 func addKonto(Benamning string, StartSaldo decimal.Decimal, StartManad string, db *sql.DB) {
-	//fmt.Println("addKonto namn: ", Benamning)
+	log.Println("addKonto namn: ", Benamning, StartSaldo)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	var startSaldo = "Not Possible"
 	//StartMan, _ := strconv.Atoi(StartManad)
-	startSaldo := strings.ReplaceAll(StartSaldo.String(), ".", ",")
+ 	if JetDBSupport {
+		startSaldo = strings.ReplaceAll(StartSaldo.String(), ".", ",")
+	} else {
+		startSaldo = StartSaldo.String()
+	}
+	
 	_, err := db.ExecContext(ctx,
 		`INSERT INTO Konton(KontoNummer,Benämning,Saldo,StartSaldo,SaldoArsskifte,StartManad,ArsskifteManad) VALUES (?, ?, ?, ?, ?, ?, ?)`, 0, Benamning, startSaldo, startSaldo, startSaldo, StartManad, StartManad)
 
@@ -282,20 +288,26 @@ func updateKonto(w http.ResponseWriter, lopnr int, Benamning string, StartSaldo 
 }
 
 func updateKontoSaldo(Benamning string, Saldo string) {
-	lopnr := hämtakontoID(Benamning)
+	lopnr := hämtakontoID(db, Benamning)
 	//fmt.Println("updateKontoSaldo lopnr: ", lopnr)
+	var amount string
+	if JetDBSupport {
+           amount = strings.ReplaceAll(Saldo, ".", ",")
+	} else {
+           amount = Saldo
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	_, err := db.ExecContext(ctx,
-		`UPDATE Konton SET Saldo = ? WHERE (Löpnr=?)`, strings.ReplaceAll(Saldo, ".", ","), lopnr)
+		`UPDATE Konton SET Saldo = ? WHERE (Löpnr=?)`, amount, lopnr)
 
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(2)
 	}
-	//fmt.Println("Konto uppdaterad, nytt saldo.", Benamning, Saldo)
+	//fmt.Println("Konto uppdaterad, nytt saldo.", Benamning, amount)
 }
 
 func hanterakonton(w http.ResponseWriter, req *http.Request) {
@@ -399,7 +411,7 @@ func antalKonton() int {
 	return antal
 }
 
-func hämtakontoID(accName string) int {
+func hämtakontoID(db *sql.DB, accName string) int {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	
@@ -417,7 +429,7 @@ func hämtakontoID(accName string) int {
 	return Löpnr
 }
 
-func hämtaKonto(lopnr int) konto {
+func hämtaKonto(db *sql.DB, lopnr int) konto {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -451,7 +463,7 @@ func hämtaKonto(lopnr int) konto {
 	return retkonto
 }
 
-func saldoKonto(accName string, endDate string) decimal.Decimal{
+func saldoKonto(db *sql.DB, accName string, endDate string) decimal.Decimal{
 	//	fmt.Println("saldoKonto: accName ", accName)
 	if endDate == "" {
 		endDate = "2999-12-31"
@@ -527,7 +539,7 @@ order by datum,löpnr`, endDate, accName, accName)
 	return currSaldo
 }
 
-func saldonKonto(accName string, endDate string) (decimal.Decimal,decimal.Decimal){
+func saldonKonto(db *sql.DB, accName string, endDate string) (decimal.Decimal,decimal.Decimal){
 	//fmt.Println("saldoKonto: accName ", accName)
 	//fmt.Println("saldoKonto: endDate ", endDate)
 	

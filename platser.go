@@ -19,7 +19,7 @@ type Plats struct {
 	RefKonto string  // size, != 0 betyder kontokortsföretag
 }
 
-func antalPlatser() int {
+func antalPlatser(db *sql.DB) int {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -37,7 +37,7 @@ func antalPlatser() int {
 	return antal
 }
 
-func hämtaPlats(lopnr int) Plats {
+func hämtaPlats(db *sql.DB, lopnr int) Plats {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -196,7 +196,7 @@ func addformPlats(w http.ResponseWriter, db *sql.DB) {
 	fmt.Fprintf(w, "<p>\n")
 }
 
-func skapaPlats(namn string, gironum string, acctype bool, refacc string) error {
+func skapaPlats(db *sql.DB, namn string, gironum string, acctype bool, refacc string) error {
 	if db == nil {
 		log.Fatal("skapaPlats anropad med db=nil");
 		os.Exit(2);
@@ -227,7 +227,7 @@ func skapaPlats(namn string, gironum string, acctype bool, refacc string) error 
 func addPlats(w http.ResponseWriter, namn string, gironum string, acctype bool, refacc string, db *sql.DB) {
 	fmt.Println("addPlats namn: ", namn)
 
-	skapaPlats(namn, gironum, acctype, refacc)
+	skapaPlats(db, namn, gironum, acctype, refacc)
 	
 	fmt.Fprintf(w, "Plats %s tillagd.<br>", namn)
 }

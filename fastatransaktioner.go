@@ -38,9 +38,9 @@ func CurrDate() string {
 }
 
 func IncrDate(datum string, veckor int, månader int) string {
-	/* fmt.Println("IncrDate datum:", datum)
-	fmt.Println("IncrDate veckor:", veckor)
-	fmt.Println("IncrDate månader:", månader) */
+	/* log.Println("IncrDate datum:", datum)
+	log.Println("IncrDate veckor:", veckor)
+	log.Println("IncrDate månader:", månader) */
 
 	year, _ := strconv.Atoi(datum[0:4])
 	var month time.Month
@@ -66,9 +66,9 @@ func IncrDate(datum string, veckor int, månader int) string {
 		os.Exit(2)
 	}
 	t := time.Date(year, month, day, 12, 0, 0, 0, location)
-	/* fmt.Println("IncrDate t.year:", t.Year())
-	fmt.Println("IncrDate t.month:", t.Month())
-	fmt.Println("IncrDate t.day:", t.Day()) */
+	/* log.Println("IncrDate t.year:", t.Year())
+	log.Println("IncrDate t.month:", t.Month())
+	log.Println("IncrDate t.day:", t.Day()) */
 	nytt := t.AddDate(0, månader, veckor*7)
 	//fix date at end of month spilling over to next month
 	if månader != 0  {
@@ -82,7 +82,7 @@ func IncrDate(datum string, veckor int, månader int) string {
 		}
 	}
 	
-	fmt.Println("IncrDate nytt datum:", nytt.Format("2006-01-02"))
+	log.Println("IncrDate nytt datum:", nytt.Format("2006-01-02"))
 	return nytt.Format("2006-01-02")
 }
 
@@ -94,7 +94,7 @@ func EndOfMonth(date time.Time) (time.Time) {
     return date.AddDate(0, 1, -date.Day())
 }
 
-func showFastaTransaktioner(w http.ResponseWriter, req *http.Request) {
+func showFastaTransaktioner(w http.ResponseWriter, req *http.Request, db *sql.DB) {
 	now := time.Now()
 	currentYear, currentMonth, _ := now.Date()
 	currentLocation := now.Location()
@@ -154,7 +154,7 @@ func showFastaTransaktioner(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func addfixedtransaction(w http.ResponseWriter, req *http.Request) {
+func addfixedtransaction(w http.ResponseWriter, req *http.Request, db *sql.DB) {
 	err := req.ParseForm()
 	if err != nil {
 		log.Fatal(err)
@@ -165,21 +165,21 @@ func addfixedtransaction(w http.ResponseWriter, req *http.Request) {
 	who := req.FormValue("who")
 	amount := req.FormValue("amount")
 	text := req.FormValue("text")
-	fmt.Println("Val: ", transtyp)
-	fmt.Println("Val: ", date)
-	fmt.Println("Val: ", who)
-	fmt.Println("Val: ", amount)
-	fmt.Println("Val: ", text)
+	log.Println("Val: ", transtyp)
+	log.Println("Val: ", date)
+	log.Println("Val: ", who)
+	log.Println("Val: ", amount)
+	log.Println("Val: ", text)
 
 	if transtyp == "FastTrans" {
 		transid := req.FormValue("transid")
 		transidnum, _ := strconv.Atoi(transid)
-		registreraFastTransaktionHTML(w, transidnum)
+		registreraFastTransaktionHTML(w, transidnum, db)
 		fmt.Fprintf(w, "<p>\n")
 	}
 }
 
-func registreraFastTransaktion(transid int) {
+func registreraFastTransaktion(db *sql.DB, transid int) {
 	log.Println("Läser ut fast transaktion#"+strconv.Itoa(transid))
 	if db == nil {
 		log.Println("registreraFastTransaktion: No database open")
@@ -194,6 +194,7 @@ func registreraFastTransaktion(transid int) {
 		log.Println(err)
 		return
 	}
+	log.Println("Query klart.")
 	
 	var FrånKonto []byte  // size 40
 	var TillKonto []byte  // size 40
@@ -207,8 +208,11 @@ func registreraFastTransaktion(transid int) {
 	var TillDatum []byte  // size 10
 	var Rakning []byte  // size 1
 	
+	log.Println("Pre-res.")
 	res.Next()
+	log.Println("Res klart.")
 	err = res.Scan(&FrånKonto, &TillKonto, &Belopp, &Datum, &HurOfta, &Vad, &Vem, &Löpnr, &Kontrollnr, &TillDatum, &Rakning)
+	log.Println("Scan klart.")
 	if err != nil {
 		log.Println("registreraFastTransaktion: SCAN ERROR")
 		log.Println(err)
@@ -230,6 +234,7 @@ func registreraFastTransaktion(transid int) {
 	sqlStmt += "<td>" + toUtf8(Rakning) + "</td>"
 	sqlStmt += "</tr>\n"
 
+	res.Close()
 	// Register transaction
 	if toUtf8(Vad) == "---" {
 		// Fasta överföringar
@@ -302,7 +307,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 	}
 }
 
-func registreraFastTransaktionHTML(w http.ResponseWriter, transid int) {
+func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.DB) {
 	fmt.Fprintf(w, "Läser ut fast transaktion#"+strconv.Itoa(transid))
 	if db == nil {
 		fmt.Fprintf(w, "registreraFastTransaktion: No database open<p>\n")
@@ -479,16 +484,16 @@ func fixedtransactionHTML(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<body>\n")
 	fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
 
-	addfixedtransaction(w, req)
+	addfixedtransaction(w, req, db)
 	
-	showFastaTransaktioner(w, req)
+	showFastaTransaktioner(w, req, db)
 	
 	fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
 	fmt.Fprintf(w, "</body>\n")
 	fmt.Fprintf(w, "</html>\n")
 }
 
-func antalFastaTransaktioner() int {
+func antalFastaTransaktioner(db *sql.DB) int {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -506,7 +511,7 @@ func antalFastaTransaktioner() int {
 	return antal
 }
 
-func skapaFastUtgift(vad string, konto string, vem string, plats string, summa decimal.Decimal, datum string, periodisering bool, uppdaterabudget bool, action string, hurofta string) error {
+func skapaFastUtgift(db *sql.DB, vad string, konto string, vem string, plats string, summa decimal.Decimal, datum string, periodisering bool, uppdaterabudget bool, action string, hurofta string) error {
 	if db == nil {
 		log.Fatal("skapaFastUtgift anropad med db=nil");
 		os.Exit(2);
@@ -525,7 +530,7 @@ func skapaFastUtgift(vad string, konto string, vem string, plats string, summa d
 	return err
 }
 
-func hämtaFastTransaktion(lopnr int) (result fixedtransaction) {
+func hämtaFastTransaktion(db *sql.DB, lopnr int) (result fixedtransaction) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var err error

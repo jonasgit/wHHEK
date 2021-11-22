@@ -339,7 +339,7 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 			log.Fatal(err)
 		}
 		fmt.Fprintf(w, "<tr><td>%s</td>", acc)
-		daySaldo, totSaldo := saldonKonto(acc, currDate)
+		daySaldo, totSaldo := saldonKonto(db, acc, currDate)
 		if dbSaldo.Equals(daySaldo) && dbSaldo.Equals(totSaldo) {
 			fmt.Fprintf(w, "<td colspan=\"3\">%s</td>", dbSaldo)
 		} else if dbSaldo.Equals(daySaldo) {
