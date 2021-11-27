@@ -242,3 +242,18 @@ func InsertRow(sqlStmt string) {
 		return
 	}
 }
+
+func getdbpw(db *sql.DB) string {
+	res := db.QueryRow("SELECT Losenord FROM DtbVer")
+	
+	var Losenord []byte  // size 8
+	err := res.Scan(&Losenord)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+	pw := toUtf8(Losenord)
+	//log.Printf("getdbpwd %s %d\n", pw, len(pw))
+	
+	return pw
+}

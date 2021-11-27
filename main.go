@@ -150,6 +150,7 @@ import (
 
 // Global variables
 var db *sql.DB = nil
+var nopw_db *sql.DB = nil
 var dbtype uint8 = 0 // 0=none, 1=mdb/Access2.0, 2=sqlite3
 var currentDatabase string = "NONE"
 var (
@@ -358,45 +359,88 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 	fmt.Fprintf(w, "</table>\n")
 }
 
+func checkpwd(w http.ResponseWriter, req *http.Request) {
+	if nopw_db == nil {
+		fmt.Fprintf(w, "Ingen databas.")
+	} else {
+		pwd := getdbpw(nopw_db)
+		formpwd := req.FormValue("pwd")
+		//log.Println("jmf %s %s", pwd, formpwd)
+		if pwd == formpwd {
+			//fmt.Fprintf(w, "OK.")
+			db = nopw_db
+			nopw_db = nil
+			showsummary(w)
+		} else {
+			fmt.Fprintf(w, "Fel lösenord.")
+		}
+	}
+}
+
+func showsummary(w http.ResponseWriter) {
+	fmt.Fprintf(w, "<!DOCTYPE html>\n")
+	fmt.Fprintf(w, "<html>\n")
+	fmt.Fprintf(w, "   <head>\n")
+	fmt.Fprintf(w, "      <title>HTML Meta Tag</title>\n")
+	fmt.Fprintf(w, "      <meta http-equiv = \"refresh\" content = \"0; url = /summary\" />\n")
+	fmt.Fprintf(w, "   </head>\n")
+	fmt.Fprintf(w, "   <body>\n")
+	fmt.Fprintf(w, "      <p>Arbetar...</p>\n")
+	fmt.Fprintf(w, "</body>\n")
+	fmt.Fprintf(w, "</html>\n")
+}
+
 func opendb(w http.ResponseWriter, req *http.Request) {
 	err := req.ParseForm()
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	
 	filename := sanitizeFilename(req.FormValue("fname"))
-
+	
 	if strings.HasSuffix(strings.ToLower(filename), ".mdb") {
 		//fmt.Fprintf(w, "Trying to open Access/Jet<br>\n")
-		db = openJetDB(filename, false)
+		nopw_db = openJetDB(filename, false)
 	} else {
 		if strings.HasSuffix(strings.ToLower(filename), ".db") {
 			//fmt.Fprintf(w, "Trying to open sqlite3<br>\n")
-			db = openSqlite(filename)
+			nopw_db = openSqlite(filename)
 		} else {
 			fmt.Fprintf(w, "Bad filename: %s<br>\n", filename)
+			fmt.Fprintf(w, "</body>\n")
+			fmt.Fprintf(w, "</html>\n")
 		}
 	}
-
-	if db == nil {
+	
+	if nopw_db == nil {
 		fmt.Fprintf(w, "<html>\n")
 		fmt.Fprintf(w, "<body>\n")
-
+		
 		fmt.Fprintf(w, "Error opening database<p>\n")
-	} else {
-		fmt.Fprintf(w, "<!DOCTYPE html>\n")
-		fmt.Fprintf(w, "<html>\n")
-		fmt.Fprintf(w, "   <head>\n")
-		fmt.Fprintf(w, "      <title>HTML Meta Tag</title>\n")
-		fmt.Fprintf(w, "      <meta http-equiv = \"refresh\" content = \"0; url = /summary\" />\n")
-		fmt.Fprintf(w, "   </head>\n")
-		fmt.Fprintf(w, "   <body>\n")
-		fmt.Fprintf(w, "      <p>Arbetar...</p>\n")
-		fmt.Fprintf(w, "   </body>\n")
+		fmt.Fprintf(w, "</body>\n")
 		fmt.Fprintf(w, "</html>\n")
+	} else {
+		pwd := getdbpw(nopw_db)
+		if pwd != " " {
+			fmt.Fprintf(w, "<!DOCTYPE html>\n")
+			fmt.Fprintf(w, "<html>\n")
+			fmt.Fprintf(w, "   <head>\n")
+			fmt.Fprintf(w, "      <title>Lösenordsskyddad</title>\n")
+			fmt.Fprintf(w, "   </head>\n")
+			fmt.Fprintf(w, "   <body>\n")
+			fmt.Fprintf(w, "      <p>Databasen är lösenordsskyddad. Skriv in lösenordet:</p>\n")
+			fmt.Fprintf(w, "<form method=\"POST\" action=\"/pwd\">\n")
+			fmt.Fprintf(w, "      <label for=\"pwd\">Password:</label><input type=\"password\" id=\"pwd\" name=\"pwd\">\n")
+			fmt.Fprintf(w, "<input type=\"submit\" value=\"Använd\"></form>\n")
+			
+			fmt.Fprintf(w, "</body>\n")
+			fmt.Fprintf(w, "</html>\n")
+		} else {
+			db = nopw_db
+			nopw_db = nil
+			showsummary(w)
+		}
 	}
-	fmt.Fprintf(w, "</body>\n")
-	fmt.Fprintf(w, "</html>\n")
 }
 
 func closeDB() {
@@ -441,22 +485,26 @@ func quitapp(w http.ResponseWriter, req *http.Request) {
 
 func generateSummary(w http.ResponseWriter, req *http.Request) {
 	printSummaryHead(w, db)
-	checkÖverföringar(w, db)
-	fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><td>\n")
-	fmt.Fprintf(w, "<a href=\"monthly\">Månads kontoutdrag</a><p>\n")
-	fmt.Fprintf(w, "<a href=\"transactions\">Transaktionslista</a><p>\n")
-	fmt.Fprintf(w, "<a href=\"platser\">Platser</a><p>\n")
-	fmt.Fprintf(w, "<a href=\"personer\">Personer</a><p>\n")
-	fmt.Fprintf(w, "<a href=\"konton\">Konton</a><p>\n")
-	fmt.Fprintf(w, "<a href=\"budget\">Budget</a><p>\n")
-	fmt.Fprintf(w, "<a href=\"newtrans\">Ny transaktion</a><p>\n")
-	fmt.Fprintf(w, "<a href=\"fixedtrans\">Fasta transaktioner/överföringar</a><p>\n")
-	fmt.Fprintf(w, "<a href=\"acccmp\">Avstämning mot nerladdat kontoutdrag</a><p>\n")
-	fmt.Fprintf(w, "<a href=\"close\">Stäng databas</a><p>\n")
-	fmt.Fprintf(w, "<a href=\"quit\">Avsluta program</a><p>\n")
-	fmt.Fprintf(w, "</td><td>\n")
-	printAccounts(w, db)
-	fmt.Fprintf(w, "</td></tr></table>\n")
+	if db != nil {
+		checkÖverföringar(w, db)
+		fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><td>\n")
+		fmt.Fprintf(w, "<a href=\"monthly\">Månads kontoutdrag</a><p>\n")
+		fmt.Fprintf(w, "<a href=\"transactions\">Transaktionslista</a><p>\n")
+		fmt.Fprintf(w, "<a href=\"platser\">Platser</a><p>\n")
+		fmt.Fprintf(w, "<a href=\"personer\">Personer</a><p>\n")
+		fmt.Fprintf(w, "<a href=\"konton\">Konton</a><p>\n")
+		fmt.Fprintf(w, "<a href=\"budget\">Budget</a><p>\n")
+		fmt.Fprintf(w, "<a href=\"newtrans\">Ny transaktion</a><p>\n")
+		fmt.Fprintf(w, "<a href=\"fixedtrans\">Fasta transaktioner/överföringar</a><p>\n")
+		fmt.Fprintf(w, "<a href=\"acccmp\">Avstämning mot nerladdat kontoutdrag</a><p>\n")
+		fmt.Fprintf(w, "<a href=\"close\">Stäng databas</a><p>\n")
+		fmt.Fprintf(w, "<a href=\"quit\">Avsluta program</a><p>\n")
+		fmt.Fprintf(w, "</td><td>\n")
+		printAccounts(w, db)
+		fmt.Fprintf(w, "</td></tr></table>\n")
+	} else {
+		fmt.Fprintf(w, "Ingen databas.\n")
+	}
 	fmt.Fprintf(w, "</body>\n")
 	fmt.Fprintf(w, "</html>\n")
 }
@@ -814,6 +862,7 @@ func main() {
 	http.HandleFunc("/img/bars.svg", imgbars)
 	http.HandleFunc("/headers", headers)
 	http.HandleFunc("/open", opendb)
+	http.HandleFunc("/pwd", checkpwd)
 	http.HandleFunc("/close", closedb)
 	http.HandleFunc("/quit", quitapp)
 	http.HandleFunc("/newtrans", newtransaction)
