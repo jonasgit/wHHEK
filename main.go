@@ -142,6 +142,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"html/template"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"  // MIT License
@@ -203,8 +204,9 @@ func root(w http.ResponseWriter, req *http.Request) {
 		}
 		fmt.Fprintf(w, "<input type=\"submit\" value=\"Submit\"></form>\n")
 	} else {
-		fmt.Fprintf(w, "No files available.<p>\n")
+		fmt.Fprintf(w, "Inga filer att välja.<p>\n")
 	}
+	fmt.Fprintf(w, "Hjälp/information <a href=\"help1\">Hjälp</a><br>\n")
 	//fmt.Fprintf(w, "<p>See also <a href=\"hello\">link hello</a><br>\n")
 	//fmt.Fprintf(w, "See also <a href=\"r\">link r</a><br>\n")
 	//fmt.Fprintf(w, "See also <a href=\"headers\">link headers</a><br>\n")
@@ -855,6 +857,14 @@ func getTypeOutNames() []string {
 	return names
 }
 
+//go:embed html/help1.html
+var html1 string
+func help1(w http.ResponseWriter, req *http.Request) {
+     t := template.New("Hjälp example")
+     t, _ = t.Parse(html1)
+     t.Execute(w, t)
+}
+
 func main() {
 	http.HandleFunc("/hello", hello)
 	http.HandleFunc("/r/", restapi)
@@ -876,6 +886,7 @@ func main() {
 	http.HandleFunc("/budget", hanteraBudget)
 	http.HandleFunc("/summary", generateSummary)
 	http.HandleFunc("/acccmp", compareaccount)
+	http.HandleFunc("/help1", help1)
 	http.HandleFunc("/", root)
 
 	ip, _ := externalIP()
