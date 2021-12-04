@@ -182,36 +182,31 @@ func hello(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "hello\n")
 }
 
+//go:embed html/root.html
+var htmlroot string
 func root(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "<html>\n")
-	fmt.Fprintf(w, "<body>\n")
-	fmt.Fprintf(w, "Välj databas att arbeta med:<br>")
+     tmpl := template.New("root example")
+     tmpl, _ = tmpl.Parse(htmlroot)
 
 	files, err := ioutil.ReadDir(".")
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	filer := make([]string, 0)
+	
 	if len(files) > 0 {
-		fmt.Fprintf(w, "<form method=\"POST\" action=\"/open\">\n")
 		for _, file := range files {
-
 			if strings.HasSuffix(strings.ToLower(file.Name()), ".mdb") ||
 				strings.HasSuffix(strings.ToLower(file.Name()), ".db") {
-				//fmt.Fprintf(w,"%s<br>\n", file.Name())
-				fmt.Fprintf(w, "<input type=\"radio\" id=\"%s\" name=\"fname\" value=\"%s\"><label for=\"%s\">%s</label><br>\n", file.Name(), file.Name(), file.Name(), file.Name())
+				filer = append(filer, file.Name())
+				log.Println("Hittad fil:", file.Name())
+
 			}
 		}
-		fmt.Fprintf(w, "<input type=\"submit\" value=\"Submit\"></form>\n")
-	} else {
-		fmt.Fprintf(w, "Inga filer att välja.<p>\n")
-	}
-	fmt.Fprintf(w, "Hjälp/information <a href=\"help1\">Hjälp</a><br>\n")
-	//fmt.Fprintf(w, "<p>See also <a href=\"hello\">link hello</a><br>\n")
-	//fmt.Fprintf(w, "See also <a href=\"r\">link r</a><br>\n")
-	//fmt.Fprintf(w, "See also <a href=\"headers\">link headers</a><br>\n")
-	fmt.Fprintf(w, "</body>\n")
-	fmt.Fprintf(w, "</html>\n")
+	}	
+	tmpl.Execute(w, filer)
+// TODO		fmt.Fprintf(w, "Inga filer att välja.<p>\n")
 }
 
 //go:embed htmx.min.js
@@ -459,7 +454,7 @@ func closedb(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<html>\n")
 	fmt.Fprintf(w, "   <head>\n")
 	fmt.Fprintf(w, "      <title>HTML Meta Tag</title>\n")
-	fmt.Fprintf(w, "      <meta http-equiv = \"refresh\" content = \"10; url = /\" />\n")
+	fmt.Fprintf(w, "      <meta http-equiv = \"refresh\" content = \"1; url = /\" />\n")
 	fmt.Fprintf(w, "   </head>\n")
 	fmt.Fprintf(w, "   <body>\n")
 	fmt.Fprintf(w, "      <p>Closing database!</p>\n")
@@ -481,8 +476,9 @@ func quitapp(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "      <p>Avslutar. Hej då!</p>\n")
 	fmt.Fprintf(w, "   </body>\n")
 	fmt.Fprintf(w, "</html>\n")
-	time.Sleep(8 * time.Second)
-	srv.Shutdown(ctx);
+	//time.Sleep(8 * time.Second)
+	//srv.Shutdown(ctx);
+	os.Exit(0)
 }
 
 func generateSummary(w http.ResponseWriter, req *http.Request) {
