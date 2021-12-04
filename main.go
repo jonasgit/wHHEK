@@ -45,9 +45,11 @@
 // Hantera fasta överföringar/betalningar för hela aktuell månad
 // Visa budget
 // Redigera budget
+// Hantera lösenordsskyddad databas
 
 // ROADMAP/TODO/The Future Is In Flux
 // ============
+// BUG: Teckenkodning i lösenord
 // localize decimal.String()
 // escape & in all html. escapeHTML verkar inte fungera. Use template?
 // hantera fel: för lång text till comment
@@ -94,9 +96,8 @@
 // REST-api: visa/redigera budget
 // Visa budget med jämförelse till resultat
 // REST-api: Visa budget med jämförelse till resultat
-// Hantera lösenordsskyddad databas
 // Byt till https/SSL
-// Kräv inloggning
+// Kräv inloggning (kräver https?)
 // Årsskiftesrutin inkl uppdatera budget på olika sätt
 // Graf som i månadsvyn, med valfri grupp av konton
 // Graf som i månadsvyn fast för senaste året, med valfri grupp av konton
@@ -105,9 +106,6 @@
 // Lägg till nytt lån
 // Redigera lån
 
-// Testa kompabilitet Linux/Mac (endast med sqlite-databas)
-//   Alternate use of: go build -tags withoutODBC
-//                    / /  + b u i l d withoutODBC
 // Experimental:
 // Build on Windows for Linux:
 // In powershell:
