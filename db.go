@@ -262,7 +262,7 @@ func getdbpw(db *sql.DB) string {
 func setdbpw(db *sql.DB, pwd string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
+	
 	_, err := db.ExecContext(ctx,
 		`UPDATE DtbVer SET Losenord = ?`,
 		pwd)

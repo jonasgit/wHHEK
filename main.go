@@ -183,22 +183,22 @@ func hello(w http.ResponseWriter, req *http.Request) {
 }
 
 type RootPageData struct {
-    FilerFinns bool
-    AntalFiler string
-    Filnamn     []string
+	FilerFinns bool
+	AntalFiler string
+	Filnamn     []string
 }
 
 //go:embed html/root.html
 var htmlroot string
 func root(w http.ResponseWriter, req *http.Request) {
-     tmpl := template.New("root example")
-     tmpl, _ = tmpl.Parse(htmlroot)
-
+	tmpl := template.New("root example")
+	tmpl, _ = tmpl.Parse(htmlroot)
+	
 	files, err := ioutil.ReadDir(".")
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	
 	filer := make([]string, 0)
 	
 	if len(files) > 0 {
@@ -207,19 +207,19 @@ func root(w http.ResponseWriter, req *http.Request) {
 				strings.HasSuffix(strings.ToLower(file.Name()), ".db") {
 				filer = append(filer, file.Name())
 				log.Println("Hittad fil:", file.Name())
-
+				
 			}
 		}
 	}
 	var antal string = strconv.Itoa(len(filer))
 	log.Println("Hittade filer", antal)
 	data := RootPageData{
-	  FilerFinns : len(filer)>0,
-	  AntalFiler : antal,
-	  Filnamn : filer[:],
+		FilerFinns : len(filer)>0,
+		AntalFiler : antal,
+		Filnamn : filer[:],
 	}
 	tmpl.Execute(w, data)
-// TODO		fmt.Fprintf(w, "Inga filer att välja.<p>\n")
+	// TODO		fmt.Fprintf(w, "Inga filer att välja.<p>\n")
 }
 
 //go:embed htmx.min.js
@@ -490,7 +490,7 @@ func quitapp(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "   </body>\n")
 	fmt.Fprintf(w, "</html>\n")
 	if f, ok := w.(http.Flusher); ok { 
-	   f.Flush() 
+		f.Flush() 
 	}
 	//time.Sleep(8 * time.Second)
 	//srv.Shutdown(ctx);
@@ -874,9 +874,9 @@ func getTypeOutNames() []string {
 //go:embed html/help1.html
 var html1 string
 func help1(w http.ResponseWriter, req *http.Request) {
-     t := template.New("Hjälp example")
-     t, _ = t.Parse(html1)
-     t.Execute(w, t)
+	t := template.New("Hjälp example")
+	t, _ = t.Parse(html1)
+	t.Execute(w, t)
 }
 
 func main() {
