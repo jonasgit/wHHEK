@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"os"
@@ -256,4 +257,14 @@ func getdbpw(db *sql.DB) string {
 	//log.Printf("getdbpwd %s %d\n", pw, len(pw))
 	
 	return pw
+}
+
+func setdbpw(db *sql.DB, pwd string) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	_, err := db.ExecContext(ctx,
+		`UPDATE DtbVer SET Losenord = ?`,
+		pwd)
+	return err
 }
