@@ -182,6 +182,12 @@ func hello(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "hello\n")
 }
 
+type RootPageData struct {
+    FilerFinns bool
+    AntalFiler string
+    Filnamn     []string
+}
+
 //go:embed html/root.html
 var htmlroot string
 func root(w http.ResponseWriter, req *http.Request) {
@@ -204,8 +210,15 @@ func root(w http.ResponseWriter, req *http.Request) {
 
 			}
 		}
-	}	
-	tmpl.Execute(w, filer)
+	}
+	var antal string = strconv.Itoa(len(filer))
+	log.Println("Hittade filer", antal)
+	data := RootPageData{
+	  FilerFinns : len(filer)>0,
+	  AntalFiler : antal,
+	  Filnamn : filer[:],
+	}
+	tmpl.Execute(w, data)
 // TODO		fmt.Fprintf(w, "Inga filer att välja.<p>\n")
 }
 
@@ -476,6 +489,9 @@ func quitapp(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "      <p>Avslutar. Hej då!</p>\n")
 	fmt.Fprintf(w, "   </body>\n")
 	fmt.Fprintf(w, "</html>\n")
+	if f, ok := w.(http.Flusher); ok { 
+	   f.Flush() 
+	}
 	//time.Sleep(8 * time.Second)
 	//srv.Shutdown(ctx);
 	os.Exit(0)
@@ -497,6 +513,7 @@ func generateSummary(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "<a href=\"acccmp\">Avstämning mot nerladdat kontoutdrag</a><p>\n")
 		fmt.Fprintf(w, "<a href=\"close\">Stäng databas</a><p>\n")
 		fmt.Fprintf(w, "<a href=\"quit\">Avsluta program</a><p>\n")
+		fmt.Fprintf(w, "<a href=\"help1\">Hjälp</a><p>\n")
 		fmt.Fprintf(w, "</td><td>\n")
 		printAccounts(w, db)
 		fmt.Fprintf(w, "</td></tr></table>\n")
