@@ -204,6 +204,8 @@ func amountEquals(dbrad transaction, amount decimal.Decimal, kontonamn string, f
 }
 
 func findAmount(rad []string, filtyp string) string {
+	// Index för vilken kolumn som innehåller summan för transaktionen
+	// första/vänstra kolumnen = 0
 	switch filtyp {
 	case "komplettcsv":
 		return rad[4]
@@ -217,8 +219,10 @@ func findAmount(rad []string, filtyp string) string {
 		return rad[6]
 	case "okq8csv":
 		return rad[3]
+	case "lunarcsv":
+		return rad[2]
 	default:
-		log.Fatal("Okänd filtyp")
+		log.Fatal("Okänd filtyp:", filtyp)
 	}
 	return "-1"
 }
@@ -289,8 +293,10 @@ func findDateCol(rad []string, filtyp string) string {
 		dateraw := rad[0]
 		date := parseDate_swe(dateraw)
 		return date.Format("2006-01-02")
+	case "lunarcsv":
+		return rad[0]
 	default:
-		log.Fatal("Okänd filtyp")
+		log.Fatal("Okänd filtyp:", filtyp)
 	}		
 	return "-1"
 }
@@ -310,8 +316,10 @@ func bankheadlines(filtyp string) int {
 		headlines = 5
 	case "okq8csv":
 		headlines = 1
+	case "lunarcsv":
+		headlines = 1
 	default:
-		log.Fatal("Okänd filtyp")
+		log.Fatal("Okänd filtyp:", filtyp)
 	}
 	return headlines
 }
@@ -415,8 +423,10 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 		}
 	case "okq8csv":
 		records = readCsvFile(filen, filtyp)
+	case "lunarcsv":
+		records = readCsvFile(filen, filtyp)
 	default:
-		log.Fatal("Okänd filtyp")
+		log.Fatal("Okänd filtyp:", filtyp)
 	}
 	fmt.Println("Read file. Antal rader:", len(records))
 	firstdatestr, lastdatestr := finddaterange(records, filtyp)
@@ -523,6 +533,9 @@ func printAccCompFooter(w http.ResponseWriter, db *sql.DB) {
 }
 
 func compareaccount(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	w.WriteHeader(200)
+	
 	fmt.Fprintf(w, "<html>\n")
 	fmt.Fprintf(w, "<head>\n")
 	fmt.Fprintf(w, "<style>\n")
@@ -582,6 +595,7 @@ func compareaccount(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "revolutcsv", "Revolut CSV(Excel)")
 		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "eurocardxls", "Eurocard Xls")
 		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "okq8csv", "OKQ8 CSV")
+		fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "lunarcsv", "Lunar CSV")
 		fmt.Fprintf(w, "  </select><br>\n")
 
 		fmt.Fprintf(w, "<input type=\"file\" name=\"uploadfile\" />")
