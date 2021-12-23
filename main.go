@@ -45,9 +45,11 @@
 // Hantera fasta överföringar/betalningar för hela aktuell månad
 // Visa budget
 // Redigera budget
+// Hantera lösenordsskyddad databas
 
 // ROADMAP/TODO/The Future Is In Flux
 // ============
+// BUG: Teckenkodning i lösenord
 // localize decimal.String()
 // escape & in all html. escapeHTML verkar inte fungera. Use template?
 // hantera fel: för lång text till comment
@@ -94,9 +96,8 @@
 // REST-api: visa/redigera budget
 // Visa budget med jämförelse till resultat
 // REST-api: Visa budget med jämförelse till resultat
-// Hantera lösenordsskyddad databas
 // Byt till https/SSL
-// Kräv inloggning
+// Kräv inloggning (kräver https?)
 // Årsskiftesrutin inkl uppdatera budget på olika sätt
 // Graf som i månadsvyn, med valfri grupp av konton
 // Graf som i månadsvyn fast för senaste året, med valfri grupp av konton
@@ -105,9 +106,6 @@
 // Lägg till nytt lån
 // Redigera lån
 
-// Testa kompabilitet Linux/Mac (endast med sqlite-databas)
-//   Alternate use of: go build -tags withoutODBC
-//                    / /  + b u i l d withoutODBC
 // Experimental:
 // Build on Windows for Linux:
 // In powershell:
@@ -142,6 +140,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"html/template"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"  // MIT License
@@ -181,35 +180,44 @@ func hello(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "hello\n")
 }
 
-func root(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "<html>\n")
-	fmt.Fprintf(w, "<body>\n")
-	fmt.Fprintf(w, "Välj databas att arbeta med:<br>")
+type RootPageData struct {
+	FilerFinns bool
+	AntalFiler string
+	Filnamn     []string
+}
 
+//go:embed html/root.html
+var htmlroot string
+func root(w http.ResponseWriter, req *http.Request) {
+	tmpl := template.New("root example")
+	tmpl, _ = tmpl.Parse(htmlroot)
+	
 	files, err := ioutil.ReadDir(".")
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	
+	filer := make([]string, 0)
+	
 	if len(files) > 0 {
-		fmt.Fprintf(w, "<form method=\"POST\" action=\"/open\">\n")
 		for _, file := range files {
-
 			if strings.HasSuffix(strings.ToLower(file.Name()), ".mdb") ||
 				strings.HasSuffix(strings.ToLower(file.Name()), ".db") {
-				//fmt.Fprintf(w,"%s<br>\n", file.Name())
-				fmt.Fprintf(w, "<input type=\"radio\" id=\"%s\" name=\"fname\" value=\"%s\"><label for=\"%s\">%s</label><br>\n", file.Name(), file.Name(), file.Name(), file.Name())
+				filer = append(filer, file.Name())
+				log.Println("Hittad fil:", file.Name())
+				
 			}
 		}
-		fmt.Fprintf(w, "<input type=\"submit\" value=\"Submit\"></form>\n")
-	} else {
-		fmt.Fprintf(w, "No files available.<p>\n")
 	}
-	//fmt.Fprintf(w, "<p>See also <a href=\"hello\">link hello</a><br>\n")
-	//fmt.Fprintf(w, "See also <a href=\"r\">link r</a><br>\n")
-	//fmt.Fprintf(w, "See also <a href=\"headers\">link headers</a><br>\n")
-	fmt.Fprintf(w, "</body>\n")
-	fmt.Fprintf(w, "</html>\n")
+	var antal string = strconv.Itoa(len(filer))
+	log.Println("Hittade filer", antal)
+	data := RootPageData{
+		FilerFinns : len(filer)>0,
+		AntalFiler : antal,
+		Filnamn : filer[:],
+	}
+	tmpl.Execute(w, data)
+	// TODO		fmt.Fprintf(w, "Inga filer att välja.<p>\n")
 }
 
 //go:embed htmx.min.js
@@ -457,7 +465,7 @@ func closedb(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "<html>\n")
 	fmt.Fprintf(w, "   <head>\n")
 	fmt.Fprintf(w, "      <title>HTML Meta Tag</title>\n")
-	fmt.Fprintf(w, "      <meta http-equiv = \"refresh\" content = \"10; url = /\" />\n")
+	fmt.Fprintf(w, "      <meta http-equiv = \"refresh\" content = \"1; url = /\" />\n")
 	fmt.Fprintf(w, "   </head>\n")
 	fmt.Fprintf(w, "   <body>\n")
 	fmt.Fprintf(w, "      <p>Closing database!</p>\n")
@@ -479,8 +487,12 @@ func quitapp(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "      <p>Avslutar. Hej då!</p>\n")
 	fmt.Fprintf(w, "   </body>\n")
 	fmt.Fprintf(w, "</html>\n")
-	time.Sleep(8 * time.Second)
-	srv.Shutdown(ctx);
+	if f, ok := w.(http.Flusher); ok { 
+		f.Flush() 
+	}
+	//time.Sleep(8 * time.Second)
+	//srv.Shutdown(ctx);
+	os.Exit(0)
 }
 
 func generateSummary(w http.ResponseWriter, req *http.Request) {
@@ -497,8 +509,10 @@ func generateSummary(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "<a href=\"newtrans\">Ny transaktion</a><p>\n")
 		fmt.Fprintf(w, "<a href=\"fixedtrans\">Fasta transaktioner/överföringar</a><p>\n")
 		fmt.Fprintf(w, "<a href=\"acccmp\">Avstämning mot nerladdat kontoutdrag</a><p>\n")
+		fmt.Fprintf(w, "<a href=\"passwd\">Lösenordshantering</a><p>\n")
 		fmt.Fprintf(w, "<a href=\"close\">Stäng databas</a><p>\n")
 		fmt.Fprintf(w, "<a href=\"quit\">Avsluta program</a><p>\n")
+		fmt.Fprintf(w, "<a href=\"help1\">Hjälp</a><p>\n")
 		fmt.Fprintf(w, "</td><td>\n")
 		printAccounts(w, db)
 		fmt.Fprintf(w, "</td></tr></table>\n")
@@ -855,6 +869,14 @@ func getTypeOutNames() []string {
 	return names
 }
 
+//go:embed html/help1.html
+var html1 string
+func help1(w http.ResponseWriter, req *http.Request) {
+	t := template.New("Hjälp example")
+	t, _ = t.Parse(html1)
+	t.Execute(w, t)
+}
+
 func main() {
 	http.HandleFunc("/hello", hello)
 	http.HandleFunc("/r/", restapi)
@@ -876,6 +898,8 @@ func main() {
 	http.HandleFunc("/budget", hanteraBudget)
 	http.HandleFunc("/summary", generateSummary)
 	http.HandleFunc("/acccmp", compareaccount)
+	http.HandleFunc("/passwd", passwordmgmt)
+	http.HandleFunc("/help1", help1)
 	http.HandleFunc("/", root)
 
 	ip, _ := externalIP()

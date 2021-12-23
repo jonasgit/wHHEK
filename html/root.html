@@ -1,0 +1,18 @@
+<html>
+<body>
+<h1>wHHEK - hemekonomi</h1>
+{{if .FilerFinns}}
+Välj databas att arbeta med:<br>
+
+<form method="POST" action="/open">
+  {{range .Filnamn}}
+    <input type="radio" id="{{.}}" name="fname" value="{{.}}"><label for="{{.}}">{{.}}</label><br>
+  {{end}}
+<input type="submit" value="Submit"></form>
+{{else}}
+            Inga filer
+{{end}}
+<p>
+  Hjälp/information <a href="help1">Hjälp</a><br>
+</body>
+</html>
