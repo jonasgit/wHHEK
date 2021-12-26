@@ -189,7 +189,7 @@ type RootPageData struct {
 //go:embed html/root.html
 var htmlroot string
 func root(w http.ResponseWriter, req *http.Request) {
-	tmpl := template.New("root example")
+	tmpl := template.New("wHHEK root")
 	tmpl, _ = tmpl.Parse(htmlroot)
 	
 	files, err := ioutil.ReadDir(".")
@@ -494,6 +494,37 @@ func quitapp(w http.ResponseWriter, req *http.Request) {
 	//srv.Shutdown(ctx);
 	os.Exit(0)
 }
+
+func createdb(w http.ResponseWriter, req *http.Request) {
+	err := req.ParseForm()
+	if err != nil {
+		log.Fatal(err)
+	}
+	
+	filename := sanitizeFilename(req.FormValue("fname"))
+	
+	if (len([]rune(filename))<1) ||
+		(strings.ContainsAny(filename, "\\/|:<>.\"'`\x00")) {
+		// TODO: template
+		fmt.Fprintf(w, "<html>\n")
+		fmt.Fprintf(w, "<body>\n")
+		fmt.Fprintf(w, "Bad filename: %s<br>\n", filename)
+		fmt.Fprintf(w, "</body>\n")
+		fmt.Fprintf(w, "</html>\n")
+		return
+	}
+	
+	// TODO: template
+	fmt.Fprintf(w, "<html>\n")
+	fmt.Fprintf(w, "<body>\n")
+	
+	SkapaTomDB(filename+".db")
+	fmt.Fprintf(w, "Databas skapad: %s\n<p>", filename)
+	fmt.Fprintf(w, "<a href=\"/\">Tillbaka</a><p>\n")
+	fmt.Fprintf(w, "</body>\n")
+	fmt.Fprintf(w, "</html>\n")
+}
+
 
 func generateSummary(w http.ResponseWriter, req *http.Request) {
 	printSummaryHead(w, db)
@@ -884,6 +915,7 @@ func main() {
 	http.HandleFunc("/img/bars.svg", imgbars)
 	http.HandleFunc("/headers", headers)
 	http.HandleFunc("/open", opendb)
+	http.HandleFunc("/createdb", createdb)
 	http.HandleFunc("/pwd", checkpwd)
 	http.HandleFunc("/close", closedb)
 	http.HandleFunc("/quit", quitapp)

@@ -1,6 +1,7 @@
 <html>
 <body>
-<h1>wHHEK - hemekonomi</h1>
+  <h1>wHHEK - hemekonomi</h1>
+  <h2>Existerande databaser/filer</h2>
 {{if .FilerFinns}}
 Välj databas att arbeta med:<br>
 
@@ -12,6 +13,15 @@ Välj databas att arbeta med:<br>
 {{else}}
             Inga filer
 {{end}}
+<p>
+  <h2>Skapa ny databas/fil</h2>
+<form action="/createdb">
+  <label for="fname">Filnamn: </label>
+  <input type="text" id="fname" name="fname"><br>
+  <input type="submit" value="Submit">
+</form>
+Tecken som inte godkänns: \/|:<>."'`<br>
+  Om filen redan finns så raderas den gamla.
 <p>
   Hjälp/information <a href="help1">Hjälp</a><br>
 </body>
