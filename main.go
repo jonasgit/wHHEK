@@ -322,7 +322,7 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 	currentTime := time.Now()
 	currDate := currentTime.Format("2006-01-02")
 
-	res, err := db.Query("SELECT KontoNummer,Benämning,Saldo,StartSaldo,StartManad,Löpnr,SaldoArsskifte,ArsskifteManad FROM Konton")
+	res, err := db.Query("SELECT KontoNummer,Benämning,Saldo,StartSaldo,StartManad,Löpnr,SaldoArsskifte,ArsskifteManad FROM Konton ORDER BY Benämning")
 	
 	if err != nil {
 		log.Fatal(err)
@@ -501,7 +501,7 @@ func createdb(w http.ResponseWriter, req *http.Request) {
 		log.Fatal(err)
 	}
 	
-	filename := sanitizeFilename(req.FormValue("fname"))
+	filename := req.FormValue("fname")
 	
 	if (len([]rune(filename))<1) ||
 		(strings.ContainsAny(filename, "\\/|:<>.\"'`\x00")) {

@@ -259,12 +259,12 @@ func addKonto(Benamning string, StartSaldo decimal.Decimal, StartManad string, d
 }
 
 func addKontow(w http.ResponseWriter, Benamning string, StartSaldo string, StartManad string, db *sql.DB) {
-	fmt.Println("addKonto namn: ", Benamning)
+	fmt.Println("addKontow namn: ", Benamning)
 
 	startSaldo, err := decimal.NewFromString(StartSaldo)
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(2)
+		log.Print(err)
+		startSaldo = decimal.NewFromInt(0)
 	}
 	addKonto(Benamning, startSaldo, StartManad, db)
 
