@@ -10,19 +10,19 @@ import (
 func budgetInit(t *testing.T, filnamn string) *sql.DB {
 	// Förberedelser
 	if JetDBSupport {
-	        t.Log("Jet Supported.")
-		var filename string = "got"+filnamn+".mdb"
+		t.Log("Jet Supported.")
+		var filename string = "got" + filnamn + ".mdb"
 		SkapaTomMDB(t, filename)
 		db = openJetDB(filename, false)
 	} else {
-	        t.Log("Jet NOT Supported.")
-		var filename string = "got"+filnamn+".db"
+		t.Log("Jet NOT Supported.")
+		var filename string = "got" + filnamn + ".db"
 		SkapaTomDB(filename)
 		db = openSqlite(filename)
 	}
-	
+
 	if db == nil {
- 		t.Fatal("Ingen databas.")
+		t.Fatal("Ingen databas.")
 	}
 
 	return db
@@ -31,12 +31,12 @@ func budgetInit(t *testing.T, filnamn string) *sql.DB {
 func TestBudgetTomMDB1(t *testing.T) {
 	budgetInit(t, "bdg1")
 	if db == nil {
- 		t.Fatal("Ingen databas.")
+		t.Fatal("Ingen databas.")
 	}
 
 	// Denna testen
 	antal := antalBudgetposter(db)
-	
+
 	if antal != 34 {
 		t.Error("Antal Budgetrader != 34:", antal)
 	} else {
@@ -45,7 +45,7 @@ func TestBudgetTomMDB1(t *testing.T) {
 
 	// loopa över listan med budgettyper och kolla:
 	// QUERY = select typ, inkomst from budget order by inkomst, typ
-	typdata := [34*2]string{
+	typdata := [34 * 2]string{
 		"Arbetslöshetsersättning", "J",
 		"Barnbidrag", "J",
 		"Bidragsförskott", "J",
@@ -82,13 +82,13 @@ func TestBudgetTomMDB1(t *testing.T) {
 		"Övriga utgifter", "N",
 	}
 	budgetposter := getAllBudgetposter(db)
-	
+
 	for i, s := range budgetposter {
 		if (typdata[i*2] == s[0]) &&
 			(typdata[i*2+1] == s[1]) {
 			t.Log("Budgetpost ok. ", typdata[i*2])
 		} else {
-			t.Error("Budgetpost stämmer inte överrens:", typdata[i*2], s[0], typdata[i*2+1], s[1])
+			t.Error("Budgetpost stämmer inte överens:", typdata[i*2], s[0], typdata[i*2+1], s[1])
 		}
 	}
 	closeDB()

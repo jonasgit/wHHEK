@@ -11,12 +11,17 @@ Detta programmet fungerar med både med mdb-filer och sqlite3. Det finns en konv
 
 Gränssnittet är webbaserat, dvs programmet körs i bakgrunden och användare interagerar via webläsaren.
 
-Detta programmet går att köra i Windows så länge det går att köra 32-bitars program dvs Windows 10 64-bitars är ok. End of life för Windows 10 ser för närvarande ut att vara hösten 2025 men även Windows 11 ska kunna köra 32-bitars program.
+Detta programmet går att köra i Windows så länge det går att köra 32-bitars program dvs Windows 10 64-bitars är ok. End
+of life för Windows 10 ser för närvarande ut att vara hösten 2025 men även Windows 11 ska kunna köra 32-bitars program.
 
-Konverterar man till sqlite så bör det gå att köra även på Mac, i Linux och kravet på 32-bitars program i Windows försvinner, men inte testat.
+Konverterar man till sqlite så bör det gå att köra även på Mac, i Linux och kravet på 32-bitars program i Windows
+försvinner, men inte testat.
 
 Status: "i sin linda".
 
-Installation: Bygg enligt kommentarer i början på filen main.go eller filen make.bat. Eller se om det finns en färdig exe-fil under Releases.
+Installation: Bygg enligt kommentarer i början på filen main.go eller filen make.bat. Eller se om det finns en färdig
+exe-fil under Releases.
 
 Kör: Starta programmet i katalogen som har en mdb-fil.
+
+Under 2022 sponsras detta projektet av JetBrains med en Open Source Development licens för GoLand.

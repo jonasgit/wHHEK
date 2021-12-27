@@ -113,7 +113,6 @@
 // $env:GOARCH="386"
 // go build -o wHHEK.elf32 main.go nojetdb.go platser.go transaktioner.go fastatransaktioner.go personer.go konton.go budget.go
 
-
 // Notes/references/hints for further development
 // TODO: https://stackoverflow.com/questions/26345318/how-can-i-prevent-sql-injection-attacks-in-go-while-using-database-sql
 // TODO: https://www.calhoun.io/what-is-sql-injection-and-how-do-i-avoid-it-in-go/
@@ -131,20 +130,20 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/text/encoding/charmap"
+	"html"
+	"html/template"
 	"io/ioutil"
 	"log"
-	"html"
 	"math"
 	"net"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
-	"html/template"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"  // MIT License
-	"github.com/shopspring/decimal"  // MIT License
+	_ "github.com/mattn/go-sqlite3" // MIT License
+	"github.com/shopspring/decimal" // MIT License
 )
 
 // Global variables
@@ -155,7 +154,7 @@ var currentDatabase string = "NONE"
 var (
 	ctx context.Context
 )
-var srv *http.Server;
+var srv *http.Server
 
 func toUtf8(in_buf []byte) string {
 	buf := in_buf
@@ -183,38 +182,39 @@ func hello(w http.ResponseWriter, req *http.Request) {
 type RootPageData struct {
 	FilerFinns bool
 	AntalFiler string
-	Filnamn     []string
+	Filnamn    []string
 }
 
 //go:embed html/root.html
 var htmlroot string
+
 func root(w http.ResponseWriter, req *http.Request) {
 	tmpl := template.New("wHHEK root")
 	tmpl, _ = tmpl.Parse(htmlroot)
-	
+
 	files, err := ioutil.ReadDir(".")
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	filer := make([]string, 0)
-	
+
 	if len(files) > 0 {
 		for _, file := range files {
 			if strings.HasSuffix(strings.ToLower(file.Name()), ".mdb") ||
 				strings.HasSuffix(strings.ToLower(file.Name()), ".db") {
 				filer = append(filer, file.Name())
 				log.Println("Hittad fil:", file.Name())
-				
+
 			}
 		}
 	}
 	var antal string = strconv.Itoa(len(filer))
 	log.Println("Hittade filer", antal)
 	data := RootPageData{
-		FilerFinns : len(filer)>0,
-		AntalFiler : antal,
-		Filnamn : filer[:],
+		FilerFinns: len(filer) > 0,
+		AntalFiler: antal,
+		Filnamn:    filer[:],
 	}
 	tmpl.Execute(w, data)
 	// TODO		fmt.Fprintf(w, "Inga filer att välja.<p>\n")
@@ -222,12 +222,14 @@ func root(w http.ResponseWriter, req *http.Request) {
 
 //go:embed htmx.min.js
 var htmxjs []byte
+
 func htmx(w http.ResponseWriter, req *http.Request) {
 	w.Write(htmxjs)
 }
 
 //go:embed bars.svg
 var barssvg []byte
+
 func imgbars(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "image/svg+xml")
 
@@ -277,11 +279,11 @@ func checkÖverföringar(w http.ResponseWriter, db *sql.DB) {
 	if antal > 0 {
 		fmt.Fprintf(w, "<p>%d fasta transaktioner tills idag väntar på att hanteras. Gå till <a href=\"fixedtrans\">Fasta transaktioner</a>.<p>\n", antal)
 	}
-	
+
 	now := time.Now()
 	currentYear, currentMonth, _ := now.Date()
 	currentLocation := now.Location()
-	
+
 	firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, currentLocation)
 	lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
 	currDate = lastOfMonth.Format("2006-01-02")
@@ -297,18 +299,18 @@ func printSummaryHead(w http.ResponseWriter, db *sql.DB) {
 	fmt.Fprintf(w, "<title>wHHEK</title>\n")
 	fmt.Fprintf(w, "<!-- Load htmx -->\n")
 	fmt.Fprintf(w, "<script src=\"/htmx.js\"></script>\n")
-	
+
 	fmt.Fprintf(w, "<style>\n")
 	fmt.Fprintf(w, "table,th,td { border: 1px solid black ; text-align: center }\n")
 	fmt.Fprintf(w, "</style>\n")
 	fmt.Fprintf(w, "</head>\n")
 	fmt.Fprintf(w, "<body>\n")
-	
+
 	fmt.Fprintf(w, "<h1>Databasnamn: %s</h1>\n", currentDatabase)
-	
+
 	currentTime := time.Now()
 	currDate := currentTime.Format("2006-01-02")
-	
+
 	fmt.Fprintf(w, "Dagens datum: %s<p>\n", currDate)
 }
 
@@ -323,12 +325,11 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 	currDate := currentTime.Format("2006-01-02")
 
 	res, err := db.Query("SELECT KontoNummer,Benämning,Saldo,StartSaldo,StartManad,Löpnr,SaldoArsskifte,ArsskifteManad FROM Konton ORDER BY Benämning")
-	
+
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
-	
+
 	var KontoNummer []byte    // size 20
 	var Benämning []byte      // size 40, index
 	var Saldo []byte          // BCD / Decimal Precision 19
@@ -337,13 +338,13 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 	var Löpnr []byte          // autoinc Primary Key
 	var SaldoArsskifte []byte // BCD / Decimal Precision 19
 	var ArsskifteManad []byte // size 10
-	
+
 	fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Kontonamn</th><th>Saldo enligt databas</th><th>Saldo uträknat för idag</th><th>Saldo uträknat totalt</th>\n")
 	for res.Next() {
 		err = res.Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &Löpnr, &SaldoArsskifte, &ArsskifteManad)
-		
+
 		acc := toUtf8(Benämning)
-		dbSaldo , err2 := decimal.NewFromString(toUtf8(Saldo))
+		dbSaldo, err2 := decimal.NewFromString(toUtf8(Saldo))
 		if err2 != nil {
 			log.Fatal(err)
 		}
@@ -403,9 +404,9 @@ func opendb(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	filename := sanitizeFilename(req.FormValue("fname"))
-	
+
 	if strings.HasSuffix(strings.ToLower(filename), ".mdb") {
 		//fmt.Fprintf(w, "Trying to open Access/Jet<br>\n")
 		nopw_db = openJetDB(filename, false)
@@ -419,11 +420,11 @@ func opendb(w http.ResponseWriter, req *http.Request) {
 			fmt.Fprintf(w, "</html>\n")
 		}
 	}
-	
+
 	if nopw_db == nil {
 		fmt.Fprintf(w, "<html>\n")
 		fmt.Fprintf(w, "<body>\n")
-		
+
 		fmt.Fprintf(w, "Error opening database<p>\n")
 		fmt.Fprintf(w, "</body>\n")
 		fmt.Fprintf(w, "</html>\n")
@@ -440,7 +441,7 @@ func opendb(w http.ResponseWriter, req *http.Request) {
 			fmt.Fprintf(w, "<form method=\"POST\" action=\"/pwd\">\n")
 			fmt.Fprintf(w, "      <label for=\"pwd\">Password:</label><input type=\"password\" id=\"pwd\" name=\"pwd\">\n")
 			fmt.Fprintf(w, "<input type=\"submit\" value=\"Använd\"></form>\n")
-			
+
 			fmt.Fprintf(w, "</body>\n")
 			fmt.Fprintf(w, "</html>\n")
 		} else {
@@ -459,8 +460,8 @@ func closeDB() {
 }
 
 func closedb(w http.ResponseWriter, req *http.Request) {
-	closeDB();
-	
+	closeDB()
+
 	fmt.Fprintf(w, "<!DOCTYPE html>\n")
 	fmt.Fprintf(w, "<html>\n")
 	fmt.Fprintf(w, "   <head>\n")
@@ -487,8 +488,8 @@ func quitapp(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "      <p>Avslutar. Hej då!</p>\n")
 	fmt.Fprintf(w, "   </body>\n")
 	fmt.Fprintf(w, "</html>\n")
-	if f, ok := w.(http.Flusher); ok { 
-		f.Flush() 
+	if f, ok := w.(http.Flusher); ok {
+		f.Flush()
 	}
 	//time.Sleep(8 * time.Second)
 	//srv.Shutdown(ctx);
@@ -500,10 +501,10 @@ func createdb(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	filename := req.FormValue("fname")
-	
-	if (len([]rune(filename))<1) ||
+
+	if (len([]rune(filename)) < 1) ||
 		(strings.ContainsAny(filename, "\\/|:<>.\"'`\x00")) {
 		// TODO: template
 		fmt.Fprintf(w, "<html>\n")
@@ -513,18 +514,17 @@ func createdb(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "</html>\n")
 		return
 	}
-	
+
 	// TODO: template
 	fmt.Fprintf(w, "<html>\n")
 	fmt.Fprintf(w, "<body>\n")
-	
-	SkapaTomDB(filename+".db")
+
+	SkapaTomDB(filename + ".db")
 	fmt.Fprintf(w, "Databas skapad: %s\n<p>", filename)
 	fmt.Fprintf(w, "<a href=\"/\">Tillbaka</a><p>\n")
 	fmt.Fprintf(w, "</body>\n")
 	fmt.Fprintf(w, "</html>\n")
 }
-
 
 func generateSummary(w http.ResponseWriter, req *http.Request) {
 	printSummaryHead(w, db)
@@ -594,7 +594,6 @@ order by datum,löpnr`, endDate, accName, accName)
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
 
 	var fromAcc []byte // size 40
@@ -757,7 +756,6 @@ func monthly(w http.ResponseWriter, req *http.Request) {
 
 		if err != nil {
 			log.Fatal(err)
-			os.Exit(2)
 		}
 
 		var KontoNummer []byte    // size 20
@@ -871,7 +869,6 @@ func getTypeInNames() []string {
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
 
 	var Typ []byte // size 40, index
@@ -889,7 +886,6 @@ func getTypeOutNames() []string {
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
 
 	var Typ []byte // size 40, index
@@ -902,10 +898,14 @@ func getTypeOutNames() []string {
 
 //go:embed html/help1.html
 var html1 string
+
 func help1(w http.ResponseWriter, req *http.Request) {
 	t := template.New("Hjälp example")
 	t, _ = t.Parse(html1)
-	t.Execute(w, t)
+	err := t.Execute(w, t)
+	if err != nil {
+		return
+	}
 }
 
 func main() {
