@@ -17,11 +17,11 @@ of life för Windows 10 ser för närvarande ut att vara hösten 2025 men även 
 Konverterar man till sqlite så bör det gå att köra även på Mac, i Linux och kravet på 32-bitars program i Windows
 försvinner, men inte testat.
 
-Status: "i sin linda".
+**Status:** "i sin linda".
 
-Installation: Bygg enligt kommentarer i början på filen main.go eller filen make.bat. Eller se om det finns en färdig
+**Installation:** Bygg enligt kommentarer i början på filen main.go eller filen make.bat. Eller se om det finns en färdig
 exe-fil under Releases.
 
-Kör: Starta programmet i katalogen som har en mdb-fil.
+**Kör:** Starta programmet i katalogen som har en mdb-fil.
 
-Under 2022 sponsras detta projektet av JetBrains med en Open Source Development licens för GoLand.
+*Under 2022 sponsras detta projektet av JetBrains med en Open Source Development licens för GoLand.*
