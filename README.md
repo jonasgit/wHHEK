@@ -3,7 +3,7 @@
 # wHHEK
 Personal finance package. Aimed at Swedish users.
 
-I mitten av 90-talet fanns ett program som hette Hogia Hemekonomi. Det sparar data i en mdb-fil.
+I mitten av 90-talet fanns ett program som hette Hogia Hemekonomi. Det sparar data i en mdb-fil. Det ett program för att hålla lite ordning på sin ekonomi, glorifierad kassabok ungefär.
 
 Hogia Hemekonomi är ett 16-bitars windowsprogram som visserligen fungerar i Windows 10 om man kör 32-bitars varianten och slår på 16-bitars funktionen. Men det lär inte hålla i evighet. Så detta programmet är tänkt att blir en ersättare.
 

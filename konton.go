@@ -248,6 +248,10 @@ func addKonto(Benamning string, StartSaldo decimal.Decimal, StartManad string, d
 	} else {
 		startSaldo = StartSaldo.String()
 	}
+
+	if month, err := strconv.Atoi(StartManad); err == nil {
+		StartManad = int2man(month)
+	}
 	
 	_, err := db.ExecContext(ctx,
 		`INSERT INTO Konton(KontoNummer,Benämning,Saldo,StartSaldo,SaldoArsskifte,StartManad,ArsskifteManad) VALUES (?, ?, ?, ?, ?, ?, ?)`, 0, Benamning, startSaldo, startSaldo, startSaldo, StartManad, StartManad)

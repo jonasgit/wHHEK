@@ -42,7 +42,7 @@ func getTransactionsInDateRange(db *sql.DB, kontonamn string, startDate string, 
 	var res *sql.Rows
 
 	res, err = db.QueryContext(ctx,
-		`SELECT FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Löpnr,Saldo,Fastöverföring,Text from transaktioner
+		`SELECT FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Löpnr,Saldo,Fastöverföring,[Text] from transaktioner
   where (datum < ?) and (datum >= ?) and ((FrånKonto = ?) or (TillKonto = ?))
 order by datum,löpnr`, endDate, startDate, kontonamn, kontonamn)
         if err != nil {
@@ -79,15 +79,18 @@ order by datum,löpnr`, endDate, startDate, kontonamn, kontonamn)
 		record.comment = toUtf8(comment)
 		record.fixed = fixed
 
+		fmt.Println("date:", record.date)
+		fmt.Println("text:", record.comment)
+
 		result = append(result, record)
 	}
 	return result
 }
 
 func printTransactions(w http.ResponseWriter, db *sql.DB, startDate string, endDate string, limitcomment string) {
-	//fmt.Println("printTransactions startDate:", startDate)
-	//fmt.Println("printTransactions endDate:", endDate)
-	//fmt.Println("printTransactions comment:", limitcomment)
+	fmt.Println("printTransactions startDate:", startDate)
+	fmt.Println("printTransactions endDate:", endDate)
+	fmt.Println("printTransactions comment:", limitcomment, len(limitcomment))
 
 	fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
 
@@ -97,13 +100,17 @@ func printTransactions(w http.ResponseWriter, db *sql.DB, startDate string, endD
 	var res *sql.Rows
 
 	if len(limitcomment) > 0 {
+		fmt.Println("Query with text limit")
+
 		res, err = db.QueryContext(ctx,
-			`SELECT FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Löpnr,Saldo,Fastöverföring,Text from transaktioner
+			`SELECT FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Löpnr,Saldo,Fastöverföring,[Text] from transaktioner
   where (datum < ?) and (datum >= ?) and (Text like ?)
 order by datum,löpnr`, endDate, startDate, limitcomment)
 	} else {
+		fmt.Println("Query without text limit")
+
 		res, err = db.QueryContext(ctx,
-			`SELECT FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Löpnr,Saldo,Fastöverföring,Text from transaktioner
+			`SELECT FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Löpnr,Saldo,Fastöverföring,[Text] from transaktioner
   where (datum < ?) and (datum >= ?)
 order by datum,löpnr`, endDate, startDate)
 	}
@@ -128,6 +135,10 @@ order by datum,löpnr`, endDate, startDate)
 	fmt.Fprintf(w, "<th>Redigera</th><th>Radera</th>\n")
 	for res.Next() {
 		err = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
+		fmt.Println("date:", toUtf8(date))
+		fmt.Println("text:", comment)
+		fmt.Println("text:", toUtf8(comment))
+
 
 		fmt.Fprintf(w, "<tr><td>" + strconv.Itoa(nummer) + "</td>")
 		fmt.Fprintf(w, "<td>" + toUtf8(fromAcc) + "</td>")
@@ -143,6 +154,10 @@ order by datum,löpnr`, endDate, startDate)
 		fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/transactions\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"radera\"><input type=\"checkbox\" id=\"OK\" name=\"OK\" required><label for=\"OK\">OK</label><input type=\"submit\" value=\"Radera\"></form></td></tr>\n", nummer)
 	}
 	fmt.Fprintf(w, "</table>\n")
+}
+
+func isobytetodate(rawdate []byte) (time.Time, error) {
+	return time.Parse("2006-01-02", toUtf8(rawdate))
 }
 
 func handletransactions(w http.ResponseWriter, req *http.Request) {
@@ -171,10 +186,22 @@ func handletransactions(w http.ResponseWriter, req *http.Request) {
 		res1 := db.QueryRow("SELECT MIN(Datum) FROM Transaktioner")
 		var date []byte // size 10
 		err = res1.Scan(&date)
+		kontostartdatum, err := isobytetodate(date)
+		if err != nil {
+			log.Print(err)
+		}
+
 		res1 = db.QueryRow("SELECT MAX(Datum) FROM Transaktioner")
 		err = res1.Scan(&date)
+		kontoslutdatum, err := isobytetodate(date)
+		if err != nil {
+			log.Print(err)
+		}
 
 		printTransactions(w, db, startDate, endDate, req.FormValue("comment"))
+		fmt.Fprintf(w, "Kontots första transaktion %s<br>\n", kontostartdatum.Format("2006-01-02"))
+		fmt.Fprintf(w, "Kontots sista transaktion %s<p>\n", kontoslutdatum.Format("2006-01-02"))
+		
 		fmt.Fprintf(w, "<form method=\"POST\" action=\"/transactions\">\n")
 		fmt.Fprintf(w, "<label for=\"startdate\">Startdatum:</label>")
 		fmt.Fprintf(w, "	<input type=\"date\" id=\"startdate\" name=\"startdate\" value=\"%s\" title=\"Inklusive\">", startDate)
@@ -407,9 +434,9 @@ func addTransaktionInsättning(toacc string, date string , what string, who stri
 	// TODO: Check who valid
 	
 	sqlStatement := `
-INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
-VALUES (?,?,?,?,?,?,?,?)`
-	_, err := db.Exec(sqlStatement, "---", toacc, transtyp, date, what, who, amount, text)
+INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Saldo,[Fastöverföring],[Text])
+VALUES (?,?,?,?,?,?,?,?,?,?)`
+	_, err := db.Exec(sqlStatement, "---", toacc, transtyp, date, what, who, amount, "", "False", text)
 	if err != nil {
 		panic(err)
 	}
@@ -437,9 +464,9 @@ func addTransaktionInköp(fromacc string, place string, date string , what strin
 	// TODO: Check who valid
 	
 	sqlStatement := `
-INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
-VALUES (?,?,?,?,?,?,?,?)`
-	_, err := db.Exec(sqlStatement, fromacc, place, transtyp, date, what, who, amount, text)
+INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Saldo,[Fastöverföring],[Text])
+VALUES (?,?,?,?,?,?,?,?,?,?)`
+	_, err := db.Exec(sqlStatement, fromacc, place, transtyp, date, what, who, amount, "", "False", text)
 	if err != nil {
 		panic(err)
 	}
@@ -458,7 +485,7 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 	date := req.FormValue("date")
 	who := req.FormValue("who")
 	amountstr := req.FormValue("amount")
-	amountstr = strings.ReplaceAll(amountstr, ".", ",")
+	amountstr = strings.ReplaceAll(amountstr, ",", ".")
 	amount, err := decimal.NewFromString(amountstr)
 	if err != nil {
 		log.Println("OK: addtransaction, trasig/saknar amount ", amountstr, err)
@@ -528,9 +555,9 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "Registrerar Uttag...<br> ")
 
 		sqlStatement := `
-INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
-VALUES (?,?,?,?,?,?,?,?)`
-		_, err = db.Exec(sqlStatement, fromacc, "Plånboken", transtyp, date, "---", who, strings.ReplaceAll(amount.String(), ".", ","), text)
+INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Saldo,[Fastöverföring],[Text])
+VALUES (?,?,?,?,?,?,?,?,?,?)`
+		_, err = db.Exec(sqlStatement, fromacc, "Plånboken", transtyp, date, "---", who, strings.ReplaceAll(amount.String(), ".", ","), "", "False", text)
 		if err != nil {
 			panic(err)
 		}
@@ -556,9 +583,9 @@ VALUES (?,?,?,?,?,?,?,?)`
 		fmt.Fprintf(w, "Registrerar Överföring...<br> ")
 
 		sqlStatement := `
-INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
-VALUES (?,?,?,?,?,?,?,?)`
-		_, err = db.Exec(sqlStatement, fromacc, toacc, transtyp, date, "---", who, strings.ReplaceAll(amount.String(), ".", ","), text)
+INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Saldo,[Fastöverföring],[Text])
+VALUES (?,?,?,?,?,?,?,?,?,?)`
+		_, err = db.Exec(sqlStatement, fromacc, toacc, transtyp, date, "---", who, strings.ReplaceAll(amount.String(), ".", ","), "", "False", text)
 		if err != nil {
 			panic(err)
 		}
@@ -745,7 +772,7 @@ func hämtaTransaktion(lopnr int) (result transaction) {
 		record.toAcc = toUtf8(toAcc)
 		record.tType = toUtf8(tType)
 		record.what = toUtf8(what)
-		record.date, err = time.Parse("2006-01-02", toUtf8(date))
+		record.date, err = isobytetodate(date)
 		record.who = toUtf8(who)
 		record.amount, err = decimal.NewFromString(toUtf8(amount))
 		record.comment = toUtf8(comment)
