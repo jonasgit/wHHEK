@@ -436,7 +436,7 @@ func addTransaktionInsättning(toacc string, date string , what string, who stri
 	sqlStatement := `
 INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Saldo,[Fastöverföring],[Text])
 VALUES (?,?,?,?,?,?,?,?,?,?)`
-	_, err := db.Exec(sqlStatement, "---", toacc, transtyp, date, what, who, amount, "", "False", text)
+	_, err := db.Exec(sqlStatement, "---", toacc, transtyp, date, what, who, amount, "", false, text)
 	if err != nil {
 		panic(err)
 	}
@@ -450,13 +450,10 @@ func addTransaktionInköp(fromacc string, place string, date string , what strin
 	var transtyp string = "Inköp"
         var amount string = "NONE"
 
-	if JetDBSupport {
-           amount = strings.ReplaceAll(summa.String(), ".", ",")
-	} else {
-           amount = summa.String()
-	}
- 	log.Println("nytt inköp: ", fromacc, date, amount)
-	
+	amount = strings.ReplaceAll(summa.String(), ",", ".")
+	amountf, _  := strconv.ParseFloat(amount, 64)
+ 	log.Println("nytt inköp: ", date, amount, text)
+
 	// TODO: Check length of "text"
 	// TODO: Check date format
 	// TODO: Check toacc valid
@@ -466,8 +463,10 @@ func addTransaktionInköp(fromacc string, place string, date string , what strin
 	sqlStatement := `
 INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Saldo,[Fastöverföring],[Text])
 VALUES (?,?,?,?,?,?,?,?,?,?)`
-	_, err := db.Exec(sqlStatement, fromacc, place, transtyp, date, what, who, amount, "", "False", text)
+	_, err := db.Exec(sqlStatement, fromacc, place, transtyp, date, what, who, amountf, nil, false, text)
+
 	if err != nil {
+		log.Println("nytt inköp: ", sqlStatement)
 		panic(err)
 	}
 

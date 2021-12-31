@@ -327,7 +327,7 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 	res, err := db.Query("SELECT KontoNummer,Benämning,Saldo,StartSaldo,StartManad,Löpnr,SaldoArsskifte,ArsskifteManad FROM Konton ORDER BY Benämning")
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("printSummaryTable:", err)
 	}
 
 	var KontoNummer []byte    // size 20
@@ -344,9 +344,9 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 		err = res.Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &Löpnr, &SaldoArsskifte, &ArsskifteManad)
 
 		acc := toUtf8(Benämning)
-		dbSaldo, err2 := decimal.NewFromString(toUtf8(Saldo))
+		dbSaldo, err2 := decimal.NewFromString(strings.ReplaceAll(toUtf8(Saldo), ",", "."))
 		if err2 != nil {
-			log.Fatal(err)
+			log.Fatal("printSummaryTable:", err)
 		}
 		fmt.Fprintf(w, "<tr><td>%s</td>", acc)
 		daySaldo, totSaldo := saldonKonto(db, acc, currDate)
