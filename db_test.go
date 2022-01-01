@@ -33,7 +33,7 @@ func SkapaTomMDB(t *testing.T, filename string) {
 }
 
 func TestOpenMDB(t *testing.T) {
-	var filename string = "gotest.mdb"
+	var filename = "gotest.mdb"
 
 	if !JetDBSupport {
 		t.Log("MDB/JetDB not supported.")
@@ -54,7 +54,7 @@ func TestOpenMDB(t *testing.T) {
 }
 
 func TestOpenDB(t *testing.T) {
-	var filename string = "gotest."
+	var filename = "gotest."
 
 	if JetDBSupport {
 		t.Log("Jet Supported.")

@@ -7,54 +7,54 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shopspring/decimal"  // MIT License
+	"github.com/shopspring/decimal" // MIT License
 )
 
 func fasttransaktionInit(t *testing.T, filnamn string) *sql.DB {
 	// Förberedelser
-	
+
 	if JetDBSupport {
-	   	var filename string = "got"+filnamn+".mdb"
-	        t.Log("Jet Supported.")
+		var filename = "got" + filnamn + ".mdb"
+		t.Log("Jet Supported.")
 
 		SkapaTomMDB(t, filename)
 		db = openJetDB(filename, false)
 	} else {
-	   	var filename string = "got"+filnamn+".db"
-	        t.Log("Jet NOT Supported.")
+		var filename = "got" + filnamn + ".db"
+		t.Log("Jet NOT Supported.")
 		SkapaTomDB(filename)
 		db = openSqlite(filename)
 	}
-	
+
 	if db == nil {
- 		t.Fatal("Ingen databas.")
+		t.Fatal("Ingen databas.")
 	}
 	return db
 }
 
 func TestFastTransaktionTomDB1(t *testing.T) {
 	db = fasttransaktionInit(t, "ftrt1")
-	
+
 	// Denna testen
 	antal := antalFastaTransaktioner(db)
-	
+
 	if antal != 0 {
 		t.Error("Antal fasta transaktioner != (0).")
 	} else {
 		t.Log("Antal fasta transaktioner ok (0).")
 	}
-	
+
 	closeDB()
 }
 
 func compareDates(t *testing.T, t1 time.Time, t2 time.Time) bool {
 	/*	t.Log("t1.Year: ", t1.Year())
-	t.Log("t1.Month: ", int(t1.Month()))
-	t.Log("t1.Day: ", t1.Day())
-	t.Log("t2.Year: ", t2.Year())
-	t.Log("t2.Month: ", int(t2.Month()))
-	t.Log("t2.Day: ", t2.Day())*/
-	
+		t.Log("t1.Month: ", int(t1.Month()))
+		t.Log("t1.Day: ", t1.Day())
+		t.Log("t2.Year: ", t2.Year())
+		t.Log("t2.Month: ", int(t2.Month()))
+		t.Log("t2.Day: ", t2.Day())*/
+
 	if t1.Year() != t2.Year() {
 		//t.Log("False")
 		return false
@@ -74,7 +74,7 @@ func compareDates(t *testing.T, t1 time.Time, t2 time.Time) bool {
 func TestFastTransaktionTomDB2(t *testing.T) {
 	// Förbered test
 	db = fasttransaktionInit(t, "ftrt2")
-	skapaPlats(db, "Mack", "", false, "")
+	_ = skapaPlats(db, "Mack", "", false, "")
 
 	antal := antalTransaktioner(db)
 	if antal != 0 {
@@ -87,7 +87,7 @@ func TestFastTransaktionTomDB2(t *testing.T) {
 	// Skapa ny fast transaktion, datum 2021-01-31, månadsvis
 	summa := decimal.NewFromInt(1)
 
-	skapaFastUtgift(db, "Bil", "Plånboken", "Gemensamt", "Mack", summa, "2021-01-31", false, false, "registrera", "Varje månad")
+	_ = skapaFastUtgift(db, "Bil", "Plånboken", "Gemensamt", "Mack", summa, "2021-01-31", "Varje månad")
 
 	antal = antalFastaTransaktioner(db)
 	if antal != 1 {
@@ -95,7 +95,7 @@ func TestFastTransaktionTomDB2(t *testing.T) {
 	} else {
 		t.Log("Antal fasta transaktioner ok (1).")
 	}
-	
+
 	// Registrera denna 1 gång
 	t.Log("pre-reg 1.")
 	registreraFastTransaktion(db, 1)
@@ -162,7 +162,7 @@ func TestFastTransaktionTomDB2(t *testing.T) {
 func TestFastTransaktionTomDB3(t *testing.T) {
 	// Förbered test
 	db = fasttransaktionInit(t, "ftrt3")
-	skapaPlats(db, "Mack", "", false, "")
+	_ = skapaPlats(db, "Mack", "", false, "")
 
 	antal := antalTransaktioner(db)
 	if antal != 0 {
@@ -176,7 +176,7 @@ func TestFastTransaktionTomDB3(t *testing.T) {
 	// Skapa ny fast transaktion, datum 2020-11-30, kvartalsvis
 	summa := decimal.NewFromInt(1)
 
-	skapaFastUtgift(db, "Bil", "Plånboken", "Gemensamt", "Mack", summa, "2020-11-30", false, false, "registrera", "Varje kvartal")
+	_ = skapaFastUtgift(db, "Bil", "Plånboken", "Gemensamt", "Mack", summa, "2020-11-30", "Varje kvartal")
 
 	antal = antalFastaTransaktioner(db)
 	if antal != 1 {
@@ -184,7 +184,7 @@ func TestFastTransaktionTomDB3(t *testing.T) {
 	} else {
 		t.Log("Antal fasta transaktioner ok (1).")
 	}
-	
+
 	// Registrera denna 1 gång
 	registreraFastTransaktion(db, 1)
 	antal = antalFastaTransaktioner(db)

@@ -8,22 +8,21 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/shopspring/decimal"  // MIT License
+	"github.com/shopspring/decimal" // MIT License
 )
 
 type konto struct {
-	KontoNummer string    // size 20
-	Benämning string      // size 40, index
-	Saldo decimal.Decimal // BCD / Decimal Precision 19
-	StartSaldo decimal.Decimal  // BCD / Decimal Precision 19
-	StartManad string     // size 10
-	SaldoArsskifte string // BCD / Decimal Precision 19
-	ArsskifteManad string // size 10
+	KontoNummer    string          // size 20
+	Benämning      string          // size 40, index
+	Saldo          decimal.Decimal // BCD / Decimal Precision 19
+	StartSaldo     decimal.Decimal // BCD / Decimal Precision 19
+	StartManad     string          // size 10
+	SaldoArsskifte string          // BCD / Decimal Precision 19
+	ArsskifteManad string          // size 10
 }
 
 func printKonton(w http.ResponseWriter, db *sql.DB) {
@@ -31,7 +30,6 @@ func printKonton(w http.ResponseWriter, db *sql.DB) {
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
 
 	var KontoNummer []byte    // size 20
@@ -43,39 +41,39 @@ func printKonton(w http.ResponseWriter, db *sql.DB) {
 	var SaldoArsskifte []byte // BCD / Decimal Precision 19
 	var ArsskifteManad []byte // size 10
 
-	fmt.Fprintf(w, "<table style=\"width:100%%\"><tr>")
-	fmt.Fprintf(w, "<th>Kontonummer</th>")
-	fmt.Fprintf(w, "<th>Benämning</th>")
-	fmt.Fprintf(w, "<th>Saldo</th>")
-	fmt.Fprintf(w, "<th>Startsaldo</th>")
-	fmt.Fprintf(w, "<th>Startmånad</th>")
-	fmt.Fprintf(w, "<th>Saldo årsskifte</th>")
-	fmt.Fprintf(w, "<th>Årsskiftesmånad</th>")
-	fmt.Fprintf(w, "<th>Redigera</th><th>Radera</th>\n")
+	_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr>")
+	_, _ = fmt.Fprintf(w, "<th>Kontonummer</th>")
+	_, _ = fmt.Fprintf(w, "<th>Benämning</th>")
+	_, _ = fmt.Fprintf(w, "<th>Saldo</th>")
+	_, _ = fmt.Fprintf(w, "<th>Startsaldo</th>")
+	_, _ = fmt.Fprintf(w, "<th>Startmånad</th>")
+	_, _ = fmt.Fprintf(w, "<th>Saldo årsskifte</th>")
+	_, _ = fmt.Fprintf(w, "<th>Årsskiftesmånad</th>")
+	_, _ = fmt.Fprintf(w, "<th>Redigera</th><th>Radera</th>\n")
 	for res.Next() {
 		err = res.Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &Löpnr, &SaldoArsskifte, &ArsskifteManad)
 
-		fmt.Fprintf(w, "<tr>")
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(KontoNummer))
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(Benämning))
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(Saldo))
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(StartSaldo))
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(StartManad))
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(SaldoArsskifte))
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(ArsskifteManad))
+		_, _ = fmt.Fprintf(w, "<tr>")
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(KontoNummer))
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Benämning))
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Saldo))
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(StartSaldo))
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(StartManad))
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(SaldoArsskifte))
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(ArsskifteManad))
 
-		fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/konton\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"editform\"><input type=\"submit\" value=\"Redigera\"></form></td>\n", Löpnr)
-		fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/konton\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"radera\"><input type=\"checkbox\" id=\"OK\" name=\"OK\" required><label for=\"OK\">OK</label><input type=\"submit\" value=\"Radera\"></form></td></tr>\n", Löpnr)
+		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/konton\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"editform\"><input type=\"submit\" value=\"Redigera\"></form></td>\n", Löpnr)
+		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/konton\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"radera\"><input type=\"checkbox\" id=\"OK\" name=\"OK\" required><label for=\"OK\">OK</label><input type=\"submit\" value=\"Radera\"></form></td></tr>\n", Löpnr)
 	}
-	fmt.Fprintf(w, "</table>\n")
+	_, _ = fmt.Fprintf(w, "</table>\n")
 
-	fmt.Fprintf(w, "<form method=\"POST\" action=\"/konton\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"addform\"><input type=\"submit\" value=\"Nytt konto\"></form>\n")
+	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/konton\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"addform\"><input type=\"submit\" value=\"Nytt konto\"></form>\n")
 }
 
-func printKontonFooter(w http.ResponseWriter, db *sql.DB) {
-	fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
-	fmt.Fprintf(w, "</body>\n")
-	fmt.Fprintf(w, "</html>\n")
+func printKontonFooter(w http.ResponseWriter) {
+	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
+	_, _ = fmt.Fprintf(w, "</body>\n")
+	_, _ = fmt.Fprintf(w, "</html>\n")
 }
 
 func raderaKonto(w http.ResponseWriter, lopnr int, db *sql.DB) {
@@ -89,9 +87,8 @@ func raderaKonto(w http.ResponseWriter, lopnr int, db *sql.DB) {
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
-	fmt.Fprintf(w, "Konto med löpnr %d raderat.<br>", lopnr)
+	_, _ = fmt.Fprintf(w, "Konto med löpnr %d raderat.<br>", lopnr)
 }
 
 func editformKonto(w http.ResponseWriter, lopnr int, db *sql.DB) {
@@ -114,30 +111,29 @@ func editformKonto(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	err := res1.Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &SaldoArsskifte, &ArsskifteManad)
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
 
-	fmt.Fprintf(w, "Redigera konto<br>")
-	fmt.Fprintf(w, "<form method=\"POST\" action=\"/konton\">")
+	_, _ = fmt.Fprintf(w, "Redigera konto<br>")
+	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/konton\">")
 
-	fmt.Fprintf(w, "<label for=\"Benamning\">Benämning:</label>")
-	fmt.Fprintf(w, "<input type=\"text\" id=\"Benamning\" name=\"Benamning\" value=\"%s\">", toUtf8(Benämning))
-	fmt.Fprintf(w, "<label for=\"Saldo\" hidden>Saldo:</label>")
-	fmt.Fprintf(w, "<input type=\"text\" id=\"Saldo\" name=\"Saldo\" value=\"%s\" hidden>", Saldo)
-	fmt.Fprintf(w, "<label for=\"StartSaldo\">StartSaldo:</label>")
-	fmt.Fprintf(w, "<input type=\"text\" id=\"StartSaldo\" name=\"StartSaldo\" value=\"%s\">", StartSaldo)
-	fmt.Fprintf(w, "<label for=\"StartManad\">StartMånad:</label>")
-	fmt.Fprintf(w, "<input type=\"text\" id=\"StartManad\" name=\"StartManad\" value=\"%s\">", StartManad)
-	fmt.Fprintf(w, "<label for=\"SaldoArsskifte\" hidden>Saldo Årsskifte:</label>")
-	fmt.Fprintf(w, "<input type=\"text\" id=\"SaldoArsskifte\" name=\"SaldoArsskifte\" value=\"%s\" hidden>", SaldoArsskifte)
-	fmt.Fprintf(w, "<label for=\"ArsskifteManad\" hidden>Årsskiftesmanad:</label>")
-	fmt.Fprintf(w, "<input type=\"text\" id=\"ArsskifteManad\" name=\"ArsskifteManad\" value=\"%s\" hidden>", ArsskifteManad)
+	_, _ = fmt.Fprintf(w, "<label for=\"Benamning\">Benämning:</label>")
+	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"Benamning\" name=\"Benamning\" value=\"%s\">", toUtf8(Benämning))
+	_, _ = fmt.Fprintf(w, "<label for=\"Saldo\" hidden>Saldo:</label>")
+	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"Saldo\" name=\"Saldo\" value=\"%s\" hidden>", Saldo)
+	_, _ = fmt.Fprintf(w, "<label for=\"StartSaldo\">StartSaldo:</label>")
+	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"StartSaldo\" name=\"StartSaldo\" value=\"%s\">", StartSaldo)
+	_, _ = fmt.Fprintf(w, "<label for=\"StartManad\">StartMånad:</label>")
+	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"StartManad\" name=\"StartManad\" value=\"%s\">", StartManad)
+	_, _ = fmt.Fprintf(w, "<label for=\"SaldoArsskifte\" hidden>Saldo Årsskifte:</label>")
+	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"SaldoArsskifte\" name=\"SaldoArsskifte\" value=\"%s\" hidden>", SaldoArsskifte)
+	_, _ = fmt.Fprintf(w, "<label for=\"ArsskifteManad\" hidden>Årsskiftesmanad:</label>")
+	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"ArsskifteManad\" name=\"ArsskifteManad\" value=\"%s\" hidden>", ArsskifteManad)
 
-	fmt.Fprintf(w, "<input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\">", lopnr)
-	fmt.Fprintf(w, "<input type=\"hidden\" id=\"action\" name=\"action\" value=\"update\">")
-	fmt.Fprintf(w, "<input type=\"submit\" value=\"Uppdatera\">")
-	fmt.Fprintf(w, "</form>\n")
-	fmt.Fprintf(w, "<p>\n")
+	_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\">", lopnr)
+	_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"action\" name=\"action\" value=\"update\">")
+	_, _ = fmt.Fprintf(w, "<input type=\"submit\" value=\"Uppdatera\">")
+	_, _ = fmt.Fprintf(w, "</form>\n")
+	_, _ = fmt.Fprintf(w, "<p>\n")
 }
 
 func month2Int(month time.Month) int {
@@ -170,35 +166,35 @@ func month2Int(month time.Month) int {
 	return -1
 }
 
-func addformKonto(w http.ResponseWriter, db *sql.DB) {
+func addformKonto(w http.ResponseWriter) {
 	fmt.Println("addformKonto ")
 
 	currentTime := time.Now()
 	currentMonth := currentTime.Month()
 	currentMonthInt := month2Int(currentMonth)
 
-	fmt.Fprintf(w, "Lägg till konto<br>")
-	fmt.Fprintf(w, "<form method=\"POST\" action=\"/konton\">")
+	_, _ = fmt.Fprintf(w, "Lägg till konto<br>")
+	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/konton\">")
 
-	fmt.Fprintf(w, "<label for=\"Benamning\">Benämning:</label>")
-	fmt.Fprintf(w, "<input type=\"text\" id=\"Benamning\" name=\"Benamning\" value=\"%s\">", "")
-	fmt.Fprintf(w, "<label for=\"StartSaldo\">Startsaldo:</label>")
-	fmt.Fprintf(w, "<input type=\"text\" id=\"StartSaldo\" name=\"StartSaldo\" value=\"%s\">", "")
-	fmt.Fprintf(w, "<label for=\"StartManad\">Startmånad:</label>")
-	fmt.Fprintf(w, "<select id=\"StartManad\" name=\"StartManad\" required>\n")
+	_, _ = fmt.Fprintf(w, "<label for=\"Benamning\">Benämning:</label>")
+	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"Benamning\" name=\"Benamning\" value=\"%s\">", "")
+	_, _ = fmt.Fprintf(w, "<label for=\"StartSaldo\">Startsaldo:</label>")
+	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"StartSaldo\" name=\"StartSaldo\" value=\"%s\">", "")
+	_, _ = fmt.Fprintf(w, "<label for=\"StartManad\">Startmånad:</label>")
+	_, _ = fmt.Fprintf(w, "<select id=\"StartManad\" name=\"StartManad\" required>\n")
 	for month := 1; month < 13; month++ {
-		fmt.Fprintf(w, "<option value=\"%d\"", month)
+		_, _ = fmt.Fprintf(w, "<option value=\"%d\"", month)
 		if month == currentMonthInt {
-			fmt.Fprintf(w, " selected ")
+			_, _ = fmt.Fprintf(w, " selected ")
 		}
-		fmt.Fprintf(w, ">%d</option>\n", month)
+		_, _ = fmt.Fprintf(w, ">%d</option>\n", month)
 	}
-	fmt.Fprintf(w, "</select>\n")
+	_, _ = fmt.Fprintf(w, "</select>\n")
 
-	fmt.Fprintf(w, "<input type=\"hidden\" id=\"action\" name=\"action\" value=\"add\">")
-	fmt.Fprintf(w, "<input type=\"submit\" value=\"Nytt konto\">")
-	fmt.Fprintf(w, "</form>\n")
-	fmt.Fprintf(w, "<p>\n")
+	_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"action\" name=\"action\" value=\"add\">")
+	_, _ = fmt.Fprintf(w, "<input type=\"submit\" value=\"Nytt konto\">")
+	_, _ = fmt.Fprintf(w, "</form>\n")
+	_, _ = fmt.Fprintf(w, "<p>\n")
 }
 
 func int2man(month int) string {
@@ -230,8 +226,7 @@ func int2man(month int) string {
 	}
 
 	// Fail HARD!
-	log.Fatal("int2man: unknown month "+strconv.Itoa(month))
-	os.Exit(2)
+	log.Fatal("int2man: unknown month " + strconv.Itoa(month))
 	return "???"
 }
 
@@ -243,7 +238,7 @@ func addKonto(Benamning string, StartSaldo decimal.Decimal, StartManad string, d
 
 	var startSaldo = "Not Possible"
 	//StartMan, _ := strconv.Atoi(StartManad)
- 	if JetDBSupport {
+	if JetDBSupport {
 		startSaldo = strings.ReplaceAll(StartSaldo.String(), ".", ",")
 	} else {
 		startSaldo = StartSaldo.String()
@@ -252,13 +247,12 @@ func addKonto(Benamning string, StartSaldo decimal.Decimal, StartManad string, d
 	if month, err := strconv.Atoi(StartManad); err == nil {
 		StartManad = int2man(month)
 	}
-	
+
 	_, err := db.ExecContext(ctx,
 		`INSERT INTO Konton(KontoNummer,Benämning,Saldo,StartSaldo,SaldoArsskifte,StartManad,ArsskifteManad) VALUES (?, ?, ?, ?, ?, ?, ?)`, 0, Benamning, startSaldo, startSaldo, startSaldo, StartManad, StartManad)
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
 }
 
@@ -272,7 +266,7 @@ func addKontow(w http.ResponseWriter, Benamning string, StartSaldo string, Start
 	}
 	addKonto(Benamning, startSaldo, StartManad, db)
 
-	fmt.Fprintf(w, "Konto %s tillagd.<br>", Benamning)
+	_, _ = fmt.Fprintf(w, "Konto %s tillagd.<br>", Benamning)
 }
 
 func updateKonto(w http.ResponseWriter, lopnr int, Benamning string, StartSaldo string, StartManad string, db *sql.DB) {
@@ -286,9 +280,8 @@ func updateKonto(w http.ResponseWriter, lopnr int, Benamning string, StartSaldo 
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
-	fmt.Fprintf(w, "Konto %s uppdaterad.<br>", Benamning)
+	_, _ = fmt.Fprintf(w, "Konto %s uppdaterad.<br>", Benamning)
 }
 
 func updateKontoSaldo(Benamning string, Saldo string) {
@@ -296,9 +289,9 @@ func updateKontoSaldo(Benamning string, Saldo string) {
 	//fmt.Println("updateKontoSaldo lopnr: ", lopnr)
 	var amount string
 	if JetDBSupport {
-           amount = strings.ReplaceAll(Saldo, ".", ",")
+		amount = strings.ReplaceAll(Saldo, ".", ",")
 	} else {
-           amount = Saldo
+		amount = Saldo
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -309,22 +302,21 @@ func updateKontoSaldo(Benamning string, Saldo string) {
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
 	//fmt.Println("Konto uppdaterad, nytt saldo.", Benamning, amount)
 }
 
 func hanterakonton(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "<html>\n")
-	fmt.Fprintf(w, "<head>\n")
-	fmt.Fprintf(w, "<style>\n")
-	fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
-	fmt.Fprintf(w, "</style>\n")
-	fmt.Fprintf(w, "</head>\n")
-	fmt.Fprintf(w, "<body>\n")
+	_, _ = fmt.Fprintf(w, "<html>\n")
+	_, _ = fmt.Fprintf(w, "<head>\n")
+	_, _ = fmt.Fprintf(w, "<style>\n")
+	_, _ = fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
+	_, _ = fmt.Fprintf(w, "</style>\n")
+	_, _ = fmt.Fprintf(w, "</head>\n")
+	_, _ = fmt.Fprintf(w, "<body>\n")
 
-	fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
-	fmt.Fprintf(w, "<h2>Konton</h2>\n")
+	_, _ = fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
+	_, _ = fmt.Fprintf(w, "<h2>Konton</h2>\n")
 
 	err := req.ParseForm()
 	if err != nil {
@@ -332,7 +324,7 @@ func hanterakonton(w http.ResponseWriter, req *http.Request) {
 	}
 
 	formaction := req.FormValue("action")
-	var lopnr int = -1
+	var lopnr = -1
 	if len(req.FormValue("lopnr")) > 0 {
 		lopnr, err = strconv.Atoi(req.FormValue("lopnr"))
 	}
@@ -341,17 +333,17 @@ func hanterakonton(w http.ResponseWriter, req *http.Request) {
 	case "radera":
 		raderaKonto(w, lopnr, db)
 	case "addform":
-		addformKonto(w, db)
+		addformKonto(w)
 	case "add":
-		var Benamning string = ""
+		var Benamning = ""
 		if len(req.FormValue("Benamning")) > 0 {
 			Benamning = req.FormValue("Benamning")
 		}
-		var StartSaldo string = ""
+		var StartSaldo = ""
 		if len(req.FormValue("StartSaldo")) > 0 {
 			StartSaldo = req.FormValue("StartSaldo")
 		}
-		var StartManad string = ""
+		var StartManad = ""
 		if len(req.FormValue("StartManad")) > 0 {
 			StartManad = req.FormValue("StartManad")
 		}
@@ -359,15 +351,15 @@ func hanterakonton(w http.ResponseWriter, req *http.Request) {
 	case "editform":
 		editformKonto(w, lopnr, db)
 	case "update":
-		var Benamning string = ""
+		var Benamning = ""
 		if len(req.FormValue("Benamning")) > 0 {
 			Benamning = req.FormValue("Benamning")
 		}
-		var StartSaldo string = ""
+		var StartSaldo = ""
 		if len(req.FormValue("StartSaldo")) > 0 {
 			StartSaldo = req.FormValue("StartSaldo")
 		}
-		var StartManad string = ""
+		var StartManad = ""
 		if len(req.FormValue("StartManad")) > 0 {
 			StartManad = req.FormValue("StartManad")
 		}
@@ -376,7 +368,7 @@ func hanterakonton(w http.ResponseWriter, req *http.Request) {
 		fmt.Println("Okänd action: ", formaction)
 	}
 	printKonton(w, db)
-	printKontonFooter(w, db)
+	printKontonFooter(w)
 }
 
 func getAccNames() []string {
@@ -386,7 +378,6 @@ func getAccNames() []string {
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
 
 	var Benämning []byte // size 40, index
@@ -409,7 +400,6 @@ func antalKonton() int {
 	err := res1.Scan(&antal)
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
 
 	return antal
@@ -418,16 +408,15 @@ func antalKonton() int {
 func hämtakontoID(db *sql.DB, accName string) int {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	
+
 	res1 := db.QueryRowContext(ctx,
 		`select Löpnr
   from konton
   where benämning = ?`, accName)
-	var Löpnr int             // autoinc Primary Key
+	var Löpnr int // autoinc Primary Key
 	err := res1.Scan(&Löpnr)
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
 
 	return Löpnr
@@ -438,7 +427,7 @@ func hämtaKonto(db *sql.DB, lopnr int) konto {
 	defer cancel()
 
 	res1 := db.QueryRowContext(ctx,
-	        `SELECT KontoNummer,Benämning,Saldo,StartSaldo,StartManad,SaldoArsskifte,ArsskifteManad FROM Konton WHERE (Löpnr=?)`, lopnr)
+		`SELECT KontoNummer,Benämning,Saldo,StartSaldo,StartManad,SaldoArsskifte,ArsskifteManad FROM Konton WHERE (Löpnr=?)`, lopnr)
 
 	var KontoNummer []byte    // size 20
 	var Benämning []byte      // size 40, index
@@ -451,7 +440,6 @@ func hämtaKonto(db *sql.DB, lopnr int) konto {
 	err := res1.Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &SaldoArsskifte, &ArsskifteManad)
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
 
 	var retkonto konto
@@ -467,18 +455,18 @@ func hämtaKonto(db *sql.DB, lopnr int) konto {
 	return retkonto
 }
 
-func saldoKonto(db *sql.DB, accName string, endDate string) decimal.Decimal{
+func saldoKonto(db *sql.DB, accName string, endDate string) decimal.Decimal {
 	//	fmt.Println("saldoKonto: accName ", accName)
 	if endDate == "" {
 		endDate = "2999-12-31"
 	}
 	//fmt.Println("saldoKonto: endDate ", endDate)
-	
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var err error
 	var res *sql.Rows
-	
+
 	res1 := db.QueryRowContext(ctx,
 		`select startsaldo
   from konton
@@ -499,7 +487,6 @@ order by datum,löpnr`, endDate, accName, accName)
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
 
 	var fromAcc []byte // size 40
@@ -543,15 +530,15 @@ order by datum,löpnr`, endDate, accName, accName)
 	return currSaldo
 }
 
-func saldonKonto(db *sql.DB, accName string, endDate string) (decimal.Decimal,decimal.Decimal){
+func saldonKonto(db *sql.DB, accName string, endDate string) (decimal.Decimal, decimal.Decimal) {
 	//fmt.Println("saldoKonto: accName ", accName)
 	//fmt.Println("saldoKonto: endDate ", endDate)
-	
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var err error
 	var res *sql.Rows
-	
+
 	res1 := db.QueryRowContext(ctx,
 		`select startsaldo
   from konton
@@ -573,7 +560,6 @@ order by datum,löpnr`, accName, accName)
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
 
 	var fromAcc []byte // size 40

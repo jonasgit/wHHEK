@@ -7,7 +7,7 @@ import (
 )
 
 // Global variables
-var JetDBSupport bool = false
+var JetDBSupport = false
 
 func openJetDB(filename string, ro bool) *sql.DB {
 	// No support for JetDB

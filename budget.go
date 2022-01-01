@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -18,92 +17,91 @@ func printBudget(w http.ResponseWriter, db *sql.DB) {
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
 
-	var Typ []byte  // size 40
-	var Inkomst []byte  // size 1
-	var HurOfta int16 // SmallInt
-	var StartMånad []byte  // size 10
-	var Jan []byte  // BCD / Decimal Precision 19
-	var Feb []byte  // BCD / Decimal Precision 19
-	var Mar []byte  // BCD / Decimal Precision 19
-	var Apr []byte  // BCD / Decimal Precision 19
-	var Maj []byte  // BCD / Decimal Precision 19
-	var Jun []byte  // BCD / Decimal Precision 19
-	var Jul []byte  // BCD / Decimal Precision 19
-	var Aug []byte  // BCD / Decimal Precision 19
-	var Sep []byte  // BCD / Decimal Precision 19
-	var Okt []byte  // BCD / Decimal Precision 19
-	var Nov []byte  // BCD / Decimal Precision 19
-	var Dec []byte  // BCD / Decimal Precision 19
-	var Kontrollnr []byte  //int32 // Integer
-	var Löpnr int  // autoinc Primary Key, index
+	var Typ []byte        // size 40
+	var Inkomst []byte    // size 1
+	var HurOfta int16     // SmallInt
+	var StartMånad []byte // size 10
+	var Jan []byte        // BCD / Decimal Precision 19
+	var Feb []byte        // BCD / Decimal Precision 19
+	var Mar []byte        // BCD / Decimal Precision 19
+	var Apr []byte        // BCD / Decimal Precision 19
+	var Maj []byte        // BCD / Decimal Precision 19
+	var Jun []byte        // BCD / Decimal Precision 19
+	var Jul []byte        // BCD / Decimal Precision 19
+	var Aug []byte        // BCD / Decimal Precision 19
+	var Sep []byte        // BCD / Decimal Precision 19
+	var Okt []byte        // BCD / Decimal Precision 19
+	var Nov []byte        // BCD / Decimal Precision 19
+	var Dec []byte        // BCD / Decimal Precision 19
+	var Kontrollnr []byte //int32 // Integer
+	var Löpnr int         // autoinc Primary Key, index
 
-	fmt.Fprintf(w, "<table style=\"width:100%%\"><tr>")
-	fmt.Fprintf(w, "<th>Löpnr</th>")
-	fmt.Fprintf(w, "<th>Typ</th>")
-	fmt.Fprintf(w, "<th>Inkomst</th>")
-	fmt.Fprintf(w, "<th>HurOfta</th>")
-	fmt.Fprintf(w, "<th>StartMånad</th>")
-	fmt.Fprintf(w, "<th>Jan</th>")
-	fmt.Fprintf(w, "<th>Feb</th>")
-	fmt.Fprintf(w, "<th>Mar</th>")
-	fmt.Fprintf(w, "<th>Apr</th>")
-	fmt.Fprintf(w, "<th>Maj</th>")
-	fmt.Fprintf(w, "<th>Jun</th>")
-	fmt.Fprintf(w, "<th>Jul</th>")
-	fmt.Fprintf(w, "<th>Aug</th>")
-	fmt.Fprintf(w, "<th>Sep</th>")
-	fmt.Fprintf(w, "<th>Okt</th>")
-	fmt.Fprintf(w, "<th>Nov</th>")
-	fmt.Fprintf(w, "<th>Dec</th>")
-	fmt.Fprintf(w, "<th>Kontrollnr</th>")
-	fmt.Fprintf(w, "<th>Redigera</th><th>Radera</th>\n")
+	_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr>")
+	_, _ = fmt.Fprintf(w, "<th>Löpnr</th>")
+	_, _ = fmt.Fprintf(w, "<th>Typ</th>")
+	_, _ = fmt.Fprintf(w, "<th>Inkomst</th>")
+	_, _ = fmt.Fprintf(w, "<th>HurOfta</th>")
+	_, _ = fmt.Fprintf(w, "<th>StartMånad</th>")
+	_, _ = fmt.Fprintf(w, "<th>Jan</th>")
+	_, _ = fmt.Fprintf(w, "<th>Feb</th>")
+	_, _ = fmt.Fprintf(w, "<th>Mar</th>")
+	_, _ = fmt.Fprintf(w, "<th>Apr</th>")
+	_, _ = fmt.Fprintf(w, "<th>Maj</th>")
+	_, _ = fmt.Fprintf(w, "<th>Jun</th>")
+	_, _ = fmt.Fprintf(w, "<th>Jul</th>")
+	_, _ = fmt.Fprintf(w, "<th>Aug</th>")
+	_, _ = fmt.Fprintf(w, "<th>Sep</th>")
+	_, _ = fmt.Fprintf(w, "<th>Okt</th>")
+	_, _ = fmt.Fprintf(w, "<th>Nov</th>")
+	_, _ = fmt.Fprintf(w, "<th>Dec</th>")
+	_, _ = fmt.Fprintf(w, "<th>Kontrollnr</th>")
+	_, _ = fmt.Fprintf(w, "<th>Redigera</th><th>Radera</th>\n")
 	for res.Next() {
-		err = res.Scan(&Löpnr,&Typ,&Inkomst,&HurOfta,&StartMånad,&Jan,&Feb,&Mar,&Apr,&Maj,&Jun,&Jul,&Aug,&Sep,&Okt,&Nov,&Dec,&Kontrollnr)
+		err = res.Scan(&Löpnr, &Typ, &Inkomst, &HurOfta, &StartMånad, &Jan, &Feb, &Mar, &Apr, &Maj, &Jun, &Jul, &Aug, &Sep, &Okt, &Nov, &Dec, &Kontrollnr)
 
-		fmt.Fprintf(w, "<tr>")
-		fmt.Fprintf(w, "<td>%d</td>", Löpnr)
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(Typ))
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(Inkomst))
-		fmt.Fprintf(w, "<td>%s</td>", strconv.Itoa(int(HurOfta)))
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(StartMånad))
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(Jan))
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(Feb))
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(Mar))
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(Apr))
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(Maj))
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(Jun))
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(Jul))
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(Aug))
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(Sep))
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(Okt))
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(Nov))
-		fmt.Fprintf(w, "<td>%s</td>", toUtf8(Dec))
+		_, _ = fmt.Fprintf(w, "<tr>")
+		_, _ = fmt.Fprintf(w, "<td>%d</td>", Löpnr)
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Typ))
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Inkomst))
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", strconv.Itoa(int(HurOfta)))
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(StartMånad))
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Jan))
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Feb))
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Mar))
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Apr))
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Maj))
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Jun))
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Jul))
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Aug))
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Sep))
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Okt))
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Nov))
+		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Dec))
 		if Kontrollnr != nil {
-			fmt.Fprintf(w, "<td>%s</td>", toUtf8(Kontrollnr))
+			_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Kontrollnr))
 		} else {
-			fmt.Fprintf(w, "<td>%s</td>", "null")
+			_, _ = fmt.Fprintf(w, "<td>%s</td>", "null")
 		}
 
-		fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/budget\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"editform\"><input type=\"submit\" value=\"Redigera\"></form></td>\n", Löpnr)
-		fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/budget\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"radera\"><input type=\"checkbox\" id=\"OK\" name=\"OK\" required><label for=\"OK\">OK</label><input type=\"submit\" value=\"Radera\"></form></td></tr>\n", Löpnr)
+		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/budget\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"editform\"><input type=\"submit\" value=\"Redigera\"></form></td>\n", Löpnr)
+		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/budget\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"radera\"><input type=\"checkbox\" id=\"OK\" name=\"OK\" required><label for=\"OK\">OK</label><input type=\"submit\" value=\"Radera\"></form></td></tr>\n", Löpnr)
 	}
-	fmt.Fprintf(w, "</table>\n")
+	_, _ = fmt.Fprintf(w, "</table>\n")
 
-	fmt.Fprintf(w, "<form method=\"POST\" action=\"/budget\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"addform\"><input type=\"submit\" value=\"Ny budgetpost\"></form>\n")
+	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/budget\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"addform\"><input type=\"submit\" value=\"Ny budgetpost\"></form>\n")
 }
 
-func printBudgetFooter(w http.ResponseWriter, db *sql.DB) {
-	fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
-	fmt.Fprintf(w, "</body>\n")
-	fmt.Fprintf(w, "</html>\n")
+func printBudgetFooter(w http.ResponseWriter) {
+	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
+	_, _ = fmt.Fprintf(w, "</body>\n")
+	_, _ = fmt.Fprintf(w, "</html>\n")
 }
 
 func PrintEditCellText(w http.ResponseWriter, label string, title string, value string) {
-	fmt.Fprintf(w, "<label for=\"%s\">%s:</label>", label, title)
-	fmt.Fprintf(w, "<input type=\"text\" id=\"%s\" name=\"%s\" value=\"%s\" >", label, label, value)
+	_, _ = fmt.Fprintf(w, "<label for=\"%s\">%s:</label>", label, title)
+	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"%s\" name=\"%s\" value=\"%s\" >", label, label, value)
 }
 
 func editformBudget(w http.ResponseWriter, lopnr int, db *sql.DB) {
@@ -115,33 +113,32 @@ func editformBudget(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	res1 := db.QueryRowContext(ctx,
 		`SELECT Löpnr,Typ,Inkomst,HurOfta,StartMånad,Jan,Feb,Mar,Apr,Maj,Jun,Jul,Aug,Sep,Okt,Nov,Dec,Kontrollnr FROM Budget WHERE (Löpnr=?)`, lopnr)
 
-	var Typ []byte  // size 40
-	var Inkomst []byte  // size 1
-	var HurOfta int16 // SmallInt
-	var StartMånad []byte  // size 10
-	var Jan []byte  // BCD / Decimal Precision 19
-	var Feb []byte  // BCD / Decimal Precision 19
-	var Mar []byte  // BCD / Decimal Precision 19
-	var Apr []byte  // BCD / Decimal Precision 19
-	var Maj []byte  // BCD / Decimal Precision 19
-	var Jun []byte  // BCD / Decimal Precision 19
-	var Jul []byte  // BCD / Decimal Precision 19
-	var Aug []byte  // BCD / Decimal Precision 19
-	var Sep []byte  // BCD / Decimal Precision 19
-	var Okt []byte  // BCD / Decimal Precision 19
-	var Nov []byte  // BCD / Decimal Precision 19
-	var Dec []byte  // BCD / Decimal Precision 19
-	var Kontrollnr []byte  //int32 // Integer
-	var Löpnr int  // autoinc Primary Key, index
+	var Typ []byte        // size 40
+	var Inkomst []byte    // size 1
+	var HurOfta int16     // SmallInt
+	var StartMånad []byte // size 10
+	var Jan []byte        // BCD / Decimal Precision 19
+	var Feb []byte        // BCD / Decimal Precision 19
+	var Mar []byte        // BCD / Decimal Precision 19
+	var Apr []byte        // BCD / Decimal Precision 19
+	var Maj []byte        // BCD / Decimal Precision 19
+	var Jun []byte        // BCD / Decimal Precision 19
+	var Jul []byte        // BCD / Decimal Precision 19
+	var Aug []byte        // BCD / Decimal Precision 19
+	var Sep []byte        // BCD / Decimal Precision 19
+	var Okt []byte        // BCD / Decimal Precision 19
+	var Nov []byte        // BCD / Decimal Precision 19
+	var Dec []byte        // BCD / Decimal Precision 19
+	var Kontrollnr []byte //int32 // Integer
+	var Löpnr int         // autoinc Primary Key, index
 
-	err := res1.Scan(&Löpnr,&Typ,&Inkomst,&HurOfta,&StartMånad,&Jan,&Feb,&Mar,&Apr,&Maj,&Jun,&Jul,&Aug,&Sep,&Okt,&Nov,&Dec,&Kontrollnr)
+	err := res1.Scan(&Löpnr, &Typ, &Inkomst, &HurOfta, &StartMånad, &Jan, &Feb, &Mar, &Apr, &Maj, &Jun, &Jul, &Aug, &Sep, &Okt, &Nov, &Dec, &Kontrollnr)
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
 
-	fmt.Fprintf(w, "Redigera budgetpost<br>")
-	fmt.Fprintf(w, "<form method=\"POST\" action=\"/budget\">")
+	_, _ = fmt.Fprintf(w, "Redigera budgetpost<br>")
+	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/budget\">")
 
 	PrintEditCellText(w, "Typ", "Typ", toUtf8(Typ))
 	PrintEditCellText(w, "Inkomst", "Inkomst", toUtf8(Inkomst))
@@ -165,78 +162,77 @@ func editformBudget(w http.ResponseWriter, lopnr int, db *sql.DB) {
 		PrintEditCellText(w, "Kontrollnr", "Kontrollnr", "null")
 	}
 
-	fmt.Fprintf(w, "<input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\">", Löpnr)
-	fmt.Fprintf(w, "<input type=\"hidden\" id=\"action\" name=\"action\" value=\"update\">")
-	fmt.Fprintf(w, "<input type=\"submit\" value=\"Uppdatera\">")
-	fmt.Fprintf(w, "</form>\n")
-	fmt.Fprintf(w, "<p>\n")
+	_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\">", Löpnr)
+	_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"action\" name=\"action\" value=\"update\">")
+	_, _ = fmt.Fprintf(w, "<input type=\"submit\" value=\"Uppdatera\">")
+	_, _ = fmt.Fprintf(w, "</form>\n")
+	_, _ = fmt.Fprintf(w, "<p>\n")
 }
-
 
 func updateBudget(w http.ResponseWriter, lopnr int, req *http.Request, db *sql.DB) {
 	fmt.Println("updateBudget lopnr: ", lopnr)
 
-	var Typ string = ""
+	var Typ = ""
 	if len(req.FormValue("Typ")) > 0 {
 		Typ = req.FormValue("Typ")
 	}
-	var Inkomst string = ""
+	var Inkomst = ""
 	if len(req.FormValue("Inkomst")) > 0 {
 		Inkomst = req.FormValue("Inkomst")
 	}
-	var HurOfta string = ""
+	var HurOfta = ""
 	if len(req.FormValue("HurOfta")) > 0 {
 		HurOfta = req.FormValue("HurOfta")
 	}
-	var StartMånad string = ""
+	var StartMånad = ""
 	if len(req.FormValue("StartMånad")) > 0 {
 		StartMånad = req.FormValue("StartMånad")
 	}
-	var Jan string = ""
+	var Jan = ""
 	if len(req.FormValue("Jan")) > 0 {
 		Jan = req.FormValue("Jan")
 	}
-	var Feb string = ""
+	var Feb = ""
 	if len(req.FormValue("Feb")) > 0 {
 		Feb = req.FormValue("Feb")
 	}
-	var Mar string = ""
+	var Mar = ""
 	if len(req.FormValue("Mar")) > 0 {
 		Mar = req.FormValue("Mar")
 	}
-	var Apr string = ""
+	var Apr = ""
 	if len(req.FormValue("Apr")) > 0 {
 		Apr = req.FormValue("Apr")
 	}
-	var Maj string = ""
+	var Maj = ""
 	if len(req.FormValue("Maj")) > 0 {
 		Maj = req.FormValue("Maj")
 	}
-	var Jun string = ""
+	var Jun = ""
 	if len(req.FormValue("Jun")) > 0 {
 		Jun = req.FormValue("Jun")
 	}
-	var Jul string = ""
+	var Jul = ""
 	if len(req.FormValue("Jul")) > 0 {
 		Jul = req.FormValue("Jul")
 	}
-	var Aug string = ""
+	var Aug = ""
 	if len(req.FormValue("Aug")) > 0 {
 		Aug = req.FormValue("Aug")
 	}
-	var Sep string = ""
+	var Sep = ""
 	if len(req.FormValue("Sep")) > 0 {
 		Sep = req.FormValue("Sep")
 	}
-	var Okt string = ""
+	var Okt = ""
 	if len(req.FormValue("Okt")) > 0 {
 		Okt = req.FormValue("Okt")
 	}
-	var Nov string = ""
+	var Nov = ""
 	if len(req.FormValue("Nov")) > 0 {
 		Nov = req.FormValue("Nov")
 	}
-	var Dec string = ""
+	var Dec = ""
 	if len(req.FormValue("Dec")) > 0 {
 		Dec = req.FormValue("Dec")
 	}
@@ -266,22 +262,21 @@ func updateBudget(w http.ResponseWriter, lopnr int, req *http.Request, db *sql.D
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
-	fmt.Fprintf(w, "Budgetpost %s uppdaterad.<br>", Typ)
+	_, _ = fmt.Fprintf(w, "Budgetpost %s uppdaterad.<br>", Typ)
 }
 
 func hanteraBudget(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "<html>\n")
-	fmt.Fprintf(w, "<head>\n")
-	fmt.Fprintf(w, "<style>\n")
-	fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
-	fmt.Fprintf(w, "</style>\n")
-	fmt.Fprintf(w, "</head>\n")
-	fmt.Fprintf(w, "<body>\n")
+	_, _ = fmt.Fprintf(w, "<html>\n")
+	_, _ = fmt.Fprintf(w, "<head>\n")
+	_, _ = fmt.Fprintf(w, "<style>\n")
+	_, _ = fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
+	_, _ = fmt.Fprintf(w, "</style>\n")
+	_, _ = fmt.Fprintf(w, "</head>\n")
+	_, _ = fmt.Fprintf(w, "<body>\n")
 
-	fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
-	fmt.Fprintf(w, "<h2>Budget</h2>\n")
+	_, _ = fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
+	_, _ = fmt.Fprintf(w, "<h2>Budget</h2>\n")
 
 	err := req.ParseForm()
 	if err != nil {
@@ -289,7 +284,7 @@ func hanteraBudget(w http.ResponseWriter, req *http.Request) {
 	}
 
 	formaction := req.FormValue("action")
-	var lopnr int = -1
+	var lopnr = -1
 	if len(req.FormValue("lopnr")) > 0 {
 		lopnr, err = strconv.Atoi(req.FormValue("lopnr"))
 	}
@@ -303,14 +298,14 @@ func hanteraBudget(w http.ResponseWriter, req *http.Request) {
 		fmt.Println("Okänd action: ", formaction)
 	}
 	printBudget(w, db)
-	printBudgetFooter(w, db)
+	printBudgetFooter(w)
 }
 
 func antalBudgetposter(db *sql.DB) int {
 	if db == nil {
 		log.Println("antalBudgetposter db=nil")
 	}
-	
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -322,7 +317,6 @@ func antalBudgetposter(db *sql.DB) int {
 	err := res1.Scan(&antal)
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
 
 	return antal
@@ -332,22 +326,21 @@ func getAllBudgetposter(db *sql.DB) []([2]string) {
 	if db == nil {
 		log.Println("getAllBudgetposter db=nil")
 	}
-	
+
 	res, err := db.Query("SELECT Typ,Inkomst FROM Budget ORDER BY Inkomst ASC, Typ ASC")
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
 
-	var Typ []byte  // size 40
-	var Inkomst []byte  // size 1
+	var Typ []byte     // size 40
+	var Inkomst []byte // size 1
 
 	var result []([2]string)
 	for res.Next() {
 		var record [2]string
 
-		err = res.Scan(&Typ,&Inkomst)
+		err = res.Scan(&Typ, &Inkomst)
 
 		record[0] = toUtf8(Typ)
 		record[1] = toUtf8(Inkomst)

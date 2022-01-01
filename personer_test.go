@@ -11,13 +11,13 @@ import (
 func personerInit(t *testing.T, filnamn string) *sql.DB {
 	// Förberedelser
 	if JetDBSupport {
-		var filename string = "got" + filnamn + ".mdb"
+		var filename = "got" + filnamn + ".mdb"
 		t.Log("Jet Supported.")
 
 		SkapaTomMDB(t, filename)
 		db = openJetDB(filename, false)
 	} else {
-		var filename string = "got" + filnamn + ".db"
+		var filename = "got" + filnamn + ".db"
 		t.Log("Jet NOT Supported.")
 		SkapaTomDB(filename)
 		db = openSqlite(filename)
@@ -67,7 +67,7 @@ func TestPersonDB1(t *testing.T) {
 	db = personerInit(t, "prs2")
 
 	// Denna testen
-	skapaPerson(db, "Namn Person", 1994, "Man")
+	_ = skapaPerson(db, "Namn Person", 1994, "Man")
 
 	antal := antalPersoner(db)
 
@@ -83,10 +83,10 @@ func TestPersonDB2(t *testing.T) {
 	db = personerInit(t, "prs3")
 
 	// Denna testen
-	skapaPerson(db, "Namn Person", 1994, "Man")
-	skapaPerson(db, "Namn Person", 1996, "Kvinna")
-	skapaPerson(db, "Namn Person", 2004, "Man")
-	skapaPerson(db, "Namn Person", 2006, "Kvinna")
+	_ = skapaPerson(db, "Namn Person", 1994, "Man")
+	_ = skapaPerson(db, "Namn Person", 1996, "Kvinna")
+	_ = skapaPerson(db, "Namn Person", 2004, "Man")
+	_ = skapaPerson(db, "Namn Person", 2006, "Kvinna")
 
 	antal := antalPersoner(db)
 
@@ -105,7 +105,7 @@ func TestPersonDB3(t *testing.T) {
 	namn := "Tom € Räksmörgås"
 	birth := 1999
 	sex := "Man"
-	skapaPerson(db, namn, birth, sex)
+	_ = skapaPerson(db, namn, birth, sex)
 
 	person := hämtaPerson(2)
 
@@ -128,7 +128,7 @@ func TestPersonDB3(t *testing.T) {
 	namn = "** \"\" ');  **" // Note: ' ej tillåtet enligt HH
 	birth = 2000
 	sex = "Kvinna"
-	skapaPerson(db, namn, birth, sex)
+	_ = skapaPerson(db, namn, birth, sex)
 
 	person = hämtaPerson(3)
 

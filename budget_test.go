@@ -11,12 +11,12 @@ func budgetInit(t *testing.T, filnamn string) *sql.DB {
 	// Förberedelser
 	if JetDBSupport {
 		t.Log("Jet Supported.")
-		var filename string = "got" + filnamn + ".mdb"
+		var filename = "got" + filnamn + ".mdb"
 		SkapaTomMDB(t, filename)
 		db = openJetDB(filename, false)
 	} else {
 		t.Log("Jet NOT Supported.")
-		var filename string = "got" + filnamn + ".db"
+		var filename = "got" + filnamn + ".db"
 		SkapaTomDB(filename)
 		db = openSqlite(filename)
 	}

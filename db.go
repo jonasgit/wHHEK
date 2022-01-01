@@ -7,16 +7,16 @@ import (
 	"database/sql"
 	"log"
 	"os"
-	
+
 	_ "github.com/mattn/go-sqlite3"
 )
 
 /* The below function checks if a regular file (not directory) with a
    given filepath exist */
-func FileExists (filepath string) bool {
-	
+func FileExists(filepath string) bool {
+
 	fileinfo, err := os.Stat(filepath)
-	
+
 	if os.IsNotExist(err) {
 		return false
 	}
@@ -27,15 +27,15 @@ func FileExists (filepath string) bool {
 func openSqlite(filename string) *sql.DB {
 	currentDatabase = "NONE"
 	dbtype = 0
-	
+
 	db, err := sql.Open("sqlite3", filename)
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	currentDatabase = filename
 	dbtype = 2
-	
+
 	return db
 }
 
@@ -51,11 +51,11 @@ func SkapaTomDB(filename string) {
 	} else {
 		log.Println("SkapaTomDB file did not exist. OK.")
 	}
-	
+
 	// Create file
 	db = openSqlite(filename)
 
- 	if db == nil {
+	if db == nil {
 		log.Println("Failed to create database. ")
 	} else {
 		log.Println("SkapTomDB database created. OK.")
@@ -65,7 +65,7 @@ func SkapaTomDB(filename string) {
 }
 
 func InitiateDB(db *sql.DB) {
- 	if db == nil {
+	if db == nil {
 		log.Println("InitiateDB: No DB.")
 		return
 	}
@@ -170,11 +170,11 @@ func InitiateDB(db *sql.DB) {
 		log.Printf("%q: %s\n", err, sqlStmt)
 		return
 	}
-	
+
 	/* Data for table BetalKonton */
-	
+
 	/* Data for table Betalningar */
-	
+
 	/* Data for table Budget */
 	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Lön efter skatt','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,1);")
 	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Barnbidrag','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,2);")
@@ -210,34 +210,34 @@ func InitiateDB(db *sql.DB) {
 	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Lek och fritid','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,32);")
 	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Livsmedel','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,33);")
 	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Möbler, husgeråd, TV, radio','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,34);")
-	
+
 	/* Data for table DtbVer */
 	InsertRow("INSERT INTO [DtbVer] ([VerNum],[Benämning],[Losenord]) VALUES ('3.01','Databas med stöd för betalning till Postgirot',' ');")
-	
+
 	/* Data for table Konton */
 	InsertRow("INSERT INTO [Konton] ([KontoNummer],[Benämning],[Saldo],[StartSaldo],[StartManad],[Löpnr],[SaldoArsskifte],[ArsskifteManad]) VALUES ('0','Plånboken',0,0,'Jan',1,0,'Jan');")
-	
+
 	/* Data for table LÅN */
-	
+
 	/* Data for table Personer */
 	InsertRow("INSERT INTO [Personer] ([Namn],[Född],[Kön],[Löpnr]) VALUES ('Gemensamt','0','Gemensamt',1);")
-	
+
 	/* Data for table Platser */
-	
+
 	/* Data for table Transaktioner */
-	
+
 	/* Data for table Överföringar */
-	
+
 	log.Println("InitiateDB: Done.")
 }
 
 func InsertRow(sqlStmt string) {
- 	if db == nil {
+	if db == nil {
 		log.Println("InsertRow: No DB.")
 		return
 	}
 
-        _, err := db.Exec(sqlStmt)
+	_, err := db.Exec(sqlStmt)
 	if err != nil {
 		log.Printf("%q: %s\n", err, sqlStmt)
 		return
@@ -246,23 +246,22 @@ func InsertRow(sqlStmt string) {
 
 func getdbpw(db *sql.DB) string {
 	res := db.QueryRow("SELECT Losenord FROM DtbVer")
-	
-	var Losenord []byte  // size 8
+
+	var Losenord []byte // size 8
 	err := res.Scan(&Losenord)
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(2)
 	}
 	pw := toUtf8(Losenord)
 	//log.Printf("getdbpwd %s %d\n", pw, len(pw))
-	
+
 	return pw
 }
 
 func setdbpw(db *sql.DB, pwd string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	
+
 	_, err := db.ExecContext(ctx,
 		`UPDATE DtbVer SET Losenord = ?`,
 		pwd)

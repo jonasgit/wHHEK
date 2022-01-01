@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SqlDialectMappings">
+    <file url="file://$PROJECT_DIR$/fastatransaktioner.go" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/konton.go" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/main.go" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/personer.go" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/platser.go" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/transaktioner.go" dialect="GenericSQL" />
+  </component>
+</project>
