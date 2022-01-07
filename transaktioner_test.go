@@ -31,6 +31,7 @@ func transaktionInit(t *testing.T, filnamn string) *sql.DB {
 }
 
 func TestTransaktionTomDB1(t *testing.T) {
+	t.Log("TestTransaktionTomDB1")
 	transaktionInit(t, "trt")
 
 	// Denna testen
@@ -46,6 +47,7 @@ func TestTransaktionTomDB1(t *testing.T) {
 }
 
 func TestTransaktionDB1(t *testing.T) {
+	t.Log("TestTransaktionDB1")
 	transaktionInit(t, "tr1")
 
 	// Denna testen
@@ -109,6 +111,7 @@ func TestTransaktionDB1(t *testing.T) {
 }
 
 func TestTransaktionDB2(t *testing.T) {
+	t.Log("TestTransaktionDB2")
 	transaktionInit(t, "tr2")
 
 	// Denna testen
@@ -197,6 +200,7 @@ func TestTransaktionDB2(t *testing.T) {
 }
 
 func TestTransaktionDB3(t *testing.T) {
+	t.Log("TestTransaktionDB3")
 	transaktionInit(t, "tr3")
 
 	// Denna testen
@@ -297,6 +301,7 @@ func TestTransaktionDB3(t *testing.T) {
 }
 
 func TestTransaktionDB4(t *testing.T) {
+	t.Log("TestTransaktionDB4")
 	transaktionInit(t, "tr4")
 
 	// Denna testen
@@ -387,6 +392,7 @@ func TestTransaktionDB4(t *testing.T) {
 }
 
 func TestTransaktionDB5(t *testing.T) {
+	t.Log("TestTransaktionDB5")
 	transaktionInit(t, "tr5")
 
 	// Denna testen
