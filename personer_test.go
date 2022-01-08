@@ -132,8 +132,8 @@ func TestPersonDB3(t *testing.T) {
 
 	person = hämtaPerson(3)
 
-	if unEscapeSQL(person.namn) != namn {
-		t.Error("Personnamn '" + namn + "' != '" + unEscapeSQL(person.namn) + "'.")
+	if person.namn != namn {
+		t.Error("Personnamn '" + namn + "' != '" + person.namn + "'.")
 	} else {
 		t.Log("Test namn ok.")
 	}

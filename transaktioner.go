@@ -412,22 +412,27 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 }
 
 func addTransaktionSQL(transtyp string, fromacc string, toacc string, date string, what string, who string, summa decimal.Decimal, text string) {
-	amount := strings.ReplaceAll(summa.String(), ",", ".")
-	amountf, _ := strconv.ParseFloat(amount, 64)
-	log.Println("ny transakationSQL: ", transtyp, amount, toacc, date, amountf, text)
-
+	var amount = "NONE"
+	if JetDBSupport {
+		amount = strings.ReplaceAll(summa.String(), ".", ",")
+	} else {
+		amount = summa.String()
+	}
+	
 	sqlStatement := `
-INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Saldo,[Fastöverföring],[Text])
-VALUES (?,?,?,?,?,?,?,?,?,?)`
-	_, err := db.Exec(sqlStatement, fromacc, toacc, transtyp, date, what, who, amountf, "", false, text)
+	INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Saldo,[Fastöverföring],[Text])
+	VALUES (?,?,?,?,?,?,?,?,?,?)`
+	_, err := db.Exec(sqlStatement, fromacc, toacc, transtyp, date, what, who, amount, nil, false, text)
 	if err != nil {
+		log.Println("SQL err")
+		log.Println("ny transaktionSQL: ", transtyp, fromacc, summa, toacc, date, what, who, amount, text)
 		panic(err)
 	}
 }
 
 func addTransaktionInsättning(toacc string, date string, what string, who string, summa decimal.Decimal, text string) {
 	var transtyp = "Insättning"
-	log.Println("ny insättning: ", toacc, date, summa, text)
+
 	// TODO: Check length of "text"
 	// TODO: Check date format
 	// TODO: Check toacc valid
@@ -437,17 +442,14 @@ func addTransaktionInsättning(toacc string, date string, what string, who strin
 	addTransaktionSQL(transtyp, "---", toacc, date, what, who, summa, text)
 
 	saldo := saldoKonto(db, toacc, "")
-	log.Println("nytt saldo: ", toacc, saldo)
 	updateKontoSaldo(toacc, saldo.String())
 
 	saldo = saldoKonto(db, toacc, "")
-	log.Println("nytt saldo: ", toacc, saldo)
 	updateKontoSaldo(toacc, saldo.String())
 }
 
 func addTransaktionInköp(fromacc string, place string, date string, what string, who string, summa decimal.Decimal, text string) {
 	var transtyp = "Inköp"
-	log.Println("nytt inköp: ", date, summa, text)
 
 	// TODO: Check length of "text"
 	// TODO: Check date format
@@ -458,13 +460,11 @@ func addTransaktionInköp(fromacc string, place string, date string, what string
 	addTransaktionSQL(transtyp, fromacc, place, date, what, who, summa, text)
 
 	saldo := saldoKonto(db, fromacc, "")
-	log.Println("nytt saldo: ", fromacc, saldo)
 	updateKontoSaldo(fromacc, saldo.String())
 }
 
 func addTransaktionUttag(fromacc string, date string, what string, who string, summa decimal.Decimal, text string) {
 	var transtyp = "Uttag"
-	log.Println("nytt uttag: ", date, summa, text)
 
 	// TODO: Check length of "text"
 	// TODO: Check date format
@@ -475,17 +475,14 @@ func addTransaktionUttag(fromacc string, date string, what string, who string, s
 	addTransaktionSQL(transtyp, fromacc, "Plånboken", date, what, who, summa, text)
 
 	saldo := saldoKonto(db, fromacc, "")
-	log.Println("nytt saldo: ", fromacc, saldo)
 	updateKontoSaldo(fromacc, saldo.String())
 
 	saldo = saldoKonto(db, "Plånboken", "")
-	log.Println("nytt saldo: ", "Plånboken", saldo)
 	updateKontoSaldo("Plånboken", saldo.String())
 }
 
 func addTransaktionÖverföring(fromacc string, toacc string, date string, who string, summa decimal.Decimal, text string) {
 	var transtyp = "Överföring"
-	log.Println("nytt uttag: ", date, summa, text)
 
 	// TODO: Check length of "text"
 	// TODO: Check date format
@@ -496,11 +493,9 @@ func addTransaktionÖverföring(fromacc string, toacc string, date string, who s
 	addTransaktionSQL(transtyp, fromacc, toacc, date, "---", who, summa, text)
 
 	saldo := saldoKonto(db, fromacc, "")
-	log.Println("nytt saldo: ", fromacc, saldo)
 	updateKontoSaldo(fromacc, saldo.String())
 
 	saldo = saldoKonto(db, toacc, "")
-	log.Println("nytt saldo: ", toacc, saldo)
 	updateKontoSaldo(toacc, saldo.String())
 }
 

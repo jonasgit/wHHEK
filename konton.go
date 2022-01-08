@@ -231,8 +231,6 @@ func int2man(month int) string {
 }
 
 func addKonto(Benamning string, StartSaldo decimal.Decimal, StartManad string, db *sql.DB) {
-	log.Println("addKonto namn: ", Benamning, StartSaldo)
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

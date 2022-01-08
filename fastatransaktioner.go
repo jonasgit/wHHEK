@@ -37,10 +37,6 @@ func CurrDate() string {
 }
 
 func IncrDate(datum string, veckor int, månader int) string {
-	/* log.Println("IncrDate datum:", datum)
-	log.Println("IncrDate veckor:", veckor)
-	log.Println("IncrDate månader:", månader) */
-
 	year, _ := strconv.Atoi(datum[0:4])
 	var month time.Month
 	monthval, _ := strconv.Atoi(datum[5:7])
@@ -76,9 +72,6 @@ func IncrDate(datum string, veckor int, månader int) string {
 		log.Fatal(err)
 	}
 	t := time.Date(year, month, day, 12, 0, 0, 0, location)
-	/* log.Println("IncrDate t.year:", t.Year())
-	log.Println("IncrDate t.month:", t.Month())
-	log.Println("IncrDate t.day:", t.Day()) */
 	nytt := t.AddDate(0, månader, veckor*7)
 	//fix date at end of month spilling over to next month
 	if månader != 0 {
@@ -91,7 +84,6 @@ func IncrDate(datum string, veckor int, månader int) string {
 		}
 	}
 
-	log.Println("IncrDate nytt datum:", nytt.Format("2006-01-02"))
 	return nytt.Format("2006-01-02")
 }
 
@@ -188,7 +180,6 @@ func addfixedtransaction(w http.ResponseWriter, req *http.Request, db *sql.DB) {
 }
 
 func registreraFastTransaktion(db *sql.DB, transid int) {
-	log.Println("Läser ut fast transaktion#" + strconv.Itoa(transid))
 	if db == nil {
 		log.Println("registreraFastTransaktion: No database open")
 		return
@@ -202,7 +193,6 @@ func registreraFastTransaktion(db *sql.DB, transid int) {
 		log.Println(err)
 		return
 	}
-	log.Println("Query klart.")
 
 	var FrånKonto []byte  // size 40
 	var TillKonto []byte  // size 40
@@ -216,11 +206,8 @@ func registreraFastTransaktion(db *sql.DB, transid int) {
 	var TillDatum []byte  // size 10
 	var Rakning []byte    // size 1
 
-	log.Println("Pre-res.")
 	res.Next()
-	log.Println("Res klart.")
 	err = res.Scan(&FrånKonto, &TillKonto, &Belopp, &Datum, &HurOfta, &Vad, &Vem, &Löpnr, &Kontrollnr, &TillDatum, &Rakning)
-	log.Println("Scan klart.")
 	if err != nil {
 		log.Println("registreraFastTransaktion: SCAN ERROR")
 		log.Println(err)
@@ -246,8 +233,6 @@ func registreraFastTransaktion(db *sql.DB, transid int) {
 	// Register transaction
 	if toUtf8(Vad) == "---" {
 		// Fasta överföringar
-		log.Println("Registrerar Överföring...")
-
 		sqlStatement := `
 INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
 VALUES (?,?,?,?,?,?,?,?)`
@@ -257,8 +242,6 @@ VALUES (?,?,?,?,?,?,?,?)`
 		}
 	} else if toUtf8(FrånKonto) == "---" {
 		// Fasta inkomster
-		log.Println("Registrerar Insättning...")
-
 		sqlStatement := `
 INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
 VALUES (?,?,?,?,?,?,?,?)`
@@ -268,8 +251,6 @@ VALUES (?,?,?,?,?,?,?,?)`
 		}
 	} else {
 		// Fasta utgifter
-		log.Println("Registrerar Fast Utgift...")
-
 		sqlStatement := `
 INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
 VALUES (?,?,?,?,?,?,?,?)`

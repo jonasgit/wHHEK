@@ -157,11 +157,8 @@ func toUtf8(inBuf []byte) string {
 	if dbtype == 1 {
 		buf, _ = charmap.Windows1252.NewDecoder().Bytes(inBuf)
 	}
-	// Escape chars for SQL
 	stringVal := string(buf)
-	stringVal2 := strings.ReplaceAll(stringVal, "'", "''")
-	stringVal3 := strings.ReplaceAll(stringVal2, "\"", "\"\"")
-	return stringVal3
+	return stringVal
 }
 
 func unEscapeSQL(inBuf string) string {
