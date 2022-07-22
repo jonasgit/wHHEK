@@ -21,6 +21,6 @@ försvinner, men inte testat.
 **Installation:** Bygg enligt kommentarer i början på filen main.go eller filen make.bat. Eller se om det finns en färdig
 exe-fil under Releases/version/Assets/.
 
-**Kör:** Starta programmet i katalogen som har en mdb-fil.
+**Kör:** Starta programmet i katalogen som har en mdb-fil. Eller där du vill skapa en ny databas.
 
 *Under 2022 sponsras detta projektet av JetBrains med en Open Source Development licens för GoLand.*
