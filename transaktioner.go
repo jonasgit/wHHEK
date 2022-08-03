@@ -413,11 +413,8 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 
 func addTransaktionSQL(transtyp string, fromacc string, toacc string, date string, what string, who string, summa decimal.Decimal, text string) {
 	var amount = "NONE"
-	if JetDBSupport {
-		amount = strings.ReplaceAll(summa.String(), ".", ",")
-	} else {
-		amount = summa.String()
-	}
+
+	amount = Amount2DBStr(summa)
 	
 	sqlStatement := `
 	INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Saldo,[Fastöverföring],[Text])

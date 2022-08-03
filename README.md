@@ -13,8 +13,7 @@ Gränssnittet är webbaserat, dvs programmet körs i bakgrunden och användare i
 
 Detta programmet går att köra i Windows så länge det går att köra 32-bitars program dvs Windows 10 64-bitars är ok och även Windows 11 fungerar.
 
-Konverterar man till sqlite så bör det gå att köra även på Mac, i Linux och kravet på 32-bitars program i Windows
-försvinner, men inte testat.
+Konverterar man till sqlite så bör det gå att köra även på Mac, i Linux och kravet på 32-bitars program i Windows försvinner, men inte testat.
 
 **Status:** "i sin linda".
 
