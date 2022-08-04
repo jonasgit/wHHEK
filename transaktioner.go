@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/shopspring/decimal" // MIT License
@@ -414,7 +413,7 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 func addTransaktionSQL(transtyp string, fromacc string, toacc string, date string, what string, who string, summa decimal.Decimal, text string) {
 	var amount = "NONE"
 
-	amount = Amount2DBStr(summa)
+	amount = AmountDec2DBStr(summa)
 	
 	sqlStatement := `
 	INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Saldo,[Fastöverföring],[Text])
@@ -506,7 +505,7 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 	date := req.FormValue("date")
 	who := req.FormValue("who")
 	amountstr := req.FormValue("amount")
-	amountstr = strings.ReplaceAll(amountstr, ",", ".")
+	amountstr = SanitizeAmount(amountstr)
 	amount, err := decimal.NewFromString(amountstr)
 	if err != nil {
 		log.Println("OK: addtransaction, trasig/saknar amount ", amountstr, err)
@@ -688,7 +687,7 @@ func updateTransaction(w http.ResponseWriter, lopnr int, req *http.Request, db *
 	}
 	var amount = ""
 	if len(req.FormValue("amount")) > 0 {
-		amount = req.FormValue("amount")
+		amount = SanitizeAmount(req.FormValue("amount"))
 	}
 	var fixed = false
 	if len(req.FormValue("fixed")) > 0 {
@@ -713,7 +712,7 @@ func updateTransaction(w http.ResponseWriter, lopnr int, req *http.Request, db *
 		date,
 		what,
 		who,
-		strings.ReplaceAll(amount, ".", ","),
+		AmountStr2DBStr(amount),
 		fixed,
 		comment,
 		lopnr)

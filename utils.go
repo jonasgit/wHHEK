@@ -43,10 +43,13 @@ func Amount2DecStr(amount string) string {
 }
 
 // Convert decimal to string for use with sql-statements
-func Amount2DBStr(summa decimal.Decimal) string {
-	if JetDBSupport {
-		return strings.ReplaceAll(summa.String(), ".", ",")
+func AmountDec2DBStr(summa decimal.Decimal) string {
+	return AmountStr2DBStr(summa.String())
+}
+func AmountStr2DBStr(summa string) string {
+	if JetDBSupport && (dbtype==1) {
+		return strings.ReplaceAll(summa, ".", ",")
 	} else {
-		return summa.String()
+		return summa
 	}
 }
