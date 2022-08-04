@@ -13,21 +13,21 @@ import (
 // allow only one decimal character ","
 // set to "0" if empty string
 func SanitizeAmount(amount string) string {
-	amount = strings.ReplaceAll(amount, ".", ",")
+	amount = strings.ReplaceAll(amount, ",", ".")
 
 	var newamount = ""
 	for _, char := range amount {
 		if unicode.IsDigit(char) {
 			newamount += string(char)
 		}
-		if char == ',' {
+		if char == '.' {
 			newamount += string(char)
 		}
 	}
 	amount = newamount
 	
-	if strings.Count(amount, ",") > 1 {
-		amount = strings.Replace(amount, ",", "", strings.Count(amount, ",")-1)
+	if strings.Count(amount, ".") > 1 {
+		amount = strings.Replace(amount, ".", "", strings.Count(amount, ".")-1)
 	}
 
 	if len(amount) == 0 {
