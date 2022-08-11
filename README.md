@@ -15,6 +15,9 @@ Detta programmet går att köra i Windows så länge det går att köra 32-bitar
 
 Konverterar man till sqlite så bör det gå att köra även på Mac, i Linux och kravet på 32-bitars program i Windows försvinner, men inte testat.
 
+Windows-versionen av det här går att köra i Linux också med hjälp av Wine. Men då krävs:
+winetricks mdac28 jet40
+
 **Status:** "i sin linda".
 
 **Installation:** Bygg enligt kommentarer i början på filen main.go eller filen make.bat. Eller se om det finns en färdig
