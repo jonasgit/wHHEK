@@ -30,6 +30,13 @@ func openJetDB(filename string, ro bool) *sql.DB {
 	db, err := sql.Open("odbc",
 		databaseAccessCommand)
 	if err != nil {
+		// Tänkbara alternativa connect-strängar om ovanstående inte fungerar:
+		// "Driver={Microsoft Access Driver (*.mdb)};dbq="+file
+		// "Driver={MS Access Database};DBQ="
+		// "Driver={MS Access Driver (*.mdb)};dbq="+
+		// "Provider=Microsoft.Jet.OLEDB.4.0
+		// https://www.connectionstrings.com/access/
+		// https://docs.microsoft.com/en-us/office/client-developer/access/desktop-database-reference/microsoft-ole-db-provider-for-microsoft-jet
 		log.Fatal(err)
 		return nil
 	}
