@@ -927,12 +927,12 @@ func main() {
 	http.HandleFunc("/help1", help1)
 	http.HandleFunc("/", root)
 
-	ip, _ := externalIP()
+	//ip, _ := externalIP()
 	fmt.Println("Öppna URL i webläsaren:  http://localhost:8090/")
-	fmt.Printf(" eller :  http://%s:8090/\n", ip)
+	//fmt.Printf(" eller :  http://%s:8090/\n", ip)
 	_ = context.Background()
 	srv := &http.Server{
-		Addr:           ":8090",
+		Addr:           "127.0.0.1:8090",
 		Handler:        nil,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
