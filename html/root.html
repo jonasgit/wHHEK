@@ -1,9 +1,10 @@
+<!-- //-*- coding: utf-8 -*- -->
 <html>
 <body>
   <h1>wHHEK - hemekonomi</h1>
   <h2>Existerande databaser/filer</h2>
 {{if .FilerFinns}}
-Välj databas att arbeta med:<br>
+VÃ¤lj databas att arbeta med:<br>
 
 <form method="POST" action="/open">
   {{range .Filnamn}}
@@ -20,9 +21,9 @@ Välj databas att arbeta med:<br>
   <input type="text" id="fname" name="fname"><br>
   <input type="submit" value="Submit">
 </form>
-Tecken som inte godkänns: \/|:<>."'`<br>
-  Om filen redan finns så raderas den gamla.
+Tecken som inte godkÃ¤nns: \/|:<>."'`<br>
+  Om filen redan finns sÃ¥ raderas den gamla.
 <p>
-  Hjälp/information <a href="help1">Hjälp</a><br>
+  HjÃ¤lp/information <a href="help1">HjÃ¤lp</a><br>
 </body>
 </html>

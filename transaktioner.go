@@ -5,8 +5,10 @@ package main
 import (
 	"context"
 	"database/sql"
+	_ "embed"
 	"fmt"
 	"html"
+	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -263,6 +265,23 @@ func raderaTransaction(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	_, _ = fmt.Fprintf(w, "Transaktion med löpnr %d raderad.<br>", lopnr)
 }
 
+//go:embed html/newtransaction1.html
+var newtrans1 string
+//go:embed html/newtransaction2.html
+var newtrans2 string
+
+type NewTrans1Data struct {
+	PageName string
+}
+type NewTrans2Data struct {
+	Kontonamn []string
+	Platser []string
+	Personer []string
+	VadInkomst []string
+	VadUtgift []string
+}
+
+
 func newtransaction(w http.ResponseWriter, req *http.Request) {
 	// Common
 	kontonamn := getAccNames()
@@ -272,142 +291,29 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 	vadInkomst := getTypeInNames()
 	vadUtgift := getTypeOutNames()
 
-	_, _ = fmt.Fprintf(w, "<html>\n")
-	_, _ = fmt.Fprintf(w, "<head>\n")
-	_, _ = fmt.Fprintf(w, "<style>\n")
-	_, _ = fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
-	_, _ = fmt.Fprintf(w, "</style>\n")
-	_, _ = fmt.Fprintf(w, "</head>\n")
-	_, _ = fmt.Fprintf(w, "<body>\n")
-	_, _ = fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
+	// del 1
+	tmpl1 := template.New("wHHEK newtrans1")
+	tmpl1, _ = tmpl1.Parse(newtrans1)
+	data := NewTrans1Data{
+		PageName: currentDatabase,
+	}
+	_ = tmpl1.Execute(w, data)
+
 
 	// handle submitted form
 	addtransaction(w, req)
 
-	// Inköp
-	_, _ = fmt.Fprintf(w, "<h3>Inköp</h3>\n")
-	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/newtrans\">\n")
-	_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"transtyp\" name=\"transtyp\" value=\"Inköp\">\n")
-	_, _ = fmt.Fprintf(w, "  <label for=\"fromacc\">Från:</label>")
-	_, _ = fmt.Fprintf(w, "  <select name=\"fromacc\" id=\"fromacc\">")
-	for _, s := range kontonamn {
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", s, s)
+	// del 2
+	tmpl2 := template.New("wHHEK newtrans2")
+	tmpl2, _ = tmpl2.Parse(newtrans2)
+	data2 := NewTrans2Data{
+		Kontonamn: kontonamn,
+		Platser: platser,
+		Personer: personer,
+		VadInkomst: vadInkomst,
+		VadUtgift: vadUtgift,
 	}
-
-	_, _ = fmt.Fprintf(w, "  </select>\n")
-	_, _ = fmt.Fprintf(w, "  <label for=\"place\">Plats:</label>")
-	_, _ = fmt.Fprintf(w, "  <select name=\"place\" id=\"place\">")
-	for _, s := range platser {
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", s, s)
-	}
-	_, _ = fmt.Fprintf(w, "  </select>\n")
-	_, _ = fmt.Fprintf(w, "<label for=\"date\">Datum:</label>")
-	_, _ = fmt.Fprintf(w, "	<input type=\"date\" id=\"date\" name=\"date\">")
-	_, _ = fmt.Fprintf(w, "  <label for=\"what\">Vad:</label>")
-	_, _ = fmt.Fprintf(w, "  <select name=\"what\" id=\"what\">")
-	for _, s := range vadUtgift {
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", s, s)
-	}
-	_, _ = fmt.Fprintf(w, "  </select>\n")
-	_, _ = fmt.Fprintf(w, "  <label for=\"who\">Vem:</label>")
-	_, _ = fmt.Fprintf(w, "  <select name=\"who\" id=\"who\">")
-	for _, s := range personer {
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", s, s)
-	}
-	_, _ = fmt.Fprintf(w, "  </select>\n")
-	_, _ = fmt.Fprintf(w, "<label for=\"amount\">Belopp:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"number\" id=\"amount\" name=\"amount\" min=0 step=\"0.01\">")
-	_, _ = fmt.Fprintf(w, "<label for=\"text\">Text:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"text\" name=\"text\" >")
-	_, _ = fmt.Fprintf(w, "<input type=\"submit\" value=\"Submit\"></form>\n")
-	// Insättning
-	_, _ = fmt.Fprintf(w, "<h3>Insättning</h3>\n")
-	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/newtrans\">\n")
-	_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"transtyp\" name=\"transtyp\" value=\"Insättning\">\n")
-	_, _ = fmt.Fprintf(w, "  <label for=\"toacc\">Till:</label>")
-	_, _ = fmt.Fprintf(w, "  <select name=\"toacc\" id=\"fromacc\">")
-	for _, s := range kontonamn {
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", s, s)
-	}
-
-	_, _ = fmt.Fprintf(w, "  </select>\n")
-	_, _ = fmt.Fprintf(w, "<label for=\"date\">Datum:</label>")
-	_, _ = fmt.Fprintf(w, "	<input type=\"date\" id=\"date\" name=\"date\">")
-	_, _ = fmt.Fprintf(w, "  <label for=\"what\">Vad:</label>")
-	_, _ = fmt.Fprintf(w, "  <select name=\"what\" id=\"what\">")
-	for _, s := range vadInkomst {
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", s, s)
-	}
-	_, _ = fmt.Fprintf(w, "  </select>\n")
-	_, _ = fmt.Fprintf(w, "  <label for=\"who\">Vem:</label>")
-	_, _ = fmt.Fprintf(w, "  <select name=\"who\" id=\"who\">")
-	for _, s := range personer {
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", s, s)
-	}
-	_, _ = fmt.Fprintf(w, "  </select>\n")
-	_, _ = fmt.Fprintf(w, "<label for=\"amount\">Belopp:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"number\" id=\"amount\" name=\"amount\" min=0 step=\"0.01\">")
-	_, _ = fmt.Fprintf(w, "<label for=\"text\">Text:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"text\" name=\"text\" >")
-	_, _ = fmt.Fprintf(w, "<input type=\"submit\" value=\"Submit\"></form>\n")
-	// Uttag
-	_, _ = fmt.Fprintf(w, "<h3>Uttag</h3>\n")
-	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/newtrans\">\n")
-	_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"transtyp\" name=\"transtyp\" value=\"Uttag\">\n")
-	_, _ = fmt.Fprintf(w, "  <label for=\"fromacc\">Från:</label>")
-	_, _ = fmt.Fprintf(w, "  <select name=\"fromacc\" id=\"fromacc\">")
-	for _, s := range kontonamn {
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", s, s)
-	}
-
-	_, _ = fmt.Fprintf(w, "  </select>\n")
-	_, _ = fmt.Fprintf(w, "<label for=\"date\">Datum:</label>")
-	_, _ = fmt.Fprintf(w, "	<input type=\"date\" id=\"date\" name=\"date\">")
-	_, _ = fmt.Fprintf(w, "  <label for=\"who\">Vem:</label>")
-	_, _ = fmt.Fprintf(w, "  <select name=\"who\" id=\"who\">")
-	for _, s := range personer {
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", s, s)
-	}
-	_, _ = fmt.Fprintf(w, "  </select>\n")
-	_, _ = fmt.Fprintf(w, "<label for=\"amount\">Belopp:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"number\" id=\"amount\" name=\"amount\" min=0 step=\"0.01\">")
-	_, _ = fmt.Fprintf(w, "<label for=\"text\">Text:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"text\" name=\"text\" >")
-	_, _ = fmt.Fprintf(w, "<input type=\"submit\" value=\"Submit\"></form>\n")
-	// Överföring
-	_, _ = fmt.Fprintf(w, "<h3>Överföring</h3>\n")
-	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/newtrans\">\n")
-	_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"transtyp\" name=\"transtyp\" value=\"Överföring\">\n")
-	_, _ = fmt.Fprintf(w, "  <label for=\"fromacc\">Från:</label>")
-	_, _ = fmt.Fprintf(w, "  <select name=\"fromacc\" id=\"fromacc\">")
-	for _, s := range kontonamn {
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", s, s)
-	}
-	_, _ = fmt.Fprintf(w, "  </select>\n")
-	_, _ = fmt.Fprintf(w, "  <label for=\"toacc\">Till:</label>")
-	_, _ = fmt.Fprintf(w, "  <select name=\"toacc\" id=\"toacc\">")
-	for _, s := range kontonamn {
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", s, s)
-	}
-
-	_, _ = fmt.Fprintf(w, "  </select>\n")
-	_, _ = fmt.Fprintf(w, "<label for=\"date\">Datum:</label>")
-	_, _ = fmt.Fprintf(w, "	<input type=\"date\" id=\"date\" name=\"date\">")
-	_, _ = fmt.Fprintf(w, "  <label for=\"who\">Vem:</label>")
-	_, _ = fmt.Fprintf(w, "  <select name=\"who\" id=\"who\">")
-	for _, s := range personer {
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", s, s)
-	}
-	_, _ = fmt.Fprintf(w, "  </select>\n")
-	_, _ = fmt.Fprintf(w, "<label for=\"amount\">Belopp:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"number\" id=\"amount\" name=\"amount\" min=0 step=\"0.01\">")
-	_, _ = fmt.Fprintf(w, "<label for=\"text\">Text:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"text\" name=\"text\" >")
-	_, _ = fmt.Fprintf(w, "<input type=\"submit\" value=\"Submit\"></form>\n")
-
-	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
-	_, _ = fmt.Fprintf(w, "</body>\n")
-	_, _ = fmt.Fprintf(w, "</html>\n")
+	_ = tmpl2.Execute(w, data2)
 }
 
 func addTransaktionSQL(transtyp string, fromacc string, toacc string, date string, what string, who string, summa decimal.Decimal, text string) {
