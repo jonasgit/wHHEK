@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"unicode"
 	
@@ -13,6 +14,7 @@ import (
 // allow only one decimal character ","
 // set to "0" if empty string
 func SanitizeAmount(amount string) string {
+	fmt.Println("Sanitize IN:"+amount)
 	amount = strings.ReplaceAll(amount, ",", ".")
 
 	var newamount = ""
@@ -34,6 +36,7 @@ func SanitizeAmount(amount string) string {
 		amount = "0"
 	}
 	
+	fmt.Println("Sanitize OUT:"+amount)
 	return amount
 }
 
@@ -47,9 +50,13 @@ func AmountDec2DBStr(summa decimal.Decimal) string {
 	return AmountStr2DBStr(summa.String())
 }
 func AmountStr2DBStr(summa string) string {
+	fmt.Println("AmountStr2DBStr IN:"+summa)
+
 	if JetDBSupport && (dbtype==1) {
+		fmt.Println("AmountStr2DBStr OUT1:"+strings.ReplaceAll(summa, ".", ","))
 		return strings.ReplaceAll(summa, ".", ",")
 	} else {
+		fmt.Println("AmountStr2DBStr OUT2:"+summa)
 		return summa
 	}
 }
