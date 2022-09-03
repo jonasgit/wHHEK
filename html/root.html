@@ -1,29 +1,29 @@
 <!-- //-*- coding: utf-8 -*- -->
-<html>
+<html lang="sv">
 <body>
-  <h1>wHHEK - hemekonomi</h1>
-  <h2>Existerande databaser/filer</h2>
+<h1>wHHEK - hemekonomi</h1>
+<h2>Existerande databaser/filer</h2>
 {{if .FilerFinns}}
-VÃ¤lj databas att arbeta med:<br>
+Välj databas att arbeta med:<br>
 
 <form method="POST" action="/open">
   {{range .Filnamn}}
-    <input type="radio" id="{{.}}" name="fname" value="{{.}}"><label for="{{.}}">{{.}}</label><br>
+  <input type="radio" id="{{.}}" name="fname" value="{{.}}"><label for="{{.}}">{{.}}</label><br>
   {{end}}
-<input type="submit" value="Submit"></form>
+  <input type="submit" value="Submit"></form>
 {{else}}
-            Inga filer
+Inga filer
 {{end}}
 <p>
-  <h2>Skapa ny databas/fil</h2>
+<h2>Skapa ny databas/fil</h2>
 <form action="/createdb">
   <label for="fname">Filnamn: </label>
   <input type="text" id="fname" name="fname"><br>
   <input type="submit" value="Submit">
 </form>
-Tecken som inte godkÃ¤nns: \/|:<>."'`<br>
-  Om filen redan finns sÃ¥ raderas den gamla.
+Tecken som inte godkänns: \/|:<>."'`<br>
+Om filen redan finns så raderas den gamla.
 <p>
-  HjÃ¤lp/information <a href="help1">HjÃ¤lp</a><br>
+  Hjälp/information <a href="help1">Hjälp</a><br>
 </body>
 </html>
