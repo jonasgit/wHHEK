@@ -194,7 +194,7 @@ func root(w http.ResponseWriter, req *http.Request) {
 
 	if len(files) > 0 {
 		for _, file := range files {
-			if strings.HasSuffix(strings.ToLower(file.Name()), ".mdb") ||
+			if (JetDBSupport && strings.HasSuffix(strings.ToLower(file.Name()), ".mdb")) ||
 				strings.HasSuffix(strings.ToLower(file.Name()), ".db") {
 				filer = append(filer, file.Name())
 				log.Println("Hittad fil:", file.Name())
