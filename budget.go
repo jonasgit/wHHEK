@@ -322,7 +322,7 @@ func antalBudgetposter(db *sql.DB) int {
 	return antal
 }
 
-func getAllBudgetposter(db *sql.DB) []([2]string) {
+func getAllBudgetposter(db *sql.DB) [][2]string {
 	if db == nil {
 		log.Println("getAllBudgetposter db=nil")
 	}
@@ -336,7 +336,7 @@ func getAllBudgetposter(db *sql.DB) []([2]string) {
 	var Typ []byte     // size 40
 	var Inkomst []byte // size 1
 
-	var result []([2]string)
+	var result [][2]string
 	for res.Next() {
 		var record [2]string
 
