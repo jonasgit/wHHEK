@@ -10,25 +10,34 @@ import (
 	"net/http"
 )
 
-func setPasswd(w http.ResponseWriter, pwd2 string, pwd3 string) {
-	_, _ = fmt.Fprintf(w, "<html><body>")
+//go:embed html/setpassord.html
+var sethtmlpass string
 
+type SetPwdData struct {
+	IsPwdexists bool
+	IsPwddiff bool
+	IsPwdok bool
+}
+
+func setPasswd(w http.ResponseWriter, pwd2 string, pwd3 string) {
 	oldpwd := getdbpw(db)
-	if oldpwd != " " {
-		_, _ = fmt.Fprintf(w, "Det finns redan lösenord satt. Använd byt-knappen för att byta.")
-		_, _ = fmt.Fprintf(w, "</body></html>")
-		return
+	
+	pwdexists := oldpwd != " "
+	pwddiff := pwd2 != pwd3
+	pwdok := !(pwdexists || pwddiff)
+	
+	if pwdok {
+		_ = setdbpw(db, pwd2)
 	}
-	if pwd2 != pwd3 {
-		_, _ = fmt.Fprintf(w, "Lösenorden är olika inskrivna.")
-		_, _ = fmt.Fprintf(w, "</body></html>")
-		return
+	
+	t := template.New("Lösenordshantering")
+	t, _ = t.Parse(sethtmlpass)
+	data := SetPwdData{
+		IsPwdexists: pwdexists,
+		IsPwddiff: pwddiff,
+		IsPwdok: pwdok,
 	}
-	_ = setdbpw(db, pwd2)
-	_, _ = fmt.Fprintf(w, "Lösenord satt.<p>")
-	_, _ = fmt.Fprintf(w, "<a href=\"help1\">Hjälp</a><p>\n")
-	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
-	_, _ = fmt.Fprintf(w, "</body></html>")
+	_ = t.Execute(w, data)
 }
 
 func changePasswd(w http.ResponseWriter, pwd1 string, pwd2 string, pwd3 string) {
