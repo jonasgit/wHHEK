@@ -15,103 +15,103 @@ func TestSaniAmount(t *testing.T) {
 	if amount == "1.30" {
 		t.Log("T1 succeeded.")
 	} else {
-		t.Error("T1 failed: "+amount)
+		t.Error("T1 failed: " + amount)
 	}
-	amount = SanitizeAmount("1.30");
+	amount = SanitizeAmount("1.30")
 	if amount == "1.30" {
 		t.Log("T2 ok.")
 	} else {
-		t.Error("T2 failed: "+amount)
+		t.Error("T2 failed: " + amount)
 	}
-	amount = SanitizeAmount("1.30kr");
+	amount = SanitizeAmount("1.30kr")
 	if amount == "1.30" {
 		t.Log("T3 ok.")
 	} else {
-		t.Error("T3 failed: "+amount)
+		t.Error("T3 failed: " + amount)
 	}
-	amount = SanitizeAmount("-1.30");
+	amount = SanitizeAmount("-1.30")
 	if amount == "1.30" {
 		t.Log("T4 ok.")
 	} else {
-		t.Error("T4 failed: "+amount)
+		t.Error("T4 failed: " + amount)
 	}
-	amount = SanitizeAmount("1 001.30");
+	amount = SanitizeAmount("1 001.30")
 	if amount == "1001.30" {
 		t.Log("T5 ok.")
 	} else {
-		t.Error("T5 failed: "+amount)
+		t.Error("T5 failed: " + amount)
 	}
-	amount = SanitizeAmount("1 001,30");
+	amount = SanitizeAmount("1 001,30")
 	if amount == "1001.30" {
 		t.Log("T6 ok.")
 	} else {
-		t.Error("T6 failed: "+amount)
+		t.Error("T6 failed: " + amount)
 	}
-	amount = SanitizeAmount("1.001,30");
+	amount = SanitizeAmount("1.001,30")
 	if amount == "1001.30" {
 		t.Log("T7 ok.")
 	} else {
-		t.Error("T7 failed: "+amount)
+		t.Error("T7 failed: " + amount)
 	}
-	amount = SanitizeAmount("1,001.30");
+	amount = SanitizeAmount("1,001.30")
 	if amount == "1001.30" {
 		t.Log("T8 ok.")
 	} else {
-		t.Error("T8 failed: "+amount)
+		t.Error("T8 failed: " + amount)
 	}
-	amount = SanitizeAmount(".30");
+	amount = SanitizeAmount(".30")
 	if amount == ".30" {
 		t.Log("T9 ok.")
 	} else {
-		t.Error("T9 failed: "+amount)
+		t.Error("T9 failed: " + amount)
 	}
-	amount = SanitizeAmount("");
+	amount = SanitizeAmount("")
 	if amount == "0" {
 		t.Log("T10 ok.")
 	} else {
-		t.Error("T10 failed: "+amount)
+		t.Error("T10 failed: " + amount)
 	}
-	amount = SanitizeAmount("SEK1.30kr");
+	amount = SanitizeAmount("SEK1.30kr")
 	if amount == "1.30" {
 		t.Log("T11 ok.")
 	} else {
-		t.Error("T11 failed: "+amount)
+		t.Error("T11 failed: " + amount)
 	}
-	amount = SanitizeAmount("räksmörgås");
+	amount = SanitizeAmount("räksmörgås")
 	if amount == "0" {
 		t.Log("T12 ok.")
 	} else {
-		t.Error("T12 failed: "+amount)
+		t.Error("T12 failed: " + amount)
 	}
-	amount = SanitizeAmount("Ⅷ");
+	amount = SanitizeAmount("Ⅷ")
 	if amount == "0" {
 		t.Log("T13 ok.")
 	} else {
-		t.Error("T13 failed: "+amount)
+		t.Error("T13 failed: " + amount)
 	}
-	amount = SanitizeAmount("½");
+	amount = SanitizeAmount("½")
 	if amount == "0" {
 		t.Log("T14 ok.")
 	} else {
-		t.Error("T14 failed: "+amount)
+		t.Error("T14 failed: " + amount)
 	}
-	amount = SanitizeAmount(",30");
+	amount = SanitizeAmount(",30")
 	if amount == ".30" {
 		t.Log("T15 ok.")
 	} else {
-		t.Error("T15 failed: "+amount)
+		t.Error("T15 failed: " + amount)
 	}
-	amount = SanitizeAmount("1,001.");
+	amount = SanitizeAmount("1,001.")
 	if amount == "1001." {
 		t.Log("T16 ok.")
 	} else {
-		t.Error("T16 failed: "+amount)
+		t.Error("T16 failed: " + amount)
 	}
-	amount = SanitizeAmount("1,001");
+	amount = SanitizeAmount("1,001")
 	if amount == "1.001" {
 		t.Log("T17 ok.")
 	} else {
-		t.Error("T17 failed: "+amount)
+		t.Error("T17 failed: " + amount)
 	}
 }
 
@@ -119,7 +119,7 @@ func TestSaniAmount(t *testing.T) {
 func TestDec1(t *testing.T) {
 	var n = decimal.NewFromInt(0)
 	incr, _ := decimal.NewFromString(".01")
-	
+
 	for i := 0; i < 1000; i++ {
 		n = n.Add(incr)
 	}
@@ -127,11 +127,11 @@ func TestDec1(t *testing.T) {
 	if n.Equal(expected) {
 		t.Log("TestDec1 ok.")
 	} else {
-		t.Error("TestDec1 failed: "+n.String())
+		t.Error("TestDec1 failed: " + n.String())
 	}
 	if n.String() == "10" {
 		t.Log("TestDec1 ok.")
 	} else {
-		t.Error("TestDec1 failed: "+n.String())
+		t.Error("TestDec1 failed: " + n.String())
 	}
 }

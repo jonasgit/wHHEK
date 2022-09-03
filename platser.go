@@ -14,7 +14,7 @@ import (
 type Plats struct {
 	Namn       string // size
 	Gironummer string // size
-	Typ        bool   // oanvänt?
+	Typ        bool   // Oanvänt?
 	RefKonto   string // size, != 0 betyder kontokortsföretag
 }
 

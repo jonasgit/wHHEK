@@ -6,7 +6,7 @@ import (
 	"database/sql"
 )
 
-// Global variables
+// JetDBSupport Global variables
 var JetDBSupport = false
 
 func openJetDB(filename string, ro bool) *sql.DB {

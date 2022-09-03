@@ -11,8 +11,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-/* The below function checks if a regular file (not directory) with a
-   given filepath exist */
+// FileExists  The below function checks if a regular file (not directory) with a
 func FileExists(filepath string) bool {
 
 	fileinfo, err := os.Stat(filepath)
