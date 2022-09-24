@@ -4,7 +4,6 @@ package main
 
 import (
 	_ "embed"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -69,20 +68,30 @@ func changePasswd(w http.ResponseWriter, pwd1 string, pwd2 string, pwd3 string) 
 	_ = t.Execute(w, data)
 }
 
-func delPasswd(w http.ResponseWriter, pwd1 string) {
-	_, _ = fmt.Fprintf(w, "<html><body>")
+//go:embed html/delpass.html
+var htmldelpass string
+type DelPwdData struct {
+	IsPwdMiss bool
+	IsPwdok bool
+}
 
+func delPasswd(w http.ResponseWriter, pwd1 string) {
 	oldpwd := getdbpw(db)
-	if pwd1 != oldpwd {
-		_, _ = fmt.Fprintf(w, "Angett lösenord stämmer inte.")
-		_, _ = fmt.Fprintf(w, "</body></html>")
-		return
+	
+	pwdmiss := pwd1 != oldpwd
+	pwdok := !pwdmiss
+	
+	if pwdok {
+		_ = setdbpw(db, " ")
 	}
-	_ = setdbpw(db, " ")
-	_, _ = fmt.Fprintf(w, "Lösenord borttaget.<p>")
-	_, _ = fmt.Fprintf(w, "<a href=\"help1\">Hjälp</a><p>\n")
-	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
-	_, _ = fmt.Fprintf(w, "</body></html>")
+	
+	t := template.New("Lösenordshantering")
+	t, _ = t.Parse(htmldelpass)
+	data := DelPwdData{
+		IsPwdMiss: pwdmiss,
+		IsPwdok: pwdok,
+	}
+	_ = t.Execute(w, data)
 }
 
 //go:embed html/passord.html
