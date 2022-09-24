@@ -286,25 +286,25 @@ func checkÖverföringar(w http.ResponseWriter, db *sql.DB) {
 	}
 }
 
+//go:embed html/main1.html
+var htmlmain1 string
+
+type Main1Data struct {
+	CurrDBName string
+	CurrDate string
+}
+
 func printSummaryHead(w http.ResponseWriter) {
-	_, _ = fmt.Fprintf(w, "<html>\n")
-	_, _ = fmt.Fprintf(w, "<head>\n")
-	_, _ = fmt.Fprintf(w, "<title>wHHEK</title>\n")
-	_, _ = fmt.Fprintf(w, "<!-- Load htmx -->\n")
-	_, _ = fmt.Fprintf(w, "<script src=\"/htmx.js\"></script>\n")
-
-	_, _ = fmt.Fprintf(w, "<style>\n")
-	_, _ = fmt.Fprintf(w, "table,th,td { border: 1px solid black ; text-align: center }\n")
-	_, _ = fmt.Fprintf(w, "</style>\n")
-	_, _ = fmt.Fprintf(w, "</head>\n")
-	_, _ = fmt.Fprintf(w, "<body>\n")
-
-	_, _ = fmt.Fprintf(w, "<h1>Databasnamn: %s</h1>\n", currentDatabase)
-
 	currentTime := time.Now()
 	currDate := currentTime.Format("2006-01-02")
 
-	_, _ = fmt.Fprintf(w, "Dagens datum: %s<p>\n", currDate)
+	t := template.New("Lösenordshantering")
+	t, _ = t.Parse(htmlmain1)
+	data := Main1Data{
+		CurrDBName: currentDatabase,
+		CurrDate: currDate,
+	}
+	_ = t.Execute(w, data)
 }
 
 func printAccounts(w http.ResponseWriter) {
@@ -519,25 +519,20 @@ func createdb(w http.ResponseWriter, req *http.Request) {
 	_, _ = fmt.Fprintf(w, "</html>\n")
 }
 
+//go:embed html/main2.html
+var htmlmain2 string
+
 func generateSummary(w http.ResponseWriter, req *http.Request) {
 	printSummaryHead(w)
 	if db != nil {
 		checkÖverföringar(w, db)
-		_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><td>\n")
-		_, _ = fmt.Fprintf(w, "<a href=\"monthly\">Månads kontoutdrag</a><p>\n")
-		_, _ = fmt.Fprintf(w, "<a href=\"transactions\">Transaktionslista</a><p>\n")
-		_, _ = fmt.Fprintf(w, "<a href=\"platser\">Platser</a><p>\n")
-		_, _ = fmt.Fprintf(w, "<a href=\"personer\">Personer</a><p>\n")
-		_, _ = fmt.Fprintf(w, "<a href=\"konton\">Konton</a><p>\n")
-		_, _ = fmt.Fprintf(w, "<a href=\"budget\">Budget</a><p>\n")
-		_, _ = fmt.Fprintf(w, "<a href=\"newtrans\">Ny transaktion</a><p>\n")
-		_, _ = fmt.Fprintf(w, "<a href=\"fixedtrans\">Fasta transaktioner/överföringar</a><p>\n")
-		_, _ = fmt.Fprintf(w, "<a href=\"acccmp\">Avstämning mot nerladdat kontoutdrag</a><p>\n")
-		_, _ = fmt.Fprintf(w, "<a href=\"passwd\">Lösenordshantering</a><p>\n")
-		_, _ = fmt.Fprintf(w, "<a href=\"close\">Stäng databas</a><p>\n")
-		_, _ = fmt.Fprintf(w, "<a href=\"quit\">Avsluta program</a><p>\n")
-		_, _ = fmt.Fprintf(w, "<a href=\"help1\">Hjälp</a><p>\n")
-		_, _ = fmt.Fprintf(w, "</td><td>\n")
+		t := template.New("Main2")
+		t, _ = t.Parse(htmlmain2)
+		err := t.Execute(w, t)
+		if err != nil {
+			log.Println("While serving HTTP main2: ", err)
+		}
+
 		printAccounts(w)
 		_, _ = fmt.Fprintf(w, "</td></tr></table>\n")
 	} else {
