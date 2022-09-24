@@ -40,26 +40,33 @@ func setPasswd(w http.ResponseWriter, pwd2 string, pwd3 string) {
 	_ = t.Execute(w, data)
 }
 
+//go:embed html/chpass.html
+var htmlchpass string
+type ChPwdData struct {
+	IsPwdMiss bool
+	IsPwddiff bool
+	IsPwdok bool
+}
+
 func changePasswd(w http.ResponseWriter, pwd1 string, pwd2 string, pwd3 string) {
-	_, _ = fmt.Fprintf(w, "<html><body>")
-
 	oldpwd := getdbpw(db)
-	if pwd1 != oldpwd {
-		_, _ = fmt.Fprintf(w, "Angett lösenord stämmer inte.")
-		_, _ = fmt.Fprintf(w, "</body></html>")
-		return
+	
+	pwdmiss := pwd1 != oldpwd
+	pwddiff := pwd2 != pwd3
+	pwdok := !(pwdmiss || pwddiff)
+	
+	if pwdok {
+		_ = setdbpw(db, pwd2)
 	}
-
-	if pwd2 != pwd3 {
-		_, _ = fmt.Fprintf(w, "Lösenorden är olika inskrivna.")
-		_, _ = fmt.Fprintf(w, "</body></html>")
-		return
+	
+	t := template.New("Lösenordshantering")
+	t, _ = t.Parse(htmlchpass)
+	data := ChPwdData{
+		IsPwdMiss: pwdmiss,
+		IsPwddiff: pwddiff,
+		IsPwdok: pwdok,
 	}
-	_ = setdbpw(db, pwd2)
-	_, _ = fmt.Fprintf(w, "Lösenord bytt.<p>")
-	_, _ = fmt.Fprintf(w, "<a href=\"help1\">Hjälp</a><p>\n")
-	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
-	_, _ = fmt.Fprintf(w, "</body></html>")
+	_ = t.Execute(w, data)
 }
 
 func delPasswd(w http.ResponseWriter, pwd1 string) {
