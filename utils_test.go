@@ -30,7 +30,7 @@ func TestSaniAmount(t *testing.T) {
 		t.Error("T3 failed: " + amount)
 	}
 	amount = SanitizeAmount("-1.30")
-	if amount == "1.30" {
+	if amount == "-1.30" {
 		t.Log("T4 ok.")
 	} else {
 		t.Error("T4 failed: " + amount)
