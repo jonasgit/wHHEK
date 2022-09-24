@@ -206,6 +206,8 @@ func findAmount(rad []string, filtyp string) string {
 	// första/vänstra kolumnen = 0
 	switch filtyp {
 	case "komplettcsv":
+		fallthrough
+	case "komplettxlsx":
 		return rad[5]
 	case "swedbcsv":
 		return rad[10]
@@ -275,6 +277,8 @@ func findDateCol(rad []string, filtyp string) string {
 	// första/vänstra kolumnen = 0
 	switch filtyp {
 	case "komplettcsv":
+		fallthrough
+	case "komplettxlsx":
 		return rad[0]
 	case "swedbcsv":
 		return rad[6]
@@ -306,6 +310,8 @@ func bankheadlines(filtyp string) int {
 	var headlines = 0
 	switch filtyp {
 	case "komplettcsv":
+		fallthrough
+	case "komplettxlsx":
 		headlines = 1
 	case "swedbcsv":
 		headlines = 2
@@ -410,6 +416,8 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 	switch filtyp {
 	case "komplettcsv":
 		records = readCsvFile(filen, filtyp)
+	case "komplettxlsx":
+		records = readXlsxFile(filen)
 	case "swedbcsv":
 		records = readCsvFile(filen, filtyp)
 	case "resursxlsx":
@@ -593,6 +601,7 @@ func compareaccount(w http.ResponseWriter, req *http.Request) {
 		_, _ = fmt.Fprintf(w, "  <label for=\"filtyp\">Filtyp:</label>")
 		_, _ = fmt.Fprintf(w, "  <select name=\"filtyp\" id=\"filtyp\">")
 		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "komplettcsv", "KomplettBank CSV")
+		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "komplettxlsx", "KomplettBank Excel")
 		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "swedbcsv", "Swedbank/Sparbankerna CSV")
 		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "resursxlsx", "Resursbank/Fordkortet Xlsx")
 		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "revolutcsv", "Revolut CSV(Excel)")
