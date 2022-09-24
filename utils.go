@@ -25,6 +25,9 @@ func SanitizeAmount(amount string) string {
 		if char == '.' {
 			newamount += string(char)
 		}
+		if char == '-' {
+			newamount += string(char)
+		}
 	}
 	amount = newamount
 

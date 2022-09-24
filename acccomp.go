@@ -206,7 +206,7 @@ func findAmount(rad []string, filtyp string) string {
 	// första/vänstra kolumnen = 0
 	switch filtyp {
 	case "komplettcsv":
-		return rad[4]
+		return rad[5]
 	case "swedbcsv":
 		return rad[10]
 	case "resursxlsx":
@@ -271,6 +271,8 @@ func parsedateSwe(datum string) time.Time {
 }
 
 func findDateCol(rad []string, filtyp string) string {
+	// Index för vilken kolumn som innehåller datum för transaktionen
+	// första/vänstra kolumnen = 0
 	switch filtyp {
 	case "komplettcsv":
 		return rad[0]
@@ -300,6 +302,7 @@ func findDateCol(rad []string, filtyp string) string {
 }
 
 func bankheadlines(filtyp string) int {
+	// Antal rubrikrader att hoppa över
 	var headlines = 0
 	switch filtyp {
 	case "komplettcsv":
@@ -332,7 +335,7 @@ func matchaUtdrag(records [][]string, dbtrans []transaction, kontonamn string, f
 		} else {
 			amountcol := findAmount(rad, filtyp)
 			amountstrs := strings.Split(amountcol, " ")
-			amountstr := strings.Replace(amountstrs[0], ",", ".", 1)
+			amountstr := SanitizeAmount(amountstrs[0])
 			//fmt.Println("matchar amount ", amountstr, " ", amountcol)
 			radAmount, err := decimal.NewFromString(amountstr)
 			if err != nil {
@@ -366,7 +369,7 @@ func matchaUtdrag(records [][]string, dbtrans []transaction, kontonamn string, f
 		} else {
 			amountcol := findAmount(rad, filtyp)
 			amountstrs := strings.Split(amountcol, " ")
-			amountstr := strings.Replace(amountstrs[0], ",", ".", 1)
+			amountstr := SanitizeAmount(amountstrs[0])
 			radAmount, err := decimal.NewFromString(amountstr)
 			if err != nil {
 				log.Fatal("matcha fuzzy:", err)
