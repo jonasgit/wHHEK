@@ -232,7 +232,13 @@ func parsedateSwe(datum string) time.Time {
 	var date time.Time
 	strs := strings.Split(datum, " ")
 	day, err := strconv.Atoi(strs[0])
+	if err != nil {
+		log.Fatal("Fatal day", err)
+	}
 	year, err := strconv.Atoi(strs[2])
+	if err != nil {
+		log.Fatal("Fatal year", err)
+	}
 	var month time.Month = 0
 	switch strs[1] {
 	case "jan":
@@ -263,11 +269,7 @@ func parsedateSwe(datum string) time.Time {
 		log.Fatal("Okänd månad:", strs[1])
 	}
 
-	location, err := time.LoadLocation("Europe/Stockholm")
-	if err != nil {
-		panic(err)
-	}
-
+	location := time.FixedZone("CET", 0)
 	date = time.Date(year, month, day, 12, 0, 0, 0, location)
 	return date
 }

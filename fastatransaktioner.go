@@ -37,6 +37,7 @@ func CurrDate() string {
 }
 
 func IncrDate(datum string, veckor int, månader int) string {
+	log.Println("IncrDate start ")
 	year, _ := strconv.Atoi(datum[0:4])
 	var month time.Month
 	monthval, _ := strconv.Atoi(datum[5:7])
@@ -65,12 +66,11 @@ func IncrDate(datum string, veckor int, månader int) string {
 		month = time.November
 	case 12:
 		month = time.December
+	default:
+		log.Fatal("Okänd månad: ", monthval)
 	}
 	day, _ := strconv.Atoi(datum[8:10])
-	location, err := time.LoadLocation("CET")
-	if err != nil {
-		log.Fatal(err)
-	}
+	location := time.FixedZone("CET", 0)
 	t := time.Date(year, month, day, 12, 0, 0, 0, location)
 	nytt := t.AddDate(0, månader, veckor*7)
 	//fix date at end of month spilling over to next month
@@ -84,6 +84,7 @@ func IncrDate(datum string, veckor int, månader int) string {
 		}
 	}
 
+	log.Println("IncrDate slut ", nytt)
 	return nytt.Format("2006-01-02")
 }
 
@@ -155,6 +156,7 @@ func showFastaTransaktioner(w http.ResponseWriter, db *sql.DB) {
 }
 
 func addfixedtransaction(w http.ResponseWriter, req *http.Request, db *sql.DB) {
+	log.Println("addfixedtransaction start")
 	err := req.ParseForm()
 	if err != nil {
 		log.Fatal(err)
@@ -177,6 +179,7 @@ func addfixedtransaction(w http.ResponseWriter, req *http.Request, db *sql.DB) {
 		registreraFastTransaktionHTML(w, transidnum, db)
 		_, _ = fmt.Fprintf(w, "<p>\n")
 	}
+	log.Println("addfixedtransaction slut")
 }
 
 func registreraFastTransaktion(db *sql.DB, transid int) {
@@ -296,6 +299,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 }
 
 func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.DB) {
+	log.Println("registreraFastTransaktionHTML start")
 	_, _ = fmt.Fprintf(w, "Läser ut fast transaktion#"+strconv.Itoa(transid))
 	if db == nil {
 		_, _ = fmt.Fprintf(w, "registreraFastTransaktion: No database open<p>\n")
@@ -354,6 +358,7 @@ func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.D
 	if toUtf8(Vad) == "---" {
 		// Fasta överföringar
 		_, _ = fmt.Fprintf(w, "Registrerar Överföring...<br> ")
+		log.Println("registreraFastTransaktionHTML Registrerar Överföring...")
 
 		sqlStatement := `
 INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
@@ -377,6 +382,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 	} else if toUtf8(FrånKonto) == "---" {
 		// Fasta inkomster
 		_, _ = fmt.Fprintf(w, "Registrerar Insättning...<br> ")
+		log.Println("registreraFastTransaktionHTML Insättning...")
 
 		sqlStatement := `
 INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
@@ -400,6 +406,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 	} else {
 		// Fasta utgifter
 		_, _ = fmt.Fprintf(w, "Registrerar Fast Utgift...<br> ")
+		log.Println("registreraFastTransaktionHTML Fast Utgift...")
 
 		sqlStatement := `
 INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
@@ -423,6 +430,8 @@ VALUES (?,?,?,?,?,?,?,?)`
 		_, _ = fmt.Fprintf(w, "</table>\n")
 	}
 
+	log.Println("registreraFastTransaktionHTML Update date...")
+	log.Println("registreraFastTransaktionHTML switch " + toUtf8(HurOfta))
 	// Update repeating transaction
 	var newDatum string
 	switch toUtf8(HurOfta) {
@@ -452,16 +461,20 @@ VALUES (?,?,?,?,?,?,?,?)`
 		log.Fatal("Okänd periodicitet: " + toUtf8(HurOfta))
 
 	}
+	log.Println("registreraFastTransaktionHTML nytt datum " + newDatum)
 	sqlStatement := `UPDATE Överföringar SET Datum = ? WHERE Löpnr = ?`
 	_, err = db.Exec(sqlStatement, newDatum, transid)
 	if err != nil {
+		log.Println("registreraFastTransaktionHTML Update error: ", err)
 		panic(err)
 	}
 
 	_, _ = fmt.Fprintf(w, "<p>\n")
+	log.Println("registreraFastTransaktionHTML slut")
 }
 
 func fixedtransactionHTML(w http.ResponseWriter, req *http.Request) {
+	log.Println("fixedtransactionHTML start")
 	_, _ = fmt.Fprintf(w, "<html>\n")
 	_, _ = fmt.Fprintf(w, "<head>\n")
 	_, _ = fmt.Fprintf(w, "<style>\n")
@@ -478,6 +491,7 @@ func fixedtransactionHTML(w http.ResponseWriter, req *http.Request) {
 	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
 	_, _ = fmt.Fprintf(w, "</body>\n")
 	_, _ = fmt.Fprintf(w, "</html>\n")
+	log.Println("fixedtransactionHTML slut")
 }
 
 func antalFastaTransaktioner(db *sql.DB) int {
