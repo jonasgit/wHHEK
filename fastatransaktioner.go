@@ -37,7 +37,7 @@ func CurrDate() string {
 }
 
 func IncrDate(datum string, veckor int, månader int) string {
-	log.Println("IncrDate start ")
+	//log.Println("IncrDate start ")
 	year, _ := strconv.Atoi(datum[0:4])
 	var month time.Month
 	monthval, _ := strconv.Atoi(datum[5:7])
@@ -84,7 +84,7 @@ func IncrDate(datum string, veckor int, månader int) string {
 		}
 	}
 
-	log.Println("IncrDate slut ", nytt)
+	//log.Println("IncrDate slut ", nytt)
 	return nytt.Format("2006-01-02")
 }
 
