@@ -255,6 +255,7 @@ func sanitizeFilename(fname string) string {
 	fname = strings.Replace(fname, "<", "", -1)
 	fname = strings.Replace(fname, ">", "", -1)
 	fname = strings.Replace(fname, "\"", "", -1)
+	fname = strings.Replace(fname, ":", "", -1)
 
 	return fname
 }

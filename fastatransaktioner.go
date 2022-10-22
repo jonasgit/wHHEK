@@ -218,11 +218,17 @@ func registreraFastTransaktion(db *sql.DB, transid int) {
 		return
 	}
 
+	amountstr := SanitizeAmountb(Belopp)
+	amount, err := decimal.NewFromString(amountstr)
+	if err != nil {
+		log.Println("OK: addtransaction, trasig/saknar amount ", amountstr, err)
+	}
+	
 	sqlStmt := ""
 	sqlStmt += "<tr><td>" + toUtf8(Löpnr) + "</td>"
 	sqlStmt += "<td>" + toUtf8(FrånKonto) + "</td>"
 	sqlStmt += "<td>" + toUtf8(TillKonto) + "</td>"
-	sqlStmt += "<td>" + toUtf8(Belopp) + "</td>"
+	sqlStmt += "<td>" + amount.String() + "</td>"
 	sqlStmt += "<td>" + toUtf8(Datum) + "</td>"
 	sqlStmt += "<td>" + toUtf8(HurOfta) + "</td>"
 	sqlStmt += "<td>" + toUtf8(Vad) + "</td>"
@@ -236,31 +242,30 @@ func registreraFastTransaktion(db *sql.DB, transid int) {
 	// Register transaction
 	if toUtf8(Vad) == "---" {
 		// Fasta överföringar
-		sqlStatement := `
-INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
-VALUES (?,?,?,?,?,?,?,?)`
-		_, err = db.Exec(sqlStatement, toUtf8(FrånKonto), toUtf8(TillKonto), "Överföring", toUtf8(Datum), "---", toUtf8(Vem), strings.ReplaceAll(toUtf8(Belopp), ".", ","), "Fast transaktion wHHEK")
-		if err != nil {
-			panic(err)
-		}
+		addTransaktionÖverföring(toUtf8(FrånKonto),
+			toUtf8(TillKonto),
+			toUtf8(Datum),
+			toUtf8(Vem),
+			amount,
+			"Fast transaktion wHHEK")
 	} else if toUtf8(FrånKonto) == "---" {
 		// Fasta inkomster
-		sqlStatement := `
-INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
-VALUES (?,?,?,?,?,?,?,?)`
-		_, err = db.Exec(sqlStatement, "---", toUtf8(TillKonto), "Insättning", toUtf8(Datum), toUtf8(Vad), toUtf8(Vem), strings.ReplaceAll(toUtf8(Belopp), ".", ","), "Fast transaktion wHHEK")
-		if err != nil {
-			panic(err)
-		}
+		addTransaktionInsättning(toUtf8(TillKonto),
+			toUtf8(Datum),
+			toUtf8(Vad),
+			toUtf8(Vem),
+			amount,
+			"Fast transaktion wHHEK")
 	} else {
 		// Fasta utgifter
-		sqlStatement := `
-INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
-VALUES (?,?,?,?,?,?,?,?)`
-		_, err = db.Exec(sqlStatement, toUtf8(FrånKonto), toUtf8(TillKonto), "Fast Utgift", toUtf8(Datum), toUtf8(Vad), toUtf8(Vem), strings.ReplaceAll(toUtf8(Belopp), ".", ","), "Fast transaktion wHHEK")
-		if err != nil {
-			panic(err)
-		}
+		addTransaktionInköp(toUtf8(FrånKonto),
+			toUtf8(TillKonto),
+			toUtf8(Datum),
+			toUtf8(Vad),
+			toUtf8(Vem),
+			amount,
+			"Fast transaktion wHHEK",
+			true)
 	}
 
 	// Update repeating transaction

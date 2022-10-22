@@ -262,7 +262,7 @@ func TestTransaktionDB3(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	addTransaktionInköp("Plånboken", plats, "2021-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås")
+	addTransaktionInköp("Plånboken", plats, "2021-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås", false)
 	konto = hämtaKonto(db, 1)
 
 	saldoExpected, err = decimal.NewFromString("1.1")
@@ -279,8 +279,8 @@ func TestTransaktionDB3(t *testing.T) {
 		t.Log("Test efter saldo ok. " + saldoExpected.String())
 	}
 
-	addTransaktionInköp("Plånboken", plats, "2021-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås")
-	addTransaktionInköp("Plånboken", plats, "2021-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås")
+	addTransaktionInköp("Plånboken", plats, "2021-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås", false)
+	addTransaktionInköp("Plånboken", plats, "2021-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås", false)
 	konto = hämtaKonto(db, 1)
 
 	saldoExpected, err = decimal.NewFromString("0.9")
@@ -362,7 +362,7 @@ func TestTransaktionDB4(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	addTransaktionInköp("Plånboken", plats, "2099-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås")
+	addTransaktionInköp("Plånboken", plats, "2099-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås", false)
 	konto = hämtaKonto(db, 1)
 
 	saldoExpected, err = decimal.NewFromString("1.1")

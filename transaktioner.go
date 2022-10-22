@@ -324,6 +324,16 @@ func addTransaktionSQL(transtyp string, fromacc string, toacc string, date strin
 	sqlStatement := `
 	INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Saldo,[Fastöverföring],[Text])
 	VALUES (?,?,?,?,?,?,?,?,?,?)`
+	fmt.Println("addTransaktionSQL: ", sqlStatement)
+	fmt.Println("addTransaktionSQL: ", fromacc)
+	fmt.Println("addTransaktionSQL: ", toacc)
+	fmt.Println("addTransaktionSQL: ", transtyp)
+	fmt.Println("addTransaktionSQL: ", date)
+	fmt.Println("addTransaktionSQL: ", what)
+	fmt.Println("addTransaktionSQL: ", who)
+	fmt.Println("addTransaktionSQL: ", amount)
+	fmt.Println("addTransaktionSQL: ", text)
+
 	_, err := db.Exec(sqlStatement, fromacc, toacc, transtyp, date, what, who, amount, nil, false, text)
 	if err != nil {
 		log.Println("SQL err")
@@ -350,9 +360,11 @@ func addTransaktionInsättning(toacc string, date string, what string, who strin
 	updateKontoSaldo(toacc, saldo.String())
 }
 
-func addTransaktionInköp(fromacc string, place string, date string, what string, who string, summa decimal.Decimal, text string) {
+func addTransaktionInköp(fromacc string, place string, date string, what string, who string, summa decimal.Decimal, text string, fixed bool) {
 	var transtyp = "Inköp"
-
+	if fixed {
+		transtyp = "Fast Utgift"
+	}
 	// TODO: Check length of "text"
 	// TODO: Check date format
 	// TODO: Check toacc valid
@@ -434,7 +446,7 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 
 		_, _ = fmt.Fprintf(w, "Registrerar Inköp...<br> ")
 
-		addTransaktionInköp(fromacc, place, date, what, who, amount, text)
+		addTransaktionInköp(fromacc, place, date, what, who, amount, text, false)
 
 		_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Frånkonto</th><th>Plats</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
 		sqlStmt := "<tr>"
