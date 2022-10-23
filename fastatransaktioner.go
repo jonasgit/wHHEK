@@ -221,7 +221,7 @@ func registreraFastTransaktion(db *sql.DB, transid int) {
 	amountstr := SanitizeAmountb(Belopp)
 	amount, err := decimal.NewFromString(amountstr)
 	if err != nil {
-		log.Println("OK: addtransaction, trasig/saknar amount ", amountstr, err)
+		log.Println("OK: registreraFastTransaktion, trasig/saknar amount ", amountstr, err)
 	}
 	
 	sqlStmt := ""

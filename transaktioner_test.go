@@ -444,6 +444,56 @@ func TestTransaktionDB5(t *testing.T) {
 	closeDB()
 }
 
+func TestTransaktionDB6(t *testing.T) {
+	t.Log("TestTransaktionDB6")
+	transaktionInit(t, "tr6")
+
+	// Denna testen
+	// Kontrollera att vi utgår från startsaldo 0.00
+	// Gör insättning 0,10kr utan text/kommentar
+	// och kontrollerar att kommentaren blir " "
+	antal := antalTransaktioner(db)
+
+	if antal != 0 {
+		t.Error("Antal transaktioner (0) != " + strconv.Itoa(antal))
+	} else {
+		t.Log("Antal transaktioner ok (0).")
+	}
+
+	saldoExpected := decimal.NewFromInt(0)
+	konto := hämtaKonto(db, 1)
+
+	if !konto.Saldo.Equal(saldoExpected) {
+		t.Error("Konto saldo '" + saldoExpected.String() + "' != '" + konto.Saldo.String() + "'.")
+	} else {
+		t.Log("Test saldo ok. 0.00")
+	}
+
+	summa, err := decimal.NewFromString("0.1")
+	if err != nil {
+		t.Error(err)
+	}
+	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "")
+
+	antal = antalTransaktioner(db)
+
+	if antal != 1 {
+		t.Error("Antal transaktioner (1) != " + strconv.Itoa(antal))
+	} else {
+		t.Log("Antal transaktioner ok (1).")
+	}
+
+	trans := hämtaTransaktion(1)
+
+	if trans.comment != " " {
+		t.Error("Transaktion text ' ' != '" + trans.comment + "'.")
+	} else {
+		t.Log("Test Text ok.", "' '")
+	}
+
+	closeDB()
+}
+
 /*  Ett test:
         var n float64 = 0
 	for i := 0; i < 1000; i++ {

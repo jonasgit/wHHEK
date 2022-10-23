@@ -320,6 +320,9 @@ func addTransaktionSQL(transtyp string, fromacc string, toacc string, date strin
 	var amount = "NONE"
 
 	amount = AmountDec2DBStr(summa)
+	if len(text) < 1 {
+		text = " "
+	}
 	
 	sqlStatement := `
 	INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Saldo,[Fastöverföring],[Text])
