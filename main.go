@@ -128,6 +128,7 @@ import (
 	"database/sql"
 	_ "embed"
 	"errors"
+	"flag"
 	"fmt"
 	"golang.org/x/text/encoding/charmap"
 	"html"
@@ -151,6 +152,7 @@ var db *sql.DB = nil
 var nopwDb *sql.DB = nil
 var dbtype uint8 = 0 // 0=none, 1=mdb/Access2.0, 2=sqlite3
 var currentDatabase = "NONE"
+var dbdecimaldot bool = false
 
 func toUtf8(inBuf []byte) string {
 	buf := inBuf
@@ -898,6 +900,19 @@ func help1(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
+	dbdecdotPtr := flag.Bool("dbdecimaldot", false, "Tvinga decimalpunkt till databas.")
+	helpPtr := flag.Bool("help", false, "Skriv ut hjälptext.")
+	
+	flag.Parse()
+	
+	if *helpPtr {
+		flag.Usage()
+		os.Exit(1)
+	}
+	if *dbdecdotPtr {
+		dbdecimaldot = true
+	}
+
 	http.HandleFunc("/hello", hello)
 	http.HandleFunc("/r/", restapi)
 	http.HandleFunc("/htmx.js", htmx)

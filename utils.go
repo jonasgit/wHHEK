@@ -66,11 +66,12 @@ func AmountStr2DBStr(summa string) string {
 	fmt.Println("AmountStr2DBStr IN:" + summa)
 
 	if JetDBSupport && (dbtype == 1) {
-		outsumma := strings.ReplaceAll(summa, ".", ",")
-		fmt.Println("AmountStr2DBStr OUT1:" + outsumma)
-		return outsumma
-	} else {
-		fmt.Println("AmountStr2DBStr OUT2:" + summa)
-		return summa
+		if !dbdecimaldot {
+			outsumma := strings.ReplaceAll(summa, ".", ",")
+			fmt.Println("AmountStr2DBStr OUT1:" + outsumma)
+			return outsumma
+		}
 	}
+	fmt.Println("AmountStr2DBStr OUT2:" + summa)
+	return summa
 }
