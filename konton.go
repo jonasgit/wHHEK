@@ -282,15 +282,10 @@ func updateKonto(w http.ResponseWriter, lopnr int, Benamning string, StartSaldo 
 	_, _ = fmt.Fprintf(w, "Konto %s uppdaterad.<br>", Benamning)
 }
 
-func updateKontoSaldo(Benamning string, Saldo string) {
+func updateKontoSaldo(Benamning string, Saldo decimal.Decimal) {
 	lopnr := hämtakontoID(db, Benamning)
 	//fmt.Println("updateKontoSaldo lopnr: ", lopnr)
-	var amount string
-	if JetDBSupport {
-		amount = strings.ReplaceAll(Saldo, ".", ",")
-	} else {
-		amount = Saldo
-	}
+	var amount string = AmountDec2DBStr(Saldo)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

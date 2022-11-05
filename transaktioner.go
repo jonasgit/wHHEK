@@ -357,10 +357,7 @@ func addTransaktionInsättning(toacc string, date string, what string, who strin
 	addTransaktionSQL(transtyp, "---", toacc, date, what, who, summa, text)
 
 	saldo := saldoKonto(db, toacc, "")
-	updateKontoSaldo(toacc, saldo.String())
-
-	saldo = saldoKonto(db, toacc, "")
-	updateKontoSaldo(toacc, saldo.String())
+	updateKontoSaldo(toacc, saldo)
 }
 
 func addTransaktionInköp(fromacc string, place string, date string, what string, who string, summa decimal.Decimal, text string, fixed bool) {
@@ -377,7 +374,7 @@ func addTransaktionInköp(fromacc string, place string, date string, what string
 	addTransaktionSQL(transtyp, fromacc, place, date, what, who, summa, text)
 
 	saldo := saldoKonto(db, fromacc, "")
-	updateKontoSaldo(fromacc, saldo.String())
+	updateKontoSaldo(fromacc, saldo)
 }
 
 func addTransaktionUttag(fromacc string, date string, what string, who string, summa decimal.Decimal, text string) {
@@ -392,10 +389,10 @@ func addTransaktionUttag(fromacc string, date string, what string, who string, s
 	addTransaktionSQL(transtyp, fromacc, "Plånboken", date, what, who, summa, text)
 
 	saldo := saldoKonto(db, fromacc, "")
-	updateKontoSaldo(fromacc, saldo.String())
+	updateKontoSaldo(fromacc, saldo)
 
 	saldo = saldoKonto(db, "Plånboken", "")
-	updateKontoSaldo("Plånboken", saldo.String())
+	updateKontoSaldo("Plånboken", saldo)
 }
 
 func addTransaktionÖverföring(fromacc string, toacc string, date string, who string, summa decimal.Decimal, text string) {
@@ -410,10 +407,10 @@ func addTransaktionÖverföring(fromacc string, toacc string, date string, who s
 	addTransaktionSQL(transtyp, fromacc, toacc, date, "---", who, summa, text)
 
 	saldo := saldoKonto(db, fromacc, "")
-	updateKontoSaldo(fromacc, saldo.String())
+	updateKontoSaldo(fromacc, saldo)
 
 	saldo = saldoKonto(db, toacc, "")
-	updateKontoSaldo(toacc, saldo.String())
+	updateKontoSaldo(toacc, saldo)
 }
 
 func addtransaction(w http.ResponseWriter, req *http.Request) {
