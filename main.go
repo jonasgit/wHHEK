@@ -130,7 +130,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"golang.org/x/text/encoding/charmap"
 	"html"
 	"html/template"
 	"io/ioutil"
@@ -153,22 +152,6 @@ var nopwDb *sql.DB = nil
 var dbtype uint8 = 0 // 0=none, 1=mdb/Access2.0, 2=sqlite3
 var currentDatabase = "NONE"
 var dbdecimaldot bool = false
-
-func toUtf8(inBuf []byte) string {
-	buf := inBuf
-	if dbtype == 1 {
-		buf, _ = charmap.Windows1252.NewDecoder().Bytes(inBuf)
-	}
-	stringVal := string(buf)
-	return stringVal
-}
-
-func unEscapeSQL(inBuf string) string {
-	// UnEscape chars for SQL
-	stringVal2 := strings.ReplaceAll(inBuf, "''", "'")
-	stringVal3 := strings.ReplaceAll(stringVal2, "\"\"", "\"")
-	return stringVal3
-}
 
 func hello(w http.ResponseWriter, req *http.Request) {
 	_, _ = fmt.Fprintf(w, "hello\n")
@@ -212,7 +195,6 @@ func root(w http.ResponseWriter, req *http.Request) {
 		Filnamn:    filer[:],
 	}
 	_ = tmpl.Execute(w, data)
-	// TODO		fmt.Fprintf(w, "Inga filer att välja.<p>\n")
 }
 
 //go:embed htmx.min.js
@@ -250,22 +232,22 @@ func headers(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func sanitizeFilename(fname string) string {
-	fname = strings.Replace(fname, "\\", "", -1)
-	fname = strings.Replace(fname, "/", "", -1)
-	fname = strings.Replace(fname, "'", "", -1)
-	fname = strings.Replace(fname, "<", "", -1)
-	fname = strings.Replace(fname, ">", "", -1)
-	fname = strings.Replace(fname, "\"", "", -1)
-	fname = strings.Replace(fname, ":", "", -1)
-
-	return fname
-}
-
 func GetCountPendingÖverföringar(db *sql.DB, currDate string) int {
 	var cnt int
 	_ = db.QueryRow(`select count(*) from Överföringar WHERE Datum <= ?`, currDate).Scan(&cnt)
 	return cnt
+}
+
+//go:embed html/main4.html
+var htmlmain4 string
+type Main4Data struct {
+	Antal int
+}
+
+//go:embed html/main5.html
+var htmlmain5 string
+type Main5Data struct {
+	Antal int
 }
 
 func checkÖverföringar(w http.ResponseWriter, db *sql.DB) {
@@ -273,7 +255,15 @@ func checkÖverföringar(w http.ResponseWriter, db *sql.DB) {
 	currDate := currentTime.Format("2006-01-02")
 	antal := GetCountPendingÖverföringar(db, currDate)
 	if antal > 0 {
-		_, _ = fmt.Fprintf(w, "<p>%d fasta transaktioner tills idag väntar på att hanteras. Gå till <a href=\"fixedtrans\">Fasta transaktioner</a>.<p>\n", antal)
+		t := template.New("Main4")
+		t, _ = t.Parse(htmlmain4)
+		data := Main4Data{
+			Antal: antal,
+		}
+		err := t.Execute(w, data)
+		if err != nil {
+			log.Println("While serving HTTP main4: ", err)
+		}
 	}
 
 	now := time.Now()
@@ -285,7 +275,15 @@ func checkÖverföringar(w http.ResponseWriter, db *sql.DB) {
 	currDate = lastOfMonth.Format("2006-01-02")
 	antal = GetCountPendingÖverföringar(db, currDate)
 	if antal > 0 {
-		_, _ = fmt.Fprintf(w, "<p>%d fasta transaktioner till hela denna månaden väntar på att hanteras. Gå till <a href=\"fixedtrans\">Fasta transaktioner</a>.<p>\n", antal)
+		t := template.New("Main5")
+		t, _ = t.Parse(htmlmain5)
+		data := Main5Data{
+			Antal: antal,
+		}
+		err := t.Execute(w, data)
+		if err != nil {
+			log.Println("While serving HTTP main5: ", err)
+		}
 	}
 }
 
@@ -310,10 +308,16 @@ func printSummaryHead(w http.ResponseWriter) {
 	_ = t.Execute(w, data)
 }
 
+//go:embed html/main6.html
+var htmlmain6 string
+
 func printAccounts(w http.ResponseWriter) {
-	_, _ = fmt.Fprintf(w, "<div hx-get=\"/r/main/accounts\" hx-trigger=\"load\">\n")
-	_, _ = fmt.Fprintf(w, "  <img class=\"htmx-indicator\" width=\"150\" src=\"/img/bars.svg\"/>\n")
-	_, _ = fmt.Fprintf(w, "</div>\n")
+	t := template.New("Main6")
+	t, _ = t.Parse(htmlmain6)
+	err := t.Execute(w, t)
+	if err != nil {
+		log.Println("While serving HTTP main6: ", err)
+	}
 }
 
 func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
@@ -382,17 +386,16 @@ func checkpwd(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+//go:embed html/main3.html
+var htmlmain3 string
+
 func showsummary(w http.ResponseWriter) {
-	_, _ = fmt.Fprintf(w, "<!DOCTYPE html>\n")
-	_, _ = fmt.Fprintf(w, "<html>\n")
-	_, _ = fmt.Fprintf(w, "   <head>\n")
-	_, _ = fmt.Fprintf(w, "      <title>HTML Meta Tag</title>\n")
-	_, _ = fmt.Fprintf(w, "      <meta http-equiv = \"refresh\" content = \"0; url = /summary\" />\n")
-	_, _ = fmt.Fprintf(w, "   </head>\n")
-	_, _ = fmt.Fprintf(w, "   <body>\n")
-	_, _ = fmt.Fprintf(w, "      <p>Arbetar...</p>\n")
-	_, _ = fmt.Fprintf(w, "</body>\n")
-	_, _ = fmt.Fprintf(w, "</html>\n")
+	t := template.New("Main3")
+	t, _ = t.Parse(htmlmain3)
+	err := t.Execute(w, t)
+	if err != nil {
+		log.Println("While serving HTTP main3: ", err)
+	}
 }
 
 func opendb(w http.ResponseWriter, req *http.Request) {
@@ -455,41 +458,53 @@ func closeDB() {
 	currentDatabase = "NONE"
 }
 
+//go:embed html/main7.html
+var htmlmain7 string
+
 func closedb(w http.ResponseWriter, req *http.Request) {
 	closeDB()
 
-	_, _ = fmt.Fprintf(w, "<!DOCTYPE html>\n")
-	_, _ = fmt.Fprintf(w, "<html>\n")
-	_, _ = fmt.Fprintf(w, "   <head>\n")
-	_, _ = fmt.Fprintf(w, "      <title>HTML Meta Tag</title>\n")
-	_, _ = fmt.Fprintf(w, "      <meta http-equiv = \"refresh\" content = \"1; url = /\" />\n")
-	_, _ = fmt.Fprintf(w, "   </head>\n")
-	_, _ = fmt.Fprintf(w, "   <body>\n")
-	_, _ = fmt.Fprintf(w, "      <p>Closing database!</p>\n")
-	_, _ = fmt.Fprintf(w, "   </body>\n")
-	_, _ = fmt.Fprintf(w, "</html>\n")
+	t := template.New("Main3")
+	t, _ = t.Parse(htmlmain3)
+	err := t.Execute(w, t)
+	if err != nil {
+		log.Println("While serving HTTP main3: ", err)
+	}
 }
 
+//go:embed html/main8.html
+var htmlmain8 string
+
 func quitapp(w http.ResponseWriter, req *http.Request) {
-	_, _ = fmt.Fprintf(w, "<!DOCTYPE html>\n")
-	_, _ = fmt.Fprintf(w, "<html>\n")
-	_, _ = fmt.Fprintf(w, "   <head>\n")
-	_, _ = fmt.Fprintf(w, "      <title>HTML Meta Tag</title>\n")
-	_, _ = fmt.Fprintf(w, "      <meta http-equiv = \"refresh\" content = \"10; url = /\" />\n")
-	_, _ = fmt.Fprintf(w, "   </head>\n")
-	_, _ = fmt.Fprintf(w, "   <body>\n")
+	t := template.New("Main8")
+	t, _ = t.Parse(htmlmain8)
+	err := t.Execute(w, t)
+	if err != nil {
+		log.Println("While serving HTTP main8: ", err)
+	}
+
 	if db != nil {
 		closedb(w, req)
 	}
-	_, _ = fmt.Fprintf(w, "      <p>Avslutar. Hej då!</p>\n")
-	_, _ = fmt.Fprintf(w, "   </body>\n")
-	_, _ = fmt.Fprintf(w, "</html>\n")
+	
 	if f, ok := w.(http.Flusher); ok {
 		f.Flush()
 	}
 	//time.Sleep(8 * time.Second)
 	//srv.Shutdown(ctx);
 	os.Exit(0)
+}
+
+//go:embed html/main9.html
+var htmlmain9 string
+type Main9Data struct {
+	Filnamn string
+}
+
+//go:embed html/main10.html
+var htmlmain10 string
+type Main10Data struct {
+	Filnamn string
 }
 
 func createdb(w http.ResponseWriter, req *http.Request) {
@@ -502,24 +517,29 @@ func createdb(w http.ResponseWriter, req *http.Request) {
 
 	if (len([]rune(filename)) < 1) ||
 		(strings.ContainsAny(filename, "\\/|:<>.\"'`\x00")) {
-		// TODO: template
-		_, _ = fmt.Fprintf(w, "<html>\n")
-		_, _ = fmt.Fprintf(w, "<body>\n")
-		_, _ = fmt.Fprintf(w, "Bad filename: %s<br>\n", filename)
-		_, _ = fmt.Fprintf(w, "</body>\n")
-		_, _ = fmt.Fprintf(w, "</html>\n")
+
+		t := template.New("Main9")
+		t, _ = t.Parse(htmlmain9)
+		data := Main9Data{
+			Filnamn: filename,
+		}
+		err := t.Execute(w, data)
+		if err != nil {
+			log.Println("While serving HTTP main9: ", err)
+		}
 		return
 	}
 
-	// TODO: template
-	_, _ = fmt.Fprintf(w, "<html>\n")
-	_, _ = fmt.Fprintf(w, "<body>\n")
-
 	SkapaTomDB(filename + ".db")
-	_, _ = fmt.Fprintf(w, "Databas skapad: %s\n<p>", filename)
-	_, _ = fmt.Fprintf(w, "<a href=\"/\">Tillbaka</a><p>\n")
-	_, _ = fmt.Fprintf(w, "</body>\n")
-	_, _ = fmt.Fprintf(w, "</html>\n")
+	t := template.New("Main10")
+	t, _ = t.Parse(htmlmain10)
+	data := Main10Data{
+		Filnamn: filename,
+	}
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Println("While serving HTTP main10: ", err)
+	}
 }
 
 //go:embed html/main2.html

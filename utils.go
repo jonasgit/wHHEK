@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"golang.org/x/text/encoding/charmap"
 	"strings"
 	"unicode"
 
@@ -74,4 +75,32 @@ func AmountStr2DBStr(summa string) string {
 	}
 	fmt.Println("AmountStr2DBStr OUT2:" + summa)
 	return summa
+}
+
+func toUtf8(inBuf []byte) string {
+	buf := inBuf
+	if dbtype == 1 {
+		buf, _ = charmap.Windows1252.NewDecoder().Bytes(inBuf)
+	}
+	stringVal := string(buf)
+	return stringVal
+}
+
+func unEscapeSQL(inBuf string) string {
+	// UnEscape chars for SQL
+	stringVal2 := strings.ReplaceAll(inBuf, "''", "'")
+	stringVal3 := strings.ReplaceAll(stringVal2, "\"\"", "\"")
+	return stringVal3
+}
+
+func sanitizeFilename(fname string) string {
+	fname = strings.Replace(fname, "\\", "", -1)
+	fname = strings.Replace(fname, "/", "", -1)
+	fname = strings.Replace(fname, "'", "", -1)
+	fname = strings.Replace(fname, "<", "", -1)
+	fname = strings.Replace(fname, ">", "", -1)
+	fname = strings.Replace(fname, "\"", "", -1)
+	fname = strings.Replace(fname, ":", "", -1)
+
+	return fname
 }
