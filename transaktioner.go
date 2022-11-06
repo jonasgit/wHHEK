@@ -377,7 +377,7 @@ func addTransaktionInköp(fromacc string, place string, date string, what string
 	updateKontoSaldo(fromacc, saldo)
 }
 
-func addTransaktionUttag(fromacc string, date string, what string, who string, summa decimal.Decimal, text string) {
+func addTransaktionUttag(fromacc string, date string, who string, summa decimal.Decimal, text string) {
 	var transtyp = "Uttag"
 
 	// TODO: Check length of "text"
@@ -386,7 +386,7 @@ func addTransaktionUttag(fromacc string, date string, what string, who string, s
 	// TODO: Check what valid
 	// TODO: Check who valid
 
-	addTransaktionSQL(transtyp, fromacc, "Plånboken", date, what, who, summa, text)
+	addTransaktionSQL(transtyp, fromacc, "Plånboken", date, "---", who, summa, text)
 
 	saldo := saldoKonto(db, fromacc, "")
 	updateKontoSaldo(fromacc, saldo)
@@ -492,7 +492,7 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 
 		_, _ = fmt.Fprintf(w, "Registrerar Uttag...<br> ")
 
-		addTransaktionUttag(fromacc, date, what, who, amount, text)
+		addTransaktionUttag(fromacc, date, who, amount, text)
 
 		_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Frånkonto</th><th>Typ</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
 		sqlStmt := "<tr>"
