@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/shopspring/decimal" // MIT License
@@ -359,19 +358,19 @@ func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.D
 	_, _ = fmt.Fprintf(w, "%s", sqlStmt)
 	_, _ = fmt.Fprintf(w, "</table>\n")
 
+	amountstr := SanitizeAmountb(Belopp)
+	amount, err := decimal.NewFromString(amountstr)
+	if err != nil {
+		log.Println("OK: registreraFastTransaktionHTML, trasig/saknar amount ", amountstr, err)
+	}
+
 	// Register transaction
 	if toUtf8(Vad) == "---" {
 		// Fasta överföringar
 		_, _ = fmt.Fprintf(w, "Registrerar Överföring...<br> ")
 		log.Println("registreraFastTransaktionHTML Registrerar Överföring...")
 
-		sqlStatement := `
-INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
-VALUES (?,?,?,?,?,?,?,?)`
-		_, err = db.Exec(sqlStatement, toUtf8(FrånKonto), toUtf8(TillKonto), "Överföring", toUtf8(Datum), "---", toUtf8(Vem), strings.ReplaceAll(toUtf8(Belopp), ".", ","), "Fast transaktion wHHEK")
-		if err != nil {
-			panic(err)
-		}
+		addTransaktionÖverföring(toUtf8(FrånKonto), toUtf8(TillKonto), toUtf8(Datum), toUtf8(Vem), amount, "Fast transaktion wHHEK")
 
 		_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Frånkonto</th><th>Tillkonto</th><th>Typ</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
 		sqlStmt := "<tr>"
@@ -389,13 +388,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 		_, _ = fmt.Fprintf(w, "Registrerar Insättning...<br> ")
 		log.Println("registreraFastTransaktionHTML Insättning...")
 
-		sqlStatement := `
-INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
-VALUES (?,?,?,?,?,?,?,?)`
-		_, err = db.Exec(sqlStatement, "---", toUtf8(TillKonto), "Insättning", toUtf8(Datum), toUtf8(Vad), toUtf8(Vem), strings.ReplaceAll(toUtf8(Belopp), ".", ","), "Fast transaktion wHHEK")
-		if err != nil {
-			panic(err)
-		}
+		addTransaktionInsättning(toUtf8(TillKonto), toUtf8(Datum), toUtf8(Vad), toUtf8(Vem), amount, "Fast transaktion wHHEK")
 
 		_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Konto</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
 		sqlStmt := "<tr>"
@@ -413,13 +406,7 @@ VALUES (?,?,?,?,?,?,?,?)`
 		_, _ = fmt.Fprintf(w, "Registrerar Fast Utgift...<br> ")
 		log.Println("registreraFastTransaktionHTML Fast Utgift...")
 
-		sqlStatement := `
-INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,"Text")
-VALUES (?,?,?,?,?,?,?,?)`
-		_, err = db.Exec(sqlStatement, toUtf8(FrånKonto), toUtf8(TillKonto), "Fast Utgift", toUtf8(Datum), toUtf8(Vad), toUtf8(Vem), strings.ReplaceAll(toUtf8(Belopp), ".", ","), "Fast transaktion wHHEK")
-		if err != nil {
-			panic(err)
-		}
+		addTransaktionInköp(toUtf8(FrånKonto), toUtf8(TillKonto), toUtf8(Datum), toUtf8(Vad), toUtf8(Vem), amount, "Fast transaktion wHHEK", true)
 
 		_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Frånkonto</th><th>Plats</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
 		sqlStmt := "<tr>"
