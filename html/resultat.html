@@ -6,6 +6,7 @@
       border: 1px solid black
     }
   </style>
+  <title>Resultat</title>
 </head>
 <body>
 <h1>wHHEK - hemekonomi</h1>
@@ -70,11 +71,11 @@ Valt år: {{.SelectedYear}}<p>
     
     Byt år<p>
       <label for="formYear">År:</label>
-      <select name="formYear" id="formYear">
-	{{range .Years}}
-	<option value="{{.}}">{{.}}</option>
-	{{end}}
-	
+  <select name="formYear" id="formYear">
+    {{range .Years}}
+    <option value="{{.}}">{{.}}</option>
+    {{end}}
+  </select>
 	<input type="submit" value="Submit">
   </form>
 <p>

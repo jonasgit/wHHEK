@@ -18,7 +18,7 @@ Konverterar man till sqlite så bör det gå att köra även på Mac, i Linux oc
 Windows-versionen av det här går att köra i Linux också med hjälp av Wine. Men då krävs:
 `winetricks mdac28 jet40`
 
-**Status:** "i sin linda".
+**Status:** "i sin linda". Lite grundfunktioner med att lägga in transaktioner och visa finns.
 
 **Installation:** Bygg enligt kommentarer i filen make.bat. Eller se om det finns en färdig
 exe-fil under Releases/version/Assets/.

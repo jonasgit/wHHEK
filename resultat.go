@@ -3,9 +3,9 @@
 package main
 
 import (
-	_ "embed"
 	"context"
 	"database/sql"
+	_ "embed"
 	//"fmt"
 	"html/template"
 	"log"
@@ -17,22 +17,23 @@ import (
 )
 
 type kategoriType struct {
-    Name string
-    Beloppy string
-    Beloppm string
+	Name    string
+	Beloppy string
+	Beloppm string
 }
 
 //go:embed html/resultat.html
 var htmlresultat string
+
 type ResultatData struct {
-	SelectedYear string
-	Inkomster []kategoriType
-	SumIn string
-	Utgifter []kategoriType
-	SumUt string
+	SelectedYear  string
+	Inkomster     []kategoriType
+	SumIn         string
+	Utgifter      []kategoriType
+	SumUt         string
 	UtgifterPlats []kategoriType
-	SumUtPlats string
-	Years []string
+	SumUtPlats    string
+	Years         []string
 }
 
 func hanteraYResult(w http.ResponseWriter, req *http.Request) {
@@ -49,54 +50,54 @@ func hanteraYResult(w http.ResponseWriter, req *http.Request) {
 			selectYear = formYear
 		}
 	}
-	
+
 	showNulls := false
 	sumin := decimal.NewFromInt32(0)
 	sumut := decimal.NewFromInt32(0)
 	sumutplats := decimal.NewFromInt32(0)
-	
+
 	//inkomster := []kategoriType{{"name1", "test1", "testm1"}, {"n2", "t2", "testm2"}}
 	inkomster := []kategoriType{}
-	utgifter  := []kategoriType{}
-	utgifterplats  := []kategoriType{}
+	utgifter := []kategoriType{}
+	utgifterplats := []kategoriType{}
 
 	decZero := decimal.NewFromInt(0)
 	dec12 := decimal.NewFromInt(12)
-	katin := getTypeInNames();
+	katin := getTypeInNames()
 	for _, kat := range katin {
 		belopp := sumKatYear(kat, selectYear, true)
 		sum := AmountDec2DBStr(belopp)
 		decimal.DivisionPrecision = 2
 		beloppm := belopp.Div(dec12)
 		summ := AmountDec2DBStr(beloppm)
-		if showNulls || (!belopp.Equal(decZero))  {
+		if showNulls || (!belopp.Equal(decZero)) {
 			inkomster = append(inkomster, kategoriType{kat, sum, summ})
 		}
 
 		sumin = sumin.Add(belopp)
 	}
-	katut := getTypeOutNames();
+	katut := getTypeOutNames()
 	for _, kat := range katut {
 		belopp := sumKatYear(kat, selectYear, false)
 		sum := AmountDec2DBStr(belopp)
 		beloppm := belopp.Div(dec12)
 		summ := AmountDec2DBStr(beloppm)
-		if showNulls || (!belopp.Equal(decZero))  {
+		if showNulls || (!belopp.Equal(decZero)) {
 			utgifter = append(utgifter, kategoriType{kat, sum, summ})
 		}
-		
+
 		sumut = sumut.Add(belopp)
 	}
-	places := getPlaceNames();
+	places := getPlaceNames()
 	for _, place := range places {
 		belopp := sumPlaceYear(place, selectYear)
 		sum := AmountDec2DBStr(belopp)
 		beloppm := belopp.Div(dec12)
 		summ := AmountDec2DBStr(beloppm)
-		if showNulls || (!belopp.Equal(decZero))  {
+		if showNulls || (!belopp.Equal(decZero)) {
 			utgifterplats = append(utgifterplats, kategoriType{place, sum, summ})
 		}
-		
+
 		sumutplats = sumutplats.Add(belopp)
 	}
 
@@ -112,25 +113,25 @@ func hanteraYResult(w http.ResponseWriter, req *http.Request) {
 	for i := firstYear; i <= lastYear; i++ {
 		years = append(years, strconv.Itoa(i))
 	}
-	
+
 	tmpl1 := template.New("wHHEK Årsresultat")
 	tmpl1, _ = tmpl1.Parse(htmlresultat)
 	data := ResultatData{
-		SelectedYear: strconv.Itoa(selectYear),
-		Inkomster: inkomster,
-		SumIn: sumin.String(),
-		Utgifter: utgifter,
-		SumUt: sumut.String(),
+		SelectedYear:  strconv.Itoa(selectYear),
+		Inkomster:     inkomster,
+		SumIn:         sumin.String(),
+		Utgifter:      utgifter,
+		SumUt:         sumut.String(),
 		UtgifterPlats: utgifterplats,
-		SumUtPlats: sumutplats.String(),
-		Years: years,
+		SumUtPlats:    sumutplats.String(),
+		Years:         years,
 	}
 	_ = tmpl1.Execute(w, data)
 }
 
 func sumKatYear(kat string, selectYear int, intyp bool) decimal.Decimal {
 	result := decimal.NewFromInt32(0)
-	
+
 	year := decimal.NewFromInt(int64(selectYear)).String()
 	startstring := year + "-01-01"
 	endstring := year + "-12-31"
@@ -156,7 +157,7 @@ func sumKatYear(kat string, selectYear int, intyp bool) decimal.Decimal {
 		}
 	}
 
-	var amount []byte  // BCD / Decimal Precision 19
+	var amount []byte // BCD / Decimal Precision 19
 
 	for res.Next() {
 		err = res.Scan(&amount)
@@ -174,7 +175,7 @@ func sumKatYear(kat string, selectYear int, intyp bool) decimal.Decimal {
 
 func sumPlaceYear(kat string, selectYear int) decimal.Decimal {
 	result := decimal.NewFromInt32(0)
-	
+
 	year := decimal.NewFromInt(int64(selectYear)).String()
 	startstring := year + "-01-01"
 	endstring := year + "-12-31"
@@ -191,7 +192,7 @@ func sumPlaceYear(kat string, selectYear int) decimal.Decimal {
 		log.Fatal(err)
 	}
 
-	var amount []byte  // BCD / Decimal Precision 19
+	var amount []byte // BCD / Decimal Precision 19
 
 	for res.Next() {
 		err = res.Scan(&amount)
