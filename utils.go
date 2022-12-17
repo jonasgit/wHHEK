@@ -3,7 +3,7 @@
 package main
 
 import (
-	"fmt"
+	//"fmt"
 	"golang.org/x/text/encoding/charmap"
 	"strings"
 	"unicode"
@@ -15,7 +15,7 @@ import (
 // allow only one decimal character ","
 // set to "0" if empty string
 func SanitizeAmount(amount string) string {
-	fmt.Println("Sanitize IN:" + amount)
+	//fmt.Println("Sanitize IN:" + amount)
 	amount = strings.ReplaceAll(amount, ",", ".")
 
 	var newamount = ""
@@ -40,7 +40,7 @@ func SanitizeAmount(amount string) string {
 		amount = "0"
 	}
 
-	fmt.Println("Sanitize OUT:" + amount)
+	//fmt.Println("Sanitize OUT:" + amount)
 	return amount
 }
 
@@ -50,30 +50,30 @@ func SanitizeAmountb(amount []byte) string {
 
 // Amount2DecStr Convert string for use with new decimal
 func Amount2DecStr(amount string) string {
-	fmt.Println("Amount2DecStr IN:" + amount)
+	//fmt.Println("Amount2DecStr IN:" + amount)
 	outamount := strings.ReplaceAll(amount, ",", ".")
-	fmt.Println("Amount2DecStr OUT:" + outamount)
+	//fmt.Println("Amount2DecStr OUT:" + outamount)
 	return outamount
 }
 
 // AmountDec2DBStr Convert decimal to string for use with sql-statements
 func AmountDec2DBStr(summa decimal.Decimal) string {
-	fmt.Println("AmountDec2DBStr IN:" + summa.String())
+	//fmt.Println("AmountDec2DBStr IN:" + summa.String())
 	outsumma := AmountStr2DBStr(summa.String())
-	fmt.Println("AmountDec2DBStr OUT:" + outsumma)
+	//fmt.Println("AmountDec2DBStr OUT:" + outsumma)
 	return outsumma
 }
 func AmountStr2DBStr(summa string) string {
-	fmt.Println("AmountStr2DBStr IN:" + summa)
+	//fmt.Println("AmountStr2DBStr IN:" + summa)
 
 	if JetDBSupport && (dbtype == 1) {
 		if !dbdecimaldot {
 			outsumma := strings.ReplaceAll(summa, ".", ",")
-			fmt.Println("AmountStr2DBStr OUT1:" + outsumma)
+			//fmt.Println("AmountStr2DBStr OUT1:" + outsumma)
 			return outsumma
 		}
 	}
-	fmt.Println("AmountStr2DBStr OUT2:" + summa)
+	//fmt.Println("AmountStr2DBStr OUT2:" + summa)
 	return summa
 }
 

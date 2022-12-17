@@ -1,0 +1,84 @@
+<!-- //-*- coding: utf-8 -*- -->
+<html lang="sv">
+<head>
+  <style>
+    table, th, td {
+      border: 1px solid black
+    }
+  </style>
+</head>
+<body>
+<h1>wHHEK - hemekonomi</h1>
+<h2>Årsresultat</h2>
+
+Valt år: {{.SelectedYear}}<p>
+    <h3>Inkomster</h3>
+    <table style="width:100%">
+      <tr>
+	<th>Kategori</th>
+	<th>Belopp Året</th>
+	<th>Belopp Snitt månad</th>
+      </tr>
+      
+      {{range .Inkomster}}
+      <tr>
+	<td>{{.Name}}</td>
+	<td>{{.Beloppy}}</td>
+	<td>{{.Beloppm}}</td>
+      </tr>
+      {{end}}
+    </table>
+    Summa inkomster: {{.SumIn}}
+<p>
+  <h3>Utgifter - typ</h3>
+  <table style="width:100%">
+    <tr>
+      <th>Kategori</th>
+      <th>Belopp Året</th>
+      <th>Belopp Snitt månad</th>
+    </tr>
+    
+    {{range .Utgifter}}
+    <tr>
+      <td>{{.Name}}</td>
+      <td>{{.Beloppy}}</td>
+      <td>{{.Beloppm}}</td>
+    </tr>
+    {{end}}
+  </table>
+  Summa utgifter: {{.SumUt}}
+<p>
+  <h3>Utgifter - plats</h3>
+  <table style="width:100%">
+    <tr>
+      <th>Plats</th>
+      <th>Belopp Året</th>
+      <th>Belopp Snitt månad</th>
+    </tr>
+    
+    {{range .UtgifterPlats}}
+    <tr>
+      <td>{{.Name}}</td>
+      <td>{{.Beloppy}}</td>
+      <td>{{.Beloppm}}</td>
+    </tr>
+    {{end}}
+  </table>
+  Summa utgifter: {{.SumUtPlats}}
+<p>
+  <form method="POST" action="/yresult">
+    
+    Byt år<p>
+      <label for="formYear">År:</label>
+      <select name="formYear" id="formYear">
+	{{range .Years}}
+	<option value="{{.}}">{{.}}</option>
+	{{end}}
+	
+	<input type="submit" value="Submit">
+  </form>
+<p>
+  <a href="summary">Översikt</a><br>
+  Hjälp/information <a href="help1">Hjälp</a><br>
+</body>
+</html>
