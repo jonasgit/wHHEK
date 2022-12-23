@@ -25,4 +25,4 @@ exe-fil under Releases/version/Assets/.
 
 **Kör:** Starta programmet i katalogen som har en mdb-fil. Eller där du vill skapa en ny databas.
 
-*Under 2022 sponsras detta projektet av JetBrains med en Open Source Development licens för GoLand.*
+*Under 2022-2023 sponsras detta projektet av JetBrains med en Open Source Development licens för GoLand.*

@@ -57,9 +57,9 @@ func hanteraYResult(w http.ResponseWriter, req *http.Request) {
 	sumutplats := decimal.NewFromInt32(0)
 
 	//inkomster := []kategoriType{{"name1", "test1", "testm1"}, {"n2", "t2", "testm2"}}
-	inkomster := []kategoriType{}
-	utgifter := []kategoriType{}
-	utgifterplats := []kategoriType{}
+	var inkomster []kategoriType
+	var utgifter []kategoriType
+	var utgifterplats []kategoriType
 
 	decZero := decimal.NewFromInt(0)
 	dec12 := decimal.NewFromInt(12)
@@ -109,7 +109,7 @@ func hanteraYResult(w http.ResponseWriter, req *http.Request) {
 	err = res1.Scan(&date)
 	lastYear, err := strconv.Atoi(toUtf8(date)[0:4])
 
-	years := []string{}
+	var years []string
 	for i := firstYear; i <= lastYear; i++ {
 		years = append(years, strconv.Itoa(i))
 	}
