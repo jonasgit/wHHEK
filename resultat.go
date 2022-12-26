@@ -6,7 +6,6 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
-	//"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -56,7 +55,6 @@ func hanteraYResult(w http.ResponseWriter, req *http.Request) {
 	sumut := decimal.NewFromInt32(0)
 	sumutplats := decimal.NewFromInt32(0)
 
-	//inkomster := []kategoriType{{"name1", "test1", "testm1"}, {"n2", "t2", "testm2"}}
 	var inkomster []kategoriType
 	var utgifter []kategoriType
 	var utgifterplats []kategoriType

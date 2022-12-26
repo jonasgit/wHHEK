@@ -1,0 +1,43 @@
+<!-- //-*- coding: utf-8 -*- -->
+<p>{{ .Antal }} fasta transaktioner till hela denna månaden väntar på att hanteras:<br>
+
+  <table style="width:100%">
+    <tr>
+      <th>Löpnr</th>
+      <th>Frånkonto</th>
+      <th>Tillkonto/Plats</th>
+      <th>Belopp</th>
+      <th>Datum</th>
+      <th>Hur Ofta</th>
+      <th>Vad</th>
+      <th>Vem</th>
+      <th>Kontrollnr</th>
+      <th>Till datum</th>
+      <th>Räkning</th>
+      <th>Agera</th>
+    </tr>
+
+    {{range .Transaktioner}}
+    <tr>
+      <td>{{ .Löpnr }}</td>
+      <td>{{ .FranKonto }}</td>
+      <td>{{ .TillKonto }}</td>
+      <td>{{ .Belopp }}</td>
+      <td>{{ .Datum }}</td>
+      <td>{{ .HurOfta }}</td>
+      <td>{{ .Vad }}</td>
+      <td>{{ .Vem }}</td>
+      <td>{{ .Kontrollnr }}</td>
+      <td>{{ .TillDatum }}</td>
+      <td>{{ .Rakning }}</td>
+      <td>
+	<form method="POST" action="/fixedtrans">
+	  <input type="hidden" id="transtyp" name="transtyp" value="FastTrans">
+	  <input type="hidden" id="transid" name="transid" value="{{ .Löpnr }}">
+	  <input type="submit" value="Registrera">
+	</form>
+      </td>
+    </tr>
+    {{end}}
+
+</table>

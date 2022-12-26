@@ -5,7 +5,9 @@ package main
 import (
 	"context"
 	"database/sql"
+	_ "embed"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -95,6 +97,28 @@ func EndOfMonth(date time.Time) time.Time {
 	return date.AddDate(0, 1, -date.Day())
 }
 
+type transType struct {
+	Löpnr      string
+	FranKonto  string
+	TillKonto  string
+	Belopp     string
+	Datum      string
+	HurOfta    string
+	Vad        string
+	Vem        string
+	Kontrollnr string
+	TillDatum  string
+	Rakning    string
+}
+
+//go:embed html/fasta1.html
+var htmlfasta1 string
+
+type Fasta1Data struct {
+	Antal         string
+	Transaktioner []transType
+}
+
 func showFastaTransaktioner(w http.ResponseWriter, db *sql.DB) {
 	now := time.Now()
 	currentYear, currentMonth, _ := now.Date()
@@ -105,7 +129,6 @@ func showFastaTransaktioner(w http.ResponseWriter, db *sql.DB) {
 	currDate := lastOfMonth.Format("2006-01-02")
 	antal := GetCountPendingÖverföringar(db, currDate)
 	if antal > 0 {
-		_, _ = fmt.Fprintf(w, "<p>%d fasta transaktioner till hela denna månaden väntar på att hanteras:<br>\n", antal)
 		res, err := db.Query("SELECT FrånKonto,TillKonto,Belopp,Datum,HurOfta,Vad,Vem,Löpnr,Kontrollnr,TillDatum,Rakning FROM Överföringar WHERE Datum <= ?", currDate)
 
 		if err != nil {
@@ -124,33 +147,36 @@ func showFastaTransaktioner(w http.ResponseWriter, db *sql.DB) {
 		var TillDatum []byte // size 10
 		var Rakning []byte   // size 1
 
-		_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Löpnr</th><th>Frånkonto</th><th>Tillkonto/Plats</th><th>Belopp</th><th>Datum</th><th>Hur Ofta</th><th>Vad</th><th>Vem</th><th>Kontrollnr</th><th>Till datum</th><th>Räkning</th><th>Agera</th>\n")
+		var transaktioner []transType
+		var transaktion transType
+
 		for res.Next() {
 			err = res.Scan(&FrånKonto, &TillKonto, &Belopp, &Datum, &HurOfta, &Vad, &Vem, &Löpnr, &Kontrollnr, &TillDatum, &Rakning)
 
-			sqlStmt := ""
-			sqlStmt += "<tr><td>" + toUtf8(Löpnr) + "</td>"
-			sqlStmt += "<td>" + toUtf8(FrånKonto) + "</td>"
-			sqlStmt += "<td>" + toUtf8(TillKonto) + "</td>"
-			sqlStmt += "<td>" + toUtf8(Belopp) + "</td>"
-			sqlStmt += "<td>" + toUtf8(Datum) + "</td>"
-			sqlStmt += "<td>" + toUtf8(HurOfta) + "</td>"
-			sqlStmt += "<td>" + toUtf8(Vad) + "</td>"
-			sqlStmt += "<td>" + toUtf8(Vem) + "</td>"
-			sqlStmt += "<td>" + strconv.Itoa(Kontrollnr) + "</td>"
-			sqlStmt += "<td>" + toUtf8(TillDatum) + "</td>"
-			sqlStmt += "<td>" + toUtf8(Rakning) + "</td>"
-			sqlStmt += "<td>"
-			sqlStmt += "<form method=\"POST\" action=\"/fixedtrans\">\n"
-			sqlStmt += "<input type=\"hidden\" id=\"transtyp\" name=\"transtyp\" value=\"FastTrans\">\n"
-			sqlStmt += "<input type=\"hidden\" id=\"transid\" name=\"transid\" value=\"" + toUtf8(Löpnr) + "\">\n"
-			sqlStmt += "<input type=\"submit\" value=\"Registrera\"></form>\n"
-			sqlStmt += "</td>"
-
-			sqlStmt += "</tr>\n"
-			_, _ = fmt.Fprintf(w, "%s", sqlStmt)
+			transaktion.Löpnr = toUtf8(Löpnr)
+			transaktion.FranKonto = toUtf8(FrånKonto)
+			transaktion.TillKonto = toUtf8(TillKonto)
+			transaktion.Belopp = toUtf8(Belopp)
+			transaktion.Datum = toUtf8(Datum)
+			transaktion.HurOfta = toUtf8(HurOfta)
+			transaktion.Vad = toUtf8(Vad)
+			transaktion.Vem = toUtf8(Vem)
+			transaktion.Kontrollnr = strconv.Itoa(Kontrollnr)
+			transaktion.TillDatum = toUtf8(TillDatum)
+			transaktion.Rakning = toUtf8(Rakning)
+			transaktioner = append(transaktioner, transaktion)
 		}
-		_, _ = fmt.Fprintf(w, "</table>\n")
+		
+		tmpl1 := template.New("wHHEK Fasta")
+		tmpl1, err = tmpl1.Parse(htmlfasta1)
+		if err != nil {
+			log.Fatal(err)
+		}
+		data := Fasta1Data{
+			Antal:         strconv.Itoa(antal),
+			Transaktioner: transaktioner,
+		}
+		_ = tmpl1.Execute(w, data)
 	}
 }
 
