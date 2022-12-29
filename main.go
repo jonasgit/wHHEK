@@ -561,6 +561,7 @@ func generateSummary(w http.ResponseWriter, req *http.Request) {
 	} else {
 		_, _ = fmt.Fprintf(w, "Ingen databas.\n")
 	}
+
 	_, _ = fmt.Fprintf(w, "</body>\n")
 	_, _ = fmt.Fprintf(w, "</html>\n")
 }
@@ -920,7 +921,6 @@ func help1(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-	dbdecdotPtr := flag.Bool("dbdecimaldot", false, "Tvinga decimalpunkt till databas.")
 	helpPtr := flag.Bool("help", false, "Skriv ut hjälptext.")
 	
 	flag.Parse()
@@ -929,9 +929,9 @@ func main() {
 		flag.Usage()
 		os.Exit(1)
 	}
-	if *dbdecdotPtr {
-		dbdecimaldot = true
-	}
+
+	dbdecimaldot = !detectdbdec()
+	log.Println("Setting dbdecimaldot: ", dbdecimaldot)
 
 	http.HandleFunc("/hello", hello)
 	http.HandleFunc("/r/", restapi)

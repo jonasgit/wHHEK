@@ -7,9 +7,6 @@ import (
 	"testing"
 )
 
-//go:embed TOMDB.MDB
-var TOMDB []byte
-
 func SkapaTomMDB(t *testing.T, filename string) {
 	if FileExists(filename) {
 		// Delete file
