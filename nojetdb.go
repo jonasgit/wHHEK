@@ -14,6 +14,7 @@ func openJetDB(filename string, ro bool) *sql.DB {
 	return nil
 }
 
+// se jetdb.go
 func detectdbdec() bool {
-	return true
+	return false
 }
