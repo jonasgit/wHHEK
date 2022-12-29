@@ -182,7 +182,7 @@ func root(w http.ResponseWriter, req *http.Request) {
 			if (JetDBSupport && strings.HasSuffix(strings.ToLower(file.Name()), ".mdb")) ||
 				strings.HasSuffix(strings.ToLower(file.Name()), ".db") {
 				filer = append(filer, file.Name())
-				log.Println("Hittad fil:", file.Name())
+				//log.Println("Hittad fil:", file.Name())
 
 			}
 		}
@@ -320,6 +320,19 @@ func printAccounts(w http.ResponseWriter) {
 	}
 }
 
+type sumType struct {
+	Name     string
+	DbSaldo  string
+	DaySaldo string
+	TotSaldo string
+}
+
+//go:embed html/main11.html
+var htmlmain11 string
+type Main11Data struct {
+	Konton []sumType
+}
+
 func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 	currentTime := time.Now()
 	currDate := currentTime.Format("2006-01-02")
@@ -339,33 +352,29 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 	var SaldoArsskifte []byte // BCD / Decimal Precision 19
 	var ArsskifteManad []byte // size 10
 
-	_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Kontonamn</th><th>Saldo enligt databas</th><th>Saldo uträknat för idag</th><th>Saldo uträknat totalt</th>\n")
+	var konton []sumType
+
 	for res.Next() {
 		err = res.Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &Löpnr, &SaldoArsskifte, &ArsskifteManad)
-
+		
 		acc := toUtf8(Benämning)
-		dbSaldo, err2 := decimal.NewFromString(strings.ReplaceAll(toUtf8(Saldo), ",", "."))
+		DbSaldo, err2 := decimal.NewFromString(strings.ReplaceAll(toUtf8(Saldo), ",", "."))
 		if err2 != nil {
 			log.Fatal("printSummaryTable:", err)
 		}
-		_, _ = fmt.Fprintf(w, "<tr><td>%s</td>", acc)
-		daySaldo, totSaldo := saldonKonto(db, acc, currDate)
-		if dbSaldo.Equals(daySaldo) && dbSaldo.Equals(totSaldo) {
-			_, _ = fmt.Fprintf(w, "<td colspan=\"3\">%s</td>", dbSaldo)
-		} else if dbSaldo.Equals(daySaldo) {
-			_, _ = fmt.Fprintf(w, "<td colspan=\"2\">%s</td>", dbSaldo)
-			_, _ = fmt.Fprintf(w, "<td>%s</td>", totSaldo)
-		} else if daySaldo.Equals(totSaldo) {
-			_, _ = fmt.Fprintf(w, "<td>%s</td>", dbSaldo)
-			_, _ = fmt.Fprintf(w, "<td colspan=\"2\">%s</td>", totSaldo)
-		} else {
-			_, _ = fmt.Fprintf(w, "<td>%s</td>", dbSaldo)
-			_, _ = fmt.Fprintf(w, "<td>%s</td>", daySaldo)
-			_, _ = fmt.Fprintf(w, "<td>%s</td>", totSaldo)
-		}
-		_, _ = fmt.Fprintf(w, "</tr>\n")
+		DaySaldo, TotSaldo := saldonKonto(db, acc, currDate)
+		
+		konton = append(konton, sumType{acc, AmountDec2DBStr(DbSaldo), AmountDec2DBStr(DaySaldo), AmountDec2DBStr(TotSaldo)})
 	}
-	_, _ = fmt.Fprintf(w, "</table>\n")
+	t := template.New("Main11")
+	t, _ = t.Parse(htmlmain11)
+	data := Main11Data{
+		Konton: konton,
+	}
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Println("While serving HTTP main11: ", err)
+	}
 }
 
 func checkpwd(w http.ResponseWriter, req *http.Request) {

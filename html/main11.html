@@ -1,0 +1,27 @@
+<!-- -*- coding: utf-8 -*- -->
+<table style="width:100%">
+  <tr>
+    <th>Kontonamn</th>
+    <th>Saldo enligt databas</th>
+    <th>Saldo uträknat för idag</th>
+    <th>Saldo uträknat totalt</th>
+  </tr>
+  {{range .Konton}}
+  <tr>
+    <td>{{.Name}}</td>
+    {{if and (eq .DbSaldo .DaySaldo) (eq .DbSaldo .TotSaldo)}}
+    <td colspan="3">{{.DbSaldo}}</td>
+    {{else if eq .DbSaldo .DaySaldo}}
+    <td colspan="2">{{.DbSaldo}}</td>
+    <td>{{.TotSaldo}}</td>
+    {{else if eq .DaySaldo .TotSaldo}}
+    <td>{{.DbSaldo}}</td>
+    <td colspan="2">{{.TotSaldo}}</td>
+    {{else}}
+    <td>{{.DbSaldo}}</td>
+    <td>{{.DaySaldo}}</td>
+    <td>{{.TotSaldo}}</td>
+    {{end}}
+  </tr>
+  {{end}}
+</table>
