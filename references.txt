@@ -2,6 +2,8 @@
 
 Bra att känna till om Access/Jet-DB:
 
+https://web.archive.org/web/20221006153557/https://support.microsoft.com/en-us/office/access-sql-basic-concepts-vocabulary-and-syntax-444d0303-cde1-424e-9a74-e8dc3e460671
+
 https://web.archive.org/web/20210507203758/https://stackoverflow.com/questions/4551112/access-database-limit-keyword
 
 https://web.archive.org/web/20221229152352/https://support.microsoft.com/en-us/office/access-specifications-0cf3c66f-9cf2-4e32-9568-98c1025bb47c
