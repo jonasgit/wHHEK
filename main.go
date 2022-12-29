@@ -377,9 +377,19 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 	}
 }
 
+//go:embed html/main12.html
+var htmlmain12 string
+//go:embed html/main13.html
+var htmlmain13 string
+
 func checkpwd(w http.ResponseWriter, req *http.Request) {
 	if nopwDb == nil {
-		_, _ = fmt.Fprintf(w, "Ingen databas.")
+		t := template.New("Main12")
+		t, _ = t.Parse(htmlmain12)
+		err := t.Execute(w, nil)
+		if err != nil {
+			log.Println("While serving HTTP main12: ", err)
+		}
 	} else {
 		pwd := getdbpw(nopwDb)
 		formpwd := req.FormValue("pwd")
@@ -390,7 +400,12 @@ func checkpwd(w http.ResponseWriter, req *http.Request) {
 			nopwDb = nil
 			showsummary(w)
 		} else {
-			_, _ = fmt.Fprintf(w, "Fel lösenord.")
+			t := template.New("Main13")
+			t, _ = t.Parse(htmlmain13)
+			err := t.Execute(w, nil)
+			if err != nil {
+				log.Println("While serving HTTP main13: ", err)
+			}
 		}
 	}
 }

@@ -77,8 +77,8 @@ order by datum,löpnr`, endDate, startDate, kontonamn, kontonamn)
 		record.comment = toUtf8(comment)
 		record.fixed = fixed
 
-		fmt.Println("date:", record.date)
-		fmt.Println("text:", record.comment)
+		//fmt.Println("date:", record.date)
+		//fmt.Println("text:", record.comment)
 
 		result = append(result, record)
 	}
@@ -86,9 +86,9 @@ order by datum,löpnr`, endDate, startDate, kontonamn, kontonamn)
 }
 
 func printTransactions(w http.ResponseWriter, db *sql.DB, startDate string, endDate string, limitcomment string) {
-	fmt.Println("printTransactions startDate:", startDate)
-	fmt.Println("printTransactions endDate:", endDate)
-	fmt.Println("printTransactions comment:", limitcomment, len(limitcomment))
+	//fmt.Println("printTransactions startDate:", startDate)
+	//fmt.Println("printTransactions endDate:", endDate)
+	//fmt.Println("printTransactions comment:", limitcomment, len(limitcomment))
 
 	_, _ = fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
 
@@ -132,9 +132,9 @@ order by datum,löpnr`, endDate, startDate)
 	_, _ = fmt.Fprintf(w, "<th>Redigera</th><th>Radera</th>\n")
 	for res.Next() {
 		err = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
-		fmt.Println("date:", toUtf8(date))
-		fmt.Println("text:", comment)
-		fmt.Println("text:", toUtf8(comment))
+		//fmt.Println("date:", toUtf8(date))
+		//fmt.Println("text:", comment)
+		//fmt.Println("text:", toUtf8(comment))
 
 		_, _ = fmt.Fprintf(w, "<tr><td>"+strconv.Itoa(nummer)+"</td>")
 		_, _ = fmt.Fprintf(w, "<td>"+toUtf8(fromAcc)+"</td>")

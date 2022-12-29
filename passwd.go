@@ -98,24 +98,24 @@ func delPasswd(w http.ResponseWriter, pwd1 string) {
 var htmlpass string
 
 func passwordmgmt(w http.ResponseWriter, req *http.Request) {
-	log.Println("passwordmgmt")
+	//log.Println("passwordmgmt")
 
 	err := req.ParseForm()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	typ := req.FormValue("submit")
-	log.Println("typ: ", typ)
+	//typ := req.FormValue("submit")
+	//log.Println("typ: ", typ)
 	action := req.FormValue("action")
-	log.Println("action: ", action)
+	//log.Println("action: ", action)
 
 	pwd1 := req.FormValue("pwd1")
-	log.Println("pwd1: ", pwd1)
+	//log.Println("pwd1: ", pwd1)
 	pwd2 := req.FormValue("pwd2")
-	log.Println("pwd2: ", pwd2)
+	//log.Println("pwd2: ", pwd2)
 	pwd3 := req.FormValue("pwd3")
-	log.Println("pwd3: ", pwd3)
+	//log.Println("pwd3: ", pwd3)
 
 	switch action {
 	case "set":
