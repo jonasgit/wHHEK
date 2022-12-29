@@ -1,4 +1,6 @@
-Bra att k‰nna till om Access/Jet-DB:
+//-*- coding: utf-8 -*-
+
+Bra att k√§nna till om Access/Jet-DB:
 
 https://web.archive.org/web/20210507203758/https://stackoverflow.com/questions/4551112/access-database-limit-keyword
 
