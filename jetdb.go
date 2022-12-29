@@ -146,7 +146,7 @@ func CheckTransaction(db *sql.DB, value string) bool {
 	//log.Println("CheckTransaction antal=", antal)
 	//SQL get result
 	var val []byte
-	Row := db.QueryRow(`SELECT Belopp FROM Transaktioner ORDER BY Löpnr DESC`)
+	Row := db.QueryRow(`SELECT TOP 1 Belopp FROM Transaktioner ORDER BY Löpnr DESC`)
 	err = Row.Scan(&val)
 	if err != nil {
 		//log.Println("SQL err", err)
