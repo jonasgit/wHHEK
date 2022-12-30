@@ -1,0 +1,48 @@
+<!-- -*- coding: utf-8 -*- -->
+<form method="POST" action="/monthly">
+  <select id="accName" name="accName">
+    
+    {{range .Konton}}
+    <option value="{{.Name}}"
+	    {{if .Selected}}
+	    selected
+	    {{end}}
+	    >{{.Name}}</option>
+    {{end}}
+  </select>
+  
+  <select id="accYear" name="accYear">
+    {{range .Years}}
+    <option value="{{.Name}}"
+	    {{if .Selected}}
+	    selected
+	    {{end}}
+	    >{{.Name}}</option>
+    {{end}}
+  </select>
+  
+  <select id="accMonth" name="accMonth">
+    {{range .Months}}
+    <option value="{{.Name}}"
+	    {{if .Selected}}
+	    selected
+	    {{end}}
+	    >{{.Name}}</option>
+    {{end}}
+  </select>
+  
+  <input type="submit" value="Visa">
+</form>
+
+<form method="POST" action="/monthly">
+  <input type="hidden" id="accName" name="accName" value="{{.SelectKonto}}">
+  <input type="hidden" id="accYear" name="accYear" value="{{.NextYear}}">
+  <input type="hidden" id="accMonth" name="accMonth" value="{{.NextMonth}}">
+  <input type="submit" value="Nästa månad">
+</form>
+<form method="POST" action="/monthly">
+  <input type="hidden" id="accName" name="accName" value="{{.SelectKonto}}">
+  <input type="hidden" id="accYear" name="accYear" value="{{.PrevYear}}">
+  <input type="hidden" id="accMonth" name="accMonth" value="{{.PrevMonth}}">
+  <input type="submit" value="Föregående månad">
+</form>

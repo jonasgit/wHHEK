@@ -1,4 +1,4 @@
-//-*- coding: utf-8 -*-
+<!--  //-*- coding: utf-8 -*-  -->
 
 # wHHEK
 Personal finance package. Aimed at Swedish users.
@@ -17,6 +17,12 @@ Konverterar man till sqlite så bör det gå att köra även på Mac, i Linux oc
 
 Windows-versionen av det här går att köra i Linux också med hjälp av Wine. Men då krävs:
 `winetricks mdac28 jet40`
+
+**Projektmål:**
+1. Använd samma filformat som Hogia Hemekonomi (MDB/Jet/Access). För att man ska kunna växla fritt mellan detta program och Hemekonomi. Endast på Windows.
+2. Och ett mer framtidssäkert filformat (Sqlite3) som fungerar på andra OS. Det ska gå att konvertera mellan båda.
+3. Motsvarande funktioner med att hantera transaktioner, budget, m.m.
+4. Ytterligare funktioner som fungerar inom filformatets begränsningar.
 
 **Status:** "i sin linda". Lite grundfunktioner med att lägga in transaktioner och visa finns.
 

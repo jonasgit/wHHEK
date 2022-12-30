@@ -422,6 +422,16 @@ func showsummary(w http.ResponseWriter) {
 	}
 }
 
+//go:embed html/main14.html
+var htmlmain14 string
+type Main14Data struct {
+	Filnamn string
+}
+//go:embed html/main15.html
+var htmlmain15 string
+//go:embed html/main16.html
+var htmlmain16 string
+
 func opendb(w http.ResponseWriter, req *http.Request) {
 	err := req.ParseForm()
 	if err != nil {
@@ -438,35 +448,34 @@ func opendb(w http.ResponseWriter, req *http.Request) {
 			//fmt.Fprintf(w, "Trying to open sqlite3<br>\n")
 			nopwDb = openSqlite(filename)
 		} else {
-			_, _ = fmt.Fprintf(w, "Bad filename: %s<br>\n", filename)
-			_, _ = fmt.Fprintf(w, "</body>\n")
-			_, _ = fmt.Fprintf(w, "</html>\n")
+			t := template.New("Main14")
+			t, _ = t.Parse(htmlmain14)
+			data := Main14Data{
+				Filnamn: filename,
+			}
+			err := t.Execute(w, data)
+			if err != nil {
+				log.Println("While serving HTTP main14: ", err)
+			}
 		}
 	}
-
+	
 	if nopwDb == nil {
-		_, _ = fmt.Fprintf(w, "<html>\n")
-		_, _ = fmt.Fprintf(w, "<body>\n")
-
-		_, _ = fmt.Fprintf(w, "Error opening database<p>\n")
-		_, _ = fmt.Fprintf(w, "</body>\n")
-		_, _ = fmt.Fprintf(w, "</html>\n")
+		t := template.New("Main15")
+		t, _ = t.Parse(htmlmain15)
+		err := t.Execute(w, nil)
+		if err != nil {
+			log.Println("While serving HTTP main15: ", err)
+		}
 	} else {
 		pwd := getdbpw(nopwDb)
 		if pwd != " " {
-			_, _ = fmt.Fprintf(w, "<!DOCTYPE html>\n")
-			_, _ = fmt.Fprintf(w, "<html>\n")
-			_, _ = fmt.Fprintf(w, "   <head>\n")
-			_, _ = fmt.Fprintf(w, "      <title>Lösenordsskyddad</title>\n")
-			_, _ = fmt.Fprintf(w, "   </head>\n")
-			_, _ = fmt.Fprintf(w, "   <body>\n")
-			_, _ = fmt.Fprintf(w, "      <p>Databasen är lösenordsskyddad. Skriv in lösenordet:</p>\n")
-			_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/pwd\">\n")
-			_, _ = fmt.Fprintf(w, "      <label for=\"pwd\">Password:</label><input type=\"password\" id=\"pwd\" name=\"pwd\">\n")
-			_, _ = fmt.Fprintf(w, "<input type=\"submit\" value=\"Använd\"></form>\n")
-
-			_, _ = fmt.Fprintf(w, "</body>\n")
-			_, _ = fmt.Fprintf(w, "</html>\n")
+			t := template.New("Main16")
+			t, _ = t.Parse(htmlmain16)
+			err := t.Execute(w, nil)
+			if err != nil {
+				log.Println("While serving HTTP main16: ", err)
+			}
 		} else {
 			db = nopwDb
 			nopwDb = nil
@@ -740,16 +749,51 @@ order by datum,löpnr`, endDate, accName, accName)
 	_, _ = fmt.Fprintf(w, "</svg>\n")
 }
 
-func monthly(w http.ResponseWriter, req *http.Request) {
-	_, _ = fmt.Fprintf(w, "<html>\n")
-	_, _ = fmt.Fprintf(w, "<head>\n")
-	_, _ = fmt.Fprintf(w, "<style>\n")
-	_, _ = fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
-	_, _ = fmt.Fprintf(w, "</style>\n")
-	_, _ = fmt.Fprintf(w, "</head>\n")
-	_, _ = fmt.Fprintf(w, "<body>\n")
+//go:embed html/main17.html
+var htmlmain17 string
+type Main17Data struct {
+	NoDB bool
+}
 
-	err := req.ParseForm()
+type kontoType struct {
+	Name     string
+	Selected bool
+}
+type monthType struct {
+	Name     string
+	Selected bool
+}
+type yearType struct {
+	Name     string
+	Selected bool
+}
+//go:embed html/main18.html
+var htmlmain18 string
+type Main18Data struct {
+	Konton []kontoType
+	Years []yearType
+	Months []monthType
+	SelectKonto string
+	NextYear string
+	NextMonth string
+	PrevYear string
+	PrevMonth string
+}
+//go:embed html/main19.html
+var htmlmain19 string
+
+func monthly(w http.ResponseWriter, req *http.Request) {
+	t := template.New("Main17")
+	t, _ = t.Parse(htmlmain17)
+	data := Main17Data{
+		NoDB: db == nil,
+	}
+	err := t.Execute(w, data)
+	if err != nil {
+		log.Println("While serving HTTP main17: ", err)
+	}
+
+	err = req.ParseForm()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -773,9 +817,7 @@ func monthly(w http.ResponseWriter, req *http.Request) {
 		accName = toUtf8(namn)
 	}
 
-	if db == nil {
-		_, _ = fmt.Fprintf(w, "Monthly: No database open<p>\n")
-	} else {
+	if db != nil {
 		res1 := db.QueryRow("SELECT MIN(Datum) FROM Transaktioner")
 		var date []byte // size 10
 		err = res1.Scan(&date)
@@ -785,80 +827,73 @@ func monthly(w http.ResponseWriter, req *http.Request) {
 		lastYear, err := strconv.Atoi(toUtf8(date)[0:4])
 
 		printMonthly(w, db, accName, accYear, accMonth)
-		//fmt.Fprintf(w, "<a href=\"monthly\">Månads kontoutdrag</a>\n")
-		_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/monthly\">\n")
-		_, _ = fmt.Fprintf(w, "<select id=\"accName\" name=\"accName\">\n")
-		res, err := db.Query("SELECT KontoNummer,Benämning,Saldo,StartSaldo,StartManad,Löpnr,SaldoArsskifte,ArsskifteManad FROM Konton order by Benämning")
 
+		kontolista := getAccNames()
+		var konton []kontoType
+		for _,j := range kontolista {
+			var k kontoType
+			k.Name = j
+			if k.Name == accName {
+				k.Selected = true
+			}
+			konton = append(konton, k)
+		}
+		var years []yearType
+		for i := firstYear; i <= lastYear; i++ {
+			var k yearType
+			k.Name = strconv.Itoa(i)
+			if i == accYear {
+				k.Selected = true
+			}
+			years = append(years, k)
+		}
+		var months []monthType
+		for i := 1; i <= 12; i++ {
+			var k monthType
+			k.Name = strconv.Itoa(i)
+			if i == accMonth {
+				k.Selected = true
+			}
+			months = append(months, k)
+		}
+
+		nextYear := accYear
+		nextMonth := accMonth + 1
+		if nextMonth > 12 {
+			nextMonth = 1
+			nextYear = nextYear + 1
+		}
+		prevYear := accYear
+		prevMonth := accMonth - 1
+		if prevMonth < 1 {
+			prevMonth = 12
+			prevYear = prevYear - 1
+		}
+		
+		t := template.New("Main18")
+		t, _ = t.Parse(htmlmain18)
+		data := Main18Data{
+			Konton: konton,
+			Years: years,
+			Months: months,
+			SelectKonto: accName,
+			NextYear: strconv.Itoa(nextYear),
+			NextMonth: strconv.Itoa(nextMonth),
+			PrevYear: strconv.Itoa(prevYear),
+			PrevMonth: strconv.Itoa(prevMonth),
+		}
+		err = t.Execute(w, data)
 		if err != nil {
-			log.Fatal(err)
+			log.Println("While serving HTTP main18: ", err)
 		}
-
-		var KontoNummer []byte    // size 20
-		var Benämning []byte      // size 40, index
-		var Saldo []byte          // BCD / Decimal Precision 19
-		var StartSaldo []byte     // BCD / Decimal Precision 19
-		var StartManad []byte     // size 10
-		var Löpnr []byte          // autoinc Primary Key
-		var SaldoArsskifte []byte // BCD / Decimal Precision 19
-		var ArsskifteManad []byte // size 10
-		for res.Next() {
-			err = res.Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &Löpnr, &SaldoArsskifte, &ArsskifteManad)
-
-			_, _ = fmt.Fprintf(w, "<option value=\"%s\"", toUtf8(Benämning))
-			if toUtf8(Benämning) == accName {
-				_, _ = fmt.Fprintf(w, " selected ")
-			}
-			_, _ = fmt.Fprintf(w, ">%s</option>\n", toUtf8(Benämning))
-		}
-		_, _ = fmt.Fprintf(w, "</select>\n")
-		_, _ = fmt.Fprintf(w, "<select id=\"accYear\" name=\"accYear\">\n")
-		for year := firstYear; year <= lastYear; year++ {
-			_, _ = fmt.Fprintf(w, "<option value=\"%d\"", year)
-			if year == accYear {
-				_, _ = fmt.Fprintf(w, " selected ")
-			}
-			_, _ = fmt.Fprintf(w, ">%d</option>\n", year)
-		}
-		_, _ = fmt.Fprintf(w, "</select>\n")
-		_, _ = fmt.Fprintf(w, "<select id=\"accMonth\" name=\"accMonth\">\n")
-		for month := 1; month < 13; month++ {
-			_, _ = fmt.Fprintf(w, "<option value=\"%d\"", month)
-			if month == accMonth {
-				_, _ = fmt.Fprintf(w, " selected ")
-			}
-			_, _ = fmt.Fprintf(w, ">%d</option>\n", month)
-		}
-		_, _ = fmt.Fprintf(w, "</select>\n")
-
-		_, _ = fmt.Fprintf(w, "<input type=\"submit\" value=\"Visa\"></form>\n")
-
-		_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/monthly\">\n")
-		_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"accName\" name=\"accName\" value=\"%s\">", accName)
-		if accMonth+1 > 12 {
-			_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"accYear\" name=\"accYear\" value=\"%d\">", accYear+1)
-			_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"accMonth\" name=\"accMonth\" value=\"%d\">", 1)
-		} else {
-			_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"accYear\" name=\"accYear\" value=\"%d\">", accYear)
-			_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"accMonth\" name=\"accMonth\" value=\"%d\">", accMonth+1)
-		}
-		_, _ = fmt.Fprintf(w, "<input type=\"submit\" value=\"Nästa månad\"></form>\n")
-
-		_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/monthly\">\n")
-		_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"accName\" name=\"accName\" value=\"%s\">", accName)
-		if accMonth-1 < 1 {
-			_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"accYear\" name=\"accYear\" value=\"%d\">", accYear-1)
-			_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"accMonth\" name=\"accMonth\" value=\"%d\">", 12)
-		} else {
-			_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"accYear\" name=\"accYear\" value=\"%d\">", accYear)
-			_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"accMonth\" name=\"accMonth\" value=\"%d\">", accMonth-1)
-		}
-		_, _ = fmt.Fprintf(w, "<input type=\"submit\" value=\"Föregående månad\"></form>\n")
 	}
 
-	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
-	_, _ = fmt.Fprintf(w, "</body>\n")
-	_, _ = fmt.Fprintf(w, "</html>\n")
+	t = template.New("Main19")
+	t, _ = t.Parse(htmlmain19)
+	err = t.Execute(w, nil)
+	if err != nil {
+		log.Println("While serving HTTP main19: ", err)
+	}
 }
 
 func externalIP() (string, error) {
