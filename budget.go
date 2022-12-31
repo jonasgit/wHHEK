@@ -91,6 +91,8 @@ func printBudget(w http.ResponseWriter, db *sql.DB) {
 	_, _ = fmt.Fprintf(w, "</table>\n")
 
 	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/budget\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"addform\"><input type=\"submit\" value=\"Ny budgetpost\"></form>\n")
+
+	res.Close()
 }
 
 func printBudgetFooter(w http.ResponseWriter) {
@@ -344,5 +346,6 @@ func getAllBudgetposter(db *sql.DB) [][2]string {
 		record[1] = toUtf8(Inkomst)
 		result = append(result, record)
 	}
+	res.Close()
 	return result
 }

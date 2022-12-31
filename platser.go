@@ -83,6 +83,7 @@ func printPlatser(w http.ResponseWriter, db *sql.DB) {
 		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/platser\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%s\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"editform\"><input type=\"submit\" value=\"Redigera\"></form></td>\n", Löpnr)
 		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/platser\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%s\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"radera\"><input type=\"checkbox\" id=\"OK\" name=\"OK\" required><label for=\"OK\">OK</label><input type=\"submit\" value=\"Radera\"></form></td></tr>\n", Löpnr)
 	}
+	res.Close()
 	_, _ = fmt.Fprintf(w, "</table>\n")
 
 	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/platser\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"addform\"><input type=\"submit\" value=\"Ny plats\"></form>\n")
@@ -320,5 +321,6 @@ func getPlaceNames() []string {
 		err = res.Scan(&Namn)
 		names = append(names, toUtf8(Namn))
 	}
+	res.Close()
 	return names
 }

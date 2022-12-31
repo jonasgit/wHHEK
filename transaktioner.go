@@ -82,6 +82,7 @@ order by datum,löpnr`, endDate, startDate, kontonamn, kontonamn)
 
 		result = append(result, record)
 	}
+	res.Close()
 	return result
 }
 
@@ -149,6 +150,7 @@ order by datum,löpnr`, endDate, startDate)
 		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/transactions\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"editform\"><input type=\"submit\" value=\"Redigera\"></form></td>\n", nummer)
 		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/transactions\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"radera\"><input type=\"checkbox\" id=\"OK\" name=\"OK\" required><label for=\"OK\">OK</label><input type=\"submit\" value=\"Radera\"></form></td></tr>\n", nummer)
 	}
+	res.Close()
 	_, _ = fmt.Fprintf(w, "</table>\n")
 }
 
@@ -695,5 +697,6 @@ func hämtaTransaktion(lopnr int) (result transaction) {
 
 		result = record
 	}
+	res.Close()
 	return result
 }

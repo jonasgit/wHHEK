@@ -166,6 +166,8 @@ func showFastaTransaktioner(w http.ResponseWriter, db *sql.DB) {
 			transaktion.Rakning = toUtf8(Rakning)
 			transaktioner = append(transaktioner, transaktion)
 		}
+
+		res.Close();
 		
 		tmpl1 := template.New("wHHEK Fasta")
 		tmpl1, err = tmpl1.Parse(htmlfasta1)
@@ -390,6 +392,8 @@ func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.D
 		log.Println("OK: registreraFastTransaktionHTML, trasig/saknar amount ", amountstr, err)
 	}
 
+	res.Close()
+	
 	// Register transaction
 	if toUtf8(Vad) == "---" {
 		// Fasta överföringar

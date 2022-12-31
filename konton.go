@@ -67,6 +67,8 @@ func printKonton(w http.ResponseWriter, db *sql.DB) {
 	}
 	_, _ = fmt.Fprintf(w, "</table>\n")
 
+	res.Close()
+	
 	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/konton\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"addform\"><input type=\"submit\" value=\"Nytt konto\"></form>\n")
 }
 
@@ -376,6 +378,7 @@ func getAccNames() []string {
 		err = res.Scan(&Benämning)
 		names = append(names, toUtf8(Benämning))
 	}
+	res.Close()
 	return names
 }
 
@@ -513,6 +516,7 @@ order by datum,löpnr`, endDate, accName, accName)
 		}
 		//fmt.Println("saldoKonto: new saldo ", currSaldo)
 	}
+	res.Close()
 	return currSaldo
 }
 
@@ -591,5 +595,6 @@ order by datum,löpnr`, accName, accName)
 		}
 		//fmt.Println("saldoKonto: new saldo ", currSaldo, " totSaldo ", totSaldo)
 	}
+	res.Close()
 	return currSaldo, totSaldo
 }

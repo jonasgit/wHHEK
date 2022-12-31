@@ -165,7 +165,7 @@ func sumKatYear(kat string, selectYear int, intyp bool) decimal.Decimal {
 
 		result = result.Add(decamount)
 	}
-
+	res.Close()
 	return result
 }
 
@@ -200,6 +200,6 @@ func sumPlaceYear(kat string, selectYear int) decimal.Decimal {
 
 		result = result.Add(decamount)
 	}
-
+	res.Close()
 	return result
 }

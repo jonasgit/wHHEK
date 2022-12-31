@@ -366,6 +366,7 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 		
 		konton = append(konton, sumType{acc, AmountDec2DBStr(DbSaldo), AmountDec2DBStr(DaySaldo), AmountDec2DBStr(TotSaldo)})
 	}
+	res.Close()
 	t := template.New("Main11")
 	t, _ = t.Parse(htmlmain11)
 	data := Main11Data{
@@ -694,6 +695,7 @@ order by datum,löpnr`, endDate, accName, accName)
 			dayFound[daynum] = true
 		}
 	}
+	res.Close()
 	_, _ = fmt.Fprintf(w, "</table>\n")
 
 	minSaldo := decimal.NewFromInt(math.MaxInt64)
@@ -942,6 +944,7 @@ func getTypeInNames() []string {
 		err = res.Scan(&Typ)
 		names = append(names, toUtf8(Typ))
 	}
+	res.Close()
 	return names
 }
 
@@ -959,6 +962,7 @@ func getTypeOutNames() []string {
 		err = res.Scan(&Typ)
 		names = append(names, toUtf8(Typ))
 	}
+	res.Close()
 	return names
 }
 

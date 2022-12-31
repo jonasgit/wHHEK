@@ -37,6 +37,7 @@ func printPersoner(w http.ResponseWriter, db *sql.DB) {
 		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/personer\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"editform\"><input type=\"submit\" value=\"Redigera\"></form></td>\n", nummer)
 		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/personer\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"radera\"><input type=\"checkbox\" id=\"OK\" name=\"OK\" required><label for=\"OK\">OK</label><input type=\"submit\" value=\"Radera\"></form></td></tr>\n", nummer)
 	}
+	res.Close()
 	_, _ = fmt.Fprintf(w, "</table>\n")
 
 	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/personer\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"addform\"><input type=\"submit\" value=\"Ny person\"></form>\n")
@@ -245,6 +246,7 @@ func getPersonNames() []string {
 		err = res.Scan(&Namn)
 		names = append(names, toUtf8(Namn))
 	}
+	res.Close()
 	return names
 }
 
