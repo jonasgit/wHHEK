@@ -244,10 +244,9 @@ func InsertRow(sqlStmt string) {
 }
 
 func getdbpw(db *sql.DB) string {
-	res := db.QueryRow("SELECT Losenord FROM DtbVer")
-
 	var Losenord []byte // size 8
-	err := res.Scan(&Losenord)
+
+	err := db.QueryRow("SELECT Losenord FROM DtbVer").Scan(&Losenord)
 	if err != nil {
 		log.Fatal(err)
 	}

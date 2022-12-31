@@ -179,16 +179,14 @@ func handletransactions(w http.ResponseWriter, req *http.Request) {
 	if db == nil {
 		_, _ = fmt.Fprintf(w, "Transactions: No database open<p>\n")
 	} else {
-		res1 := db.QueryRow("SELECT MIN(Datum) FROM Transaktioner")
 		var date []byte // size 10
-		err = res1.Scan(&date)
+		err = db.QueryRow("SELECT MIN(Datum) FROM Transaktioner").Scan(&date)
 		kontostartdatum, err := isobytetodate(date)
 		if err != nil {
 			log.Print(err)
 		}
 
-		res1 = db.QueryRow("SELECT MAX(Datum) FROM Transaktioner")
-		err = res1.Scan(&date)
+		err = db.QueryRow("SELECT MAX(Datum) FROM Transaktioner").Scan(&date)
 		kontoslutdatum, err := isobytetodate(date)
 		if err != nil {
 			log.Print(err)
@@ -537,9 +535,6 @@ func editformTransaction(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	res1 := db.QueryRowContext(ctx,
-		`SELECT FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Saldo,Fastöverföring,Text FROM transaktioner WHERE (Löpnr=?)`, lopnr)
-
 	var fromAcc []byte // size 40
 	var toAcc []byte   // size 40
 	var tType []byte   // size 40
@@ -551,7 +546,8 @@ func editformTransaction(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	var fixed bool     // Boolean
 	var comment []byte // size 60
 
-	err := res1.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &saldo, &fixed, &comment)
+	err := db.QueryRowContext(ctx,
+		`SELECT FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Saldo,Fastöverföring,Text FROM transaktioner WHERE (Löpnr=?)`, lopnr).Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &saldo, &fixed, &comment)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -646,12 +642,10 @@ func antalTransaktioner(db *sql.DB) int {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	res1 := db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM Transaktioner`)
-
 	var antal int
 
-	err := res1.Scan(&antal)
+	err := db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM Transaktioner`).Scan(&antal)
 	if err != nil {
 		log.Fatal(err)
 	}

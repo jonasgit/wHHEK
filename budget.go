@@ -110,9 +110,6 @@ func editformBudget(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	res1 := db.QueryRowContext(ctx,
-		`SELECT Löpnr,Typ,Inkomst,HurOfta,StartMånad,Jan,Feb,Mar,Apr,Maj,Jun,Jul,Aug,Sep,Okt,Nov,Dec,Kontrollnr FROM Budget WHERE (Löpnr=?)`, lopnr)
-
 	var Typ []byte        // size 40
 	var Inkomst []byte    // size 1
 	var HurOfta int16     // SmallInt
@@ -132,7 +129,9 @@ func editformBudget(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	var Kontrollnr []byte //int32 // Integer
 	var Löpnr int         // autoinc Primary Key, index
 
-	err := res1.Scan(&Löpnr, &Typ, &Inkomst, &HurOfta, &StartMånad, &Jan, &Feb, &Mar, &Apr, &Maj, &Jun, &Jul, &Aug, &Sep, &Okt, &Nov, &Dec, &Kontrollnr)
+	err := db.QueryRowContext(ctx,
+		`SELECT Löpnr,Typ,Inkomst,HurOfta,StartMånad,Jan,Feb,Mar,Apr,Maj,Jun,Jul,Aug,Sep,Okt,Nov,Dec,Kontrollnr FROM Budget WHERE (Löpnr=?)`, lopnr).Scan(&Löpnr, &Typ, &Inkomst, &HurOfta, &StartMånad, &Jan, &Feb, &Mar, &Apr, &Maj, &Jun, &Jul, &Aug, &Sep, &Okt, &Nov, &Dec, &Kontrollnr)
+	
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -309,12 +308,11 @@ func antalBudgetposter(db *sql.DB) int {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	res1 := db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM Budget`)
-
 	var antal int
 
-	err := res1.Scan(&antal)
+	err := db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM Budget`).Scan(&antal)
+
 	if err != nil {
 		log.Fatal(err)
 	}

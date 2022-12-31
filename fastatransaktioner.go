@@ -516,12 +516,10 @@ func antalFastaTransaktioner(db *sql.DB) int {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	res1 := db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM Överföringar`)
-
 	var antal int
 
-	err := res1.Scan(&antal)
+	err := db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM Överföringar`).Scan(&antal)
 	if err != nil {
 		log.Fatal(err)
 	}

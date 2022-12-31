@@ -69,14 +69,12 @@ func editformPerson(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	res1 := db.QueryRowContext(ctx,
-		`SELECT Namn,Född,Kön FROM Personer WHERE (Löpnr=?)`, lopnr)
-
 	var namn []byte  // size 50
 	var birth string // size 4 (år, 0 för Gemensamt)
 	var sex string   // size 10 (text: Gemensamt, Man, Kvinna)
 
-	err := res1.Scan(&namn, &birth, &sex)
+	err := db.QueryRowContext(ctx,
+		`SELECT Namn,Född,Kön FROM Personer WHERE (Löpnr=?)`, lopnr).Scan(&namn, &birth, &sex)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -254,12 +252,10 @@ func antalPersoner(db *sql.DB) int {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	res1 := db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM Personer`)
-
 	var antal int
 
-	err := res1.Scan(&antal)
+	err := db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM Personer`).Scan(&antal)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -271,14 +267,12 @@ func hämtaPerson(lopnr int) person {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	res1 := db.QueryRowContext(ctx,
-		`SELECT Namn,Född,Kön FROM Personer WHERE (Löpnr=?)`, lopnr)
-
 	var namn []byte  // size 50
 	var birth string // size 4 (år, 0 för Gemensamt)
 	var sex string   // size 10 (text: Gemensamt, Man, Kvinna)
 
-	err := res1.Scan(&namn, &birth, &sex)
+	err := db.QueryRowContext(ctx,
+		`SELECT Namn,Född,Kön FROM Personer WHERE (Löpnr=?)`, lopnr).Scan(&namn, &birth, &sex)
 	if err != nil {
 		log.Fatal(err)
 	}

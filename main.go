@@ -619,13 +619,12 @@ func printMonthly(w http.ResponseWriter, db *sql.DB, accName string, accYear int
 	var res *sql.Rows
 	var daySaldo [32]decimal.Decimal
 	var dayFound [32]bool
+	var rawStart []byte // size 16
 
-	res1 := db.QueryRowContext(ctx,
+	err = db.QueryRowContext(ctx,
 		`select startsaldo
   from konton
-  where benämning = ?`, accName)
-	var rawStart []byte // size 16
-	err = res1.Scan(&rawStart)
+  where benämning = ?`, accName).Scan(&rawStart)
 	res2 := toUtf8(rawStart)
 	startSaldo, err := decimal.NewFromString(res2)
 	currSaldo := startSaldo
@@ -806,24 +805,20 @@ func monthly(w http.ResponseWriter, req *http.Request) {
 		accMonth, err = strconv.Atoi(req.FormValue("accMonth"))
 		accName = req.FormValue("accName")
 	} else {
-		res1 := db.QueryRow("SELECT MAX(Datum) FROM Transaktioner")
 		var date []byte // size 10
-		err = res1.Scan(&date)
+		err = db.QueryRow("SELECT MAX(Datum) FROM Transaktioner").Scan(&date)
 		accYear, err = strconv.Atoi(toUtf8(date)[0:4])
 		accMonth, err = strconv.Atoi(toUtf8(date)[5:7])
-		res1 = db.QueryRow("SELECT TOP 1 Benämning FROM Konton")
 		var namn []byte // size 10
-		err = res1.Scan(&namn)
+		err = db.QueryRow("SELECT TOP 1 Benämning FROM Konton").Scan(&namn)
 		accName = toUtf8(namn)
 	}
 
 	if db != nil {
-		res1 := db.QueryRow("SELECT MIN(Datum) FROM Transaktioner")
 		var date []byte // size 10
-		err = res1.Scan(&date)
+		err := db.QueryRow("SELECT MIN(Datum) FROM Transaktioner").Scan(&date)
 		firstYear, err := strconv.Atoi(toUtf8(date)[0:4])
-		res1 = db.QueryRow("SELECT MAX(Datum) FROM Transaktioner")
-		err = res1.Scan(&date)
+		err = db.QueryRow("SELECT MAX(Datum) FROM Transaktioner").Scan(&date)
 		lastYear, err := strconv.Atoi(toUtf8(date)[0:4])
 
 		printMonthly(w, db, accName, accYear, accMonth)

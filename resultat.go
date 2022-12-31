@@ -99,12 +99,10 @@ func hanteraYResult(w http.ResponseWriter, req *http.Request) {
 		sumutplats = sumutplats.Add(belopp)
 	}
 
-	res1 := db.QueryRow("SELECT MIN(Datum) FROM Transaktioner")
 	var date []byte // size 10
-	err = res1.Scan(&date)
+	err = db.QueryRow("SELECT MIN(Datum) FROM Transaktioner").Scan(&date)
 	firstYear, err := strconv.Atoi(toUtf8(date)[0:4])
-	res1 = db.QueryRow("SELECT MAX(Datum) FROM Transaktioner")
-	err = res1.Scan(&date)
+	err = db.QueryRow("SELECT MAX(Datum) FROM Transaktioner").Scan(&date)
 	lastYear, err := strconv.Atoi(toUtf8(date)[0:4])
 
 	var years []string

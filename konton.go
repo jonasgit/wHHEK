@@ -97,9 +97,6 @@ func editformKonto(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	res1 := db.QueryRowContext(ctx,
-		`SELECT KontoNummer,Benämning,Saldo,StartSaldo,StartManad,SaldoArsskifte,ArsskifteManad FROM Konton WHERE (Löpnr=?)`, lopnr)
-
 	var KontoNummer []byte    // size 20
 	var Benämning []byte      // size 40, index
 	var Saldo []byte          // BCD / Decimal Precision 19
@@ -108,7 +105,8 @@ func editformKonto(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	var SaldoArsskifte []byte // BCD / Decimal Precision 19
 	var ArsskifteManad []byte // size 10
 
-	err := res1.Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &SaldoArsskifte, &ArsskifteManad)
+	err := db.QueryRowContext(ctx,
+		`SELECT KontoNummer,Benämning,Saldo,StartSaldo,StartManad,SaldoArsskifte,ArsskifteManad FROM Konton WHERE (Löpnr=?)`, lopnr).Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &SaldoArsskifte, &ArsskifteManad)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -385,12 +383,10 @@ func antalKonton() int {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	res1 := db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM Konton`)
-
 	var antal int
 
-	err := res1.Scan(&antal)
+	err := db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM Konton`).Scan(&antal)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -402,12 +398,11 @@ func hämtakontoID(db *sql.DB, accName string) int {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	res1 := db.QueryRowContext(ctx,
+	var Löpnr int // autoinc Primary Key
+	err := db.QueryRowContext(ctx,
 		`select Löpnr
   from konton
-  where benämning = ?`, accName)
-	var Löpnr int // autoinc Primary Key
-	err := res1.Scan(&Löpnr)
+  where benämning = ?`, accName).Scan(&Löpnr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -419,9 +414,6 @@ func hämtaKonto(db *sql.DB, lopnr int) konto {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	res1 := db.QueryRowContext(ctx,
-		`SELECT KontoNummer,Benämning,Saldo,StartSaldo,StartManad,SaldoArsskifte,ArsskifteManad FROM Konton WHERE (Löpnr=?)`, lopnr)
-
 	var KontoNummer []byte    // size 20
 	var Benämning []byte      // size 40, index
 	var Saldo []byte          // BCD / Decimal Precision 19
@@ -430,7 +422,8 @@ func hämtaKonto(db *sql.DB, lopnr int) konto {
 	var SaldoArsskifte []byte // BCD / Decimal Precision 19
 	var ArsskifteManad []byte // size 10
 
-	err := res1.Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &SaldoArsskifte, &ArsskifteManad)
+	err := db.QueryRowContext(ctx,
+		`SELECT KontoNummer,Benämning,Saldo,StartSaldo,StartManad,SaldoArsskifte,ArsskifteManad FROM Konton WHERE (Löpnr=?)`, lopnr).Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &SaldoArsskifte, &ArsskifteManad)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -460,12 +453,12 @@ func saldoKonto(db *sql.DB, accName string, endDate string) decimal.Decimal {
 	var err error
 	var res *sql.Rows
 
-	res1 := db.QueryRowContext(ctx,
+	var rawStart []byte // size 16
+	
+	err = db.QueryRowContext(ctx,
 		`select startsaldo
   from konton
-  where benämning = ?`, accName)
-	var rawStart []byte // size 16
-	err = res1.Scan(&rawStart)
+  where benämning = ?`, accName).Scan(&rawStart)
 	res2 := toUtf8(rawStart)
 	startSaldo, err := decimal.NewFromString(res2)
 	currSaldo := startSaldo
@@ -532,12 +525,11 @@ func saldonKonto(db *sql.DB, accName string, endDate string) (decimal.Decimal, d
 	var err error
 	var res *sql.Rows
 
-	res1 := db.QueryRowContext(ctx,
+	var rawStart []byte // size 16
+	err = db.QueryRowContext(ctx,
 		`select startsaldo
   from konton
-  where benämning = ?`, accName)
-	var rawStart []byte // size 16
-	err = res1.Scan(&rawStart)
+  where benämning = ?`, accName).Scan(&rawStart)
 	res2 := toUtf8(rawStart)
 	startSaldo, err := decimal.NewFromString(res2)
 	currSaldo := startSaldo

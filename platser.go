@@ -22,12 +22,10 @@ func antalPlatser(db *sql.DB) int {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	res1 := db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM Platser`)
-
 	var antal int
 
-	err := res1.Scan(&antal)
+	err := db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM Platser`).Scan(&antal)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -39,15 +37,13 @@ func hämtaPlats(db *sql.DB, lopnr int) Plats {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	res1 := db.QueryRowContext(ctx,
-		`SELECT Namn,Gironummer,Typ,RefKonto FROM Platser WHERE (Löpnr=?)`, lopnr)
-
 	var Namn []byte       // size 40
 	var Gironummer []byte // size 20
 	var Typ []byte        // size 2
 	var RefKonto []byte   // size 40
 
-	err := res1.Scan(&Namn, &Gironummer, &Typ, &RefKonto)
+	err := db.QueryRowContext(ctx,
+		`SELECT Namn,Gironummer,Typ,RefKonto FROM Platser WHERE (Löpnr=?)`, lopnr).Scan(&Namn, &Gironummer, &Typ, &RefKonto)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -121,14 +117,12 @@ func editformPlats(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	res1 := db.QueryRowContext(ctx,
-		`SELECT Namn,Gironummer,Typ,RefKonto FROM Platser WHERE (Löpnr=?)`, lopnr)
-
 	var Namn []byte       // size 40
 	var Gironummer []byte // size 20
 	var Typ []byte        // size 2
 	var RefKonto []byte   // size 40
-	err := res1.Scan(&Namn, &Gironummer, &Typ, &RefKonto)
+	err := db.QueryRowContext(ctx,
+		`SELECT Namn,Gironummer,Typ,RefKonto FROM Platser WHERE (Löpnr=?)`, lopnr).Scan(&Namn, &Gironummer, &Typ, &RefKonto)
 	if err != nil {
 		log.Fatal(err)
 	}

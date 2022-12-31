@@ -117,6 +117,8 @@ func detectdbdec() bool {
 	result = CheckTransaction(db, "1,001,23") */
 	result :=  CheckTransaction(db, "1,23")
 
+	db.Close()
+	
 	// Radera testDB
 	os.Remove(filename)
 
@@ -146,8 +148,7 @@ func CheckTransaction(db *sql.DB, value string) bool {
 	//log.Println("CheckTransaction antal=", antal)
 	//SQL get result
 	var val []byte
-	Row := db.QueryRow(`SELECT TOP 1 Belopp FROM Transaktioner ORDER BY Löpnr DESC`)
-	err = Row.Scan(&val)
+	err = db.QueryRow(`SELECT TOP 1 Belopp FROM Transaktioner ORDER BY Löpnr DESC`).Scan(&val)
 	if err != nil {
 		//log.Println("SQL err", err)
 		return false
