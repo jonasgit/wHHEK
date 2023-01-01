@@ -24,7 +24,7 @@ Windows-versionen av det här går att köra i Linux också med hjälp av Wine. 
 3. Motsvarande funktioner med att hantera transaktioner, budget, m.m.
 4. Ytterligare funktioner som fungerar inom filformatets begränsningar.
 
-**Status:** "i sin linda". Lite grundfunktioner med att lägga in transaktioner och visa finns.
+**Status:** "i sin linda". Lite grundfunktioner finns.
 
 **Installation:** Bygg enligt kommentarer i filen make.bat. Eller se om det finns en färdig
 exe-fil under Releases/version/Assets/.

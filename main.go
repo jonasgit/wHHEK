@@ -130,7 +130,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"html"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -600,19 +599,56 @@ func generateSummary(w http.ResponseWriter, req *http.Request) {
 	_, _ = fmt.Fprintf(w, "</html>\n")
 }
 
+type TransactionType struct {
+	Löpnr   string
+	AccName string
+	Dest    string
+	Typ     string
+	Vad     string
+	Datum   string
+	Vem     string
+	Belopp  string
+	Saldo   string
+	Text    string
+	Fixed   string
+}
+
+type MonthValueType struct {
+	X      string
+	Y      string
+	Width  string
+	Height string
+}
+
+type TextType struct {
+	X    string
+	Y    string
+	Text string
+}
+
+//go:embed html/main20.html
+var htmlmain20 string
+type Main20Data struct {
+	Filename string
+	AccName string
+	Year string
+	Month string
+	Transactions []TransactionType
+	ZeroLine string
+	MonthValues []MonthValueType
+	Texts []TextType
+}
+
 func printMonthly(w http.ResponseWriter, db *sql.DB, accName string, accYear int, accMonth int) {
-	_, _ = fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
-	_, _ = fmt.Fprintf(w, "Kontonamn: %s<br>\n", accName)
-	_, _ = fmt.Fprintf(w, "År: %d<br>\n", accYear)
-	_, _ = fmt.Fprintf(w, "Månad: %d<br>\n", accMonth)
+	var transactions []TransactionType
+	var monthValues []MonthValueType
+	var texts []TextType
 
 	var startDate, endDate string
 	startDate = fmt.Sprintf("%d-%02d-01", accYear, accMonth)
 	endDate = fmt.Sprintf("%d-%02d-01", accYear, accMonth+1)
 	//fmt.Println("DEBUG Startdatum: ", startDate)
 	//fmt.Println("DEBUG Slutdatum: ", endDate)
-
-	_, _ = fmt.Fprintf(w, "<p>\n")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -653,7 +689,6 @@ order by datum,löpnr`, endDate, accName, accName)
 	var fixed bool     // Boolean
 	var comment []byte // size 60
 
-	_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Löpnr</th><th>Frånkonto</th><th>Tillkonto</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Saldo</th><th>Text</th><th>Fast överföring</th>\n")
 	for res.Next() {
 		err = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
 		decAmount, _ := decimal.NewFromString(toUtf8(amount))
@@ -676,19 +711,19 @@ order by datum,löpnr`, endDate, accName, accName)
 			currSaldo = currSaldo.Sub(decAmount)
 		}
 		if toUtf8(date) >= startDate {
-			sqlStmt := ""
-			sqlStmt += "<tr><td>" + strconv.Itoa(nummer) + "</td>"
-			sqlStmt += "<td>" + toUtf8(fromAcc) + "</td>"
-			sqlStmt += "<td>" + toUtf8(toAcc) + "</td>"
-			sqlStmt += "<td>" + toUtf8(tType) + "</td>"
-			sqlStmt += "<td>" + toUtf8(what) + "</td>"
-			sqlStmt += "<td>" + toUtf8(date) + "</td>"
-			sqlStmt += "<td>" + toUtf8(who) + "</td>"
-			sqlStmt += "<td>" + toUtf8(amount) + "</td>"
-			sqlStmt += "<td>" + currSaldo.String() + "</td>"
-			sqlStmt += "<td>" + html.EscapeString(toUtf8(comment)) + "</td>\n"
-			sqlStmt += "<td>" + strconv.FormatBool(fixed) + "</td></tr>"
-			_, _ = fmt.Fprintf(w, "%s", sqlStmt)
+			var transaction TransactionType
+			transaction.Löpnr = strconv.Itoa(nummer)
+			transaction.AccName = toUtf8(fromAcc)
+			transaction.Dest = toUtf8(toAcc)
+			transaction.Typ = toUtf8(tType)
+			transaction.Vad = toUtf8(what)
+			transaction.Datum = toUtf8(date)
+			transaction.Vem = toUtf8(who)
+			transaction.Belopp = toUtf8(amount)
+			transaction.Saldo = currSaldo.String()
+			transaction.Text = toUtf8(comment)
+			transaction.Fixed = strconv.FormatBool(fixed)
+			transactions = append(transactions, transaction)
 
 			daynum, _ := strconv.Atoi(toUtf8(date)[8:10])
 			daySaldo[daynum] = currSaldo
@@ -696,13 +731,11 @@ order by datum,löpnr`, endDate, accName, accName)
 		}
 	}
 	res.Close()
-	_, _ = fmt.Fprintf(w, "</table>\n")
 
 	minSaldo := decimal.NewFromInt(math.MaxInt64)
 	maxSaldo := decimal.NewFromInt(math.MinInt64)
 
 	for i := 1; i < 32; i++ {
-		//fmt.Fprintf(w, "%d: %s<br>\n", i, day_saldo[i].String())
 		if daySaldo[i].GreaterThan(maxSaldo) {
 			maxSaldo = daySaldo[i]
 		}
@@ -710,11 +743,13 @@ order by datum,löpnr`, endDate, accName, accName)
 			minSaldo = daySaldo[i]
 		}
 	}
-	_, _ = fmt.Fprintf(w, "<svg width=\"900\" height=\"600\">\n")
+
 	var yf, val float64
 	var y int
 	var y1 decimal.Decimal
 	const colWidth = 20
+	var monthValue MonthValueType
+
 	for i := 1; i < 32; i++ {
 		if dayFound[i] {
 			y1 = maxSaldo.Sub(daySaldo[i])
@@ -727,8 +762,12 @@ order by datum,löpnr`, endDate, accName, accName)
 		y2f, _ := y2.Float64()
 		yf = val / (y2f / (500.0 - 0.0))
 		y = int(yf)
-		_, _ = fmt.Fprintf(w, "  <rect x=%d y=%d width=\"%d\" height=\"%d\"", (i-1)*colWidth, y, colWidth, 500-int(y))
-		_, _ = fmt.Fprintf(w, "  style=\"fill:rgb(0,0,255);stroke-width:1;stroke:rgb(0,0,0)\" />\n")
+		
+		monthValue.X = strconv.Itoa((i-1)*colWidth)
+		monthValue.Y = strconv.Itoa(y)
+		monthValue.Width = strconv.Itoa(colWidth)
+		monthValue.Height = strconv.Itoa(500-int(y))
+		monthValues = append(monthValues, monthValue)
 	}
 	// zero line
 	y1 = maxSaldo //.Sub(0.0)
@@ -737,17 +776,52 @@ order by datum,löpnr`, endDate, accName, accName)
 	y2f, _ := y2.Float64()
 	yf = val / (y2f / (500.0 - 0.0))
 	y = int(yf)
-	_, _ = fmt.Fprintf(w, "  <rect x=%d y=%d width=\"%d\" height=\"%d\"", 0, y, 900, 1)
-	_, _ = fmt.Fprintf(w, "  style=\"fill:rgb(0,0,255);stroke-width:1;stroke:rgb(0,0,0)\" />\n")
-	_, _ = fmt.Fprintf(w, "<text fill=\"#000000\" font-size=\"12\" font-family=\"Verdana\" x=\"0\" y=\"550\">1</text>\n")
-	_, _ = fmt.Fprintf(w, "<text fill=\"#000000\" font-size=\"12\" font-family=\"Verdana\" x=\"%d\" y=\"550\">10</text>\n", (10-1)*colWidth)
-	_, _ = fmt.Fprintf(w, "<text fill=\"#000000\" font-size=\"12\" font-family=\"Verdana\" x=\"%d\" y=\"550\">20</text>\n", (20-1)*colWidth)
-	_, _ = fmt.Fprintf(w, "<text fill=\"#000000\" font-size=\"12\" font-family=\"Verdana\" x=\"%d\" y=\"550\">30</text>\n", (30-1)*colWidth)
+	zeroLine := y
 
-	_, _ = fmt.Fprintf(w, "<text fill=\"#000000\" font-size=\"12\" font-family=\"Verdana\" x=\"%d\" y=\"10\">%s</text>\n", 33*colWidth, maxSaldo.String())
-	_, _ = fmt.Fprintf(w, "<text fill=\"#000000\" font-size=\"12\" font-family=\"Verdana\" x=\"%d\" y=\"500\">%s</text>\n", 33*colWidth, minSaldo.String())
-	_, _ = fmt.Fprintf(w, "Sorry, your browser does not support inline SVG.\n")
-	_, _ = fmt.Fprintf(w, "</svg>\n")
+	var text TextType
+	text.X = "0"
+	text.Y = "550"
+	text.Text = "1"
+	texts = append(texts, text)
+	text.X = strconv.Itoa((10-1)*colWidth)
+	text.Y = "550"
+	text.Text = "10"
+	texts = append(texts, text)
+	text.X = strconv.Itoa((20-1)*colWidth)
+	text.Y = "550"
+	text.Text = "20"
+	texts = append(texts, text)
+	text.X = strconv.Itoa((30-1)*colWidth)
+	text.Y = "550"
+	text.Text = "30"
+	texts = append(texts, text)
+
+	text.X = strconv.Itoa(33*colWidth)
+	text.Y = "10"
+	text.Text = maxSaldo.String()
+	texts = append(texts, text)
+	text.X = strconv.Itoa(33*colWidth)
+	text.Y = "500"
+	text.Text = minSaldo.String()
+	texts = append(texts, text)
+
+	t := template.New("Main20")
+	t, _ = t.Parse(htmlmain20)
+	data := Main20Data{
+		Filename: currentDatabase,
+		AccName: accName,
+		Year: strconv.Itoa(accYear),
+		Month: strconv.Itoa(accMonth),
+		Transactions: transactions,
+		ZeroLine: strconv.Itoa(zeroLine),
+		MonthValues: monthValues,
+		Texts: texts,
+	}
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Println("While serving HTTP main11: ", err)
+	}
+
 }
 
 //go:embed html/main17.html
