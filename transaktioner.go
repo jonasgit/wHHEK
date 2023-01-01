@@ -86,12 +86,15 @@ order by datum,löpnr`, endDate, startDate, kontonamn, kontonamn)
 	return result
 }
 
-func printTransactions(w http.ResponseWriter, db *sql.DB, startDate string, endDate string, limitcomment string) {
-	//fmt.Println("printTransactions startDate:", startDate)
-	//fmt.Println("printTransactions endDate:", endDate)
-	//fmt.Println("printTransactions comment:", limitcomment, len(limitcomment))
+//go:embed html/transakt4.html
+var htmltrans4 string
+type Trans4Data struct {
+	DBName string
+	Transaktioner []TransactionType
+}
 
-	_, _ = fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
+func printTransactions(w http.ResponseWriter, db *sql.DB, startDate string, endDate string, limitcomment string) {
+	var transactions []TransactionType
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -128,34 +131,49 @@ order by datum,löpnr`, endDate, startDate)
 	var saldo []byte   // BCD / Decimal Precision 19
 	var fixed bool     // Boolean
 	var comment []byte // size 60
-
-	_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Löpnr</th><th>Frånkonto</th><th>Tillkonto/Plats</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th><th>Fast överföring</th>\n")
-	_, _ = fmt.Fprintf(w, "<th>Redigera</th><th>Radera</th>\n")
+	
 	for res.Next() {
 		err = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
-		//fmt.Println("date:", toUtf8(date))
-		//fmt.Println("text:", comment)
-		//fmt.Println("text:", toUtf8(comment))
-
-		_, _ = fmt.Fprintf(w, "<tr><td>"+strconv.Itoa(nummer)+"</td>")
-		_, _ = fmt.Fprintf(w, "<td>"+toUtf8(fromAcc)+"</td>")
-		_, _ = fmt.Fprintf(w, "<td>"+toUtf8(toAcc)+"</td>")
-		_, _ = fmt.Fprintf(w, "<td>"+toUtf8(tType)+"</td>")
-		_, _ = fmt.Fprintf(w, "<td>"+toUtf8(what)+"</td>")
-		_, _ = fmt.Fprintf(w, "<td>"+toUtf8(date)+"</td>")
-		_, _ = fmt.Fprintf(w, "<td>"+toUtf8(who)+"</td>")
-		_, _ = fmt.Fprintf(w, "<td>"+toUtf8(amount)+"</td>")
-		_, _ = fmt.Fprintf(w, "<td>"+html.EscapeString(toUtf8(comment))+"</td>\n")
-		_, _ = fmt.Fprintf(w, "<td>"+strconv.FormatBool(fixed)+"</td>")
-		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/transactions\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"editform\"><input type=\"submit\" value=\"Redigera\"></form></td>\n", nummer)
-		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/transactions\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"radera\"><input type=\"checkbox\" id=\"OK\" name=\"OK\" required><label for=\"OK\">OK</label><input type=\"submit\" value=\"Radera\"></form></td></tr>\n", nummer)
+		
+		var transaction TransactionType
+		transaction.Löpnr = strconv.Itoa(nummer)
+		transaction.AccName = toUtf8(fromAcc)
+		transaction.Dest = toUtf8(toAcc)
+		transaction.Typ = toUtf8(tType)
+		transaction.Vad = toUtf8(what)
+		transaction.Datum = toUtf8(date)
+		transaction.Vem = toUtf8(who)
+		transaction.Belopp = toUtf8(amount)
+		transaction.Text = toUtf8(comment)
+		transaction.Fixed = strconv.FormatBool(fixed)
+		transactions = append(transactions, transaction)
 	}
 	res.Close()
-	_, _ = fmt.Fprintf(w, "</table>\n")
+	
+	t := template.New("Transaktion4")
+	t, _ = t.Parse(htmltrans4)
+	data := Trans4Data{
+		DBName: currentDatabase,
+		Transaktioner: transactions,
+	}
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Println("While serving HTTP trans4: ", err)
+	}
 }
 
 func isobytetodate(rawdate []byte) (time.Time, error) {
 	return time.Parse("2006-01-02", toUtf8(rawdate))
+}
+
+//go:embed html/transakt3.html
+var htmltrans3 string
+type Trans3Data struct {
+	DBFirstDay string
+	DBLastDay string
+	FormStartDay string
+	FormLastDay string
+	FormComment string
 }
 
 func handletransactions(w http.ResponseWriter, req *http.Request) {
@@ -195,33 +213,37 @@ func handletransactions(w http.ResponseWriter, req *http.Request) {
 		}
 
 		printTransactions(w, db, startDate, endDate, req.FormValue("comment"))
-		_, _ = fmt.Fprintf(w, "Kontots första transaktion %s<br>\n", kontostartdatum.Format("2006-01-02"))
-		_, _ = fmt.Fprintf(w, "Kontots sista transaktion %s<p>\n", kontoslutdatum.Format("2006-01-02"))
 
-		_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/transactions\">\n")
-		_, _ = fmt.Fprintf(w, "<label for=\"startdate\">Startdatum:</label>")
-		_, _ = fmt.Fprintf(w, "	<input type=\"date\" id=\"startdate\" name=\"startdate\" value=\"%s\" title=\"Inklusive\">", startDate)
-		_, _ = fmt.Fprintf(w, "<label for=\"enddate\">Slutdatum:</label>")
-		_, _ = fmt.Fprintf(w, "	<input type=\"date\" id=\"enddate\" name=\"enddate\" value=\"%s\" title=\"Exclusive\">", endDate)
-		_, _ = fmt.Fprintf(w, "<label for=\"comment\">Kommentar:</label>")
-		_, _ = fmt.Fprintf(w, "	<input id=\"comment\" name=\"comment\" value=\"%s\" placeholder=\"wildcards %%_\" title=\"Söktext\n%% är noll, ett eller många tecken.\n_ är ett tecken.\nTomt fält betyder inget filtreras.\">", req.FormValue("comment"))
-
-		_, _ = fmt.Fprintf(w, "<input type=\"submit\" value=\"Visa\"></form>\n")
-
-		_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/transactions\">\n")
+		t := template.New("Transaktion3")
+		t, _ = t.Parse(htmltrans3)
+		data := Trans3Data{
+			DBFirstDay: kontostartdatum.Format("2006-01-02"),
+			DBLastDay: kontoslutdatum.Format("2006-01-02"),
+			FormStartDay: startDate,
+			FormLastDay: endDate,
+			FormComment: req.FormValue("comment"),
+		}
+		err = t.Execute(w, data)
+		if err != nil {
+			log.Println("While serving HTTP trans3: ", err)
+		}
 	}
 }
 
-func transactions(w http.ResponseWriter, req *http.Request) {
-	_, _ = fmt.Fprintf(w, "<html>\n")
-	_, _ = fmt.Fprintf(w, "<head>\n")
-	_, _ = fmt.Fprintf(w, "<style>\n")
-	_, _ = fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
-	_, _ = fmt.Fprintf(w, "</style>\n")
-	_, _ = fmt.Fprintf(w, "</head>\n")
-	_, _ = fmt.Fprintf(w, "<body>\n")
+//go:embed html/transakt1.html
+var htmltrans1 string
+//go:embed html/transakt2.html
+var htmltrans2 string
 
-	err := req.ParseForm()
+func transactions(w http.ResponseWriter, req *http.Request) {
+	t := template.New("Transaktion1")
+	t, _ = t.Parse(htmltrans1)
+	err := t.Execute(w, nil)
+	if err != nil {
+		log.Println("While serving HTTP trans1: ", err)
+	}
+
+	err = req.ParseForm()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -245,9 +267,12 @@ func transactions(w http.ResponseWriter, req *http.Request) {
 
 	handletransactions(w, req)
 
-	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
-	_, _ = fmt.Fprintf(w, "</body>\n")
-	_, _ = fmt.Fprintf(w, "</html>\n")
+	t = template.New("Transaktion2")
+	t, _ = t.Parse(htmltrans2)
+	err = t.Execute(w, nil)
+	if err != nil {
+		log.Println("While serving HTTP trans2: ", err)
+	}
 }
 
 func raderaTransaction(w http.ResponseWriter, lopnr int, db *sql.DB) {

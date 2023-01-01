@@ -1,0 +1,50 @@
+<!-- -*- coding: utf-8 -*- -->
+<h1>{{.DBName}}</h1>
+
+<table style="width:100%%">
+  <tr>
+    <th>Löpnr</th>
+    <th>Frånkonto</th>
+    <th>Tillkonto/Plats</th>
+    <th>Typ</th>
+    <th>Vad</th>
+    <th>Datum</th>
+    <th>Vem</th>
+    <th>Belopp</th>
+    <th>Text</th>
+    <th>Fast överföring</th>
+    <th>Redigera</th>
+    <th>Radera</th>
+  </tr>
+  
+  {{range .Transaktioner}}
+  <tr>
+    <td>{{.Löpnr}}</td>
+    <td>{{.AccName}}</td>
+    <td>{{.Dest}}</td>
+    <td>{{.Typ}}</td>
+    <td>{{.Vad}}</td>
+    <td>{{.Datum}}</td>
+    <td>{{.Vem}}</td>
+    <td>{{.Belopp}}</td>
+    <td>{{.Text}}</td>
+    <td>{{.Fixed}}</td>
+    <td>
+      <form method="POST" action="/transactions">
+	<input type="hidden" id="lopnr" name="lopnr" value="{{.Löpnr}}">
+	<input type="hidden" id="action" name="action" value="editform">
+	<input type="submit" value="Redigera">
+      </form>
+    </td>
+    <td>
+      <form method="POST" action="/transactions">
+	<input type="hidden" id="lopnr" name="lopnr" value="{{.Löpnr}}">
+	<input type="hidden" id="action" name="action" value="radera">
+	<input type="checkbox" id="OK" name="OK" required>
+	<label for="OK">OK</label>
+	<input type="submit" value="Radera">
+      </form>
+    </td>
+  </tr>
+  {{end}}
+</table>

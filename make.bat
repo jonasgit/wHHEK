@@ -34,8 +34,11 @@ IF "%ARG1%"=="setup" (
 
 IF "%ARG1%"=="clean" (
   del *~
+  del html\*~
   del #*#
   del .#*
+  del *.ldb
+  del got*.mdb
   EXIT
 )
 

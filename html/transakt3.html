@@ -1,0 +1,19 @@
+<!-- -*- coding: utf-8 -*- -->
+Databasens första transaktion {{.DBFirstDay}}<br>
+Databasens sista transaktion {{.DBLastDay}}<p>
+
+<form method="POST" action="/transactions">
+<label for="startdate">Startdatum:</label>
+<input type="date" id="startdate" name="startdate" value="{{.FormStartDay}}" title="Inklusive">
+<label for="enddate">Slutdatum:</label>
+<input type="date" id="enddate" name="enddate" value="{{.FormLastDay}}" title="Exclusive">
+<label for="comment">Kommentar:</label>
+<input id="comment" name="comment" value="{{.FormComment}}" placeholder="wildcards %_" title="Söktext
+%% är noll, ett eller många tecken.
+_ är ett tecken.
+Tomt fält betyder inget filtreras.">
+
+<input type="submit" value="Visa">
+</form>
+
+<form method="POST" action="/transactions">
