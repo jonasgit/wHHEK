@@ -556,6 +556,21 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+//go:embed html/transakt5.html
+var htmltrans5 string
+type Trans5Data struct {
+	FromAcc string
+	Dest string
+	Typ string
+	Datum string
+	Vad string
+	Vem string
+	Belopp string
+	Fixed string
+	Text string
+	Löpnr string
+}
+
 func editformTransaction(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	fmt.Println("editformTransaktion lopnr: ", lopnr)
 
@@ -579,24 +594,24 @@ func editformTransaction(w http.ResponseWriter, lopnr int, db *sql.DB) {
 		log.Fatal(err)
 	}
 
-	_, _ = fmt.Fprintf(w, "Redigera transaktion<br>")
-	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/transactions\">")
-
-	PrintEditCellText(w, "fromAcc", "Från konto", toUtf8(fromAcc))
-	PrintEditCellText(w, "toAcc", "Till konto", toUtf8(toAcc))
-	PrintEditCellText(w, "tType", "Typ", toUtf8(tType))
-	PrintEditCellText(w, "date", "Datum", toUtf8(date))
-	PrintEditCellText(w, "what", "Vad", toUtf8(what))
-	PrintEditCellText(w, "who", "Vem", toUtf8(who))
-	PrintEditCellText(w, "amount", "Summa", toUtf8(amount))
-	PrintEditCellText(w, "fixed", "Fast transaktion", strconv.FormatBool(fixed))
-	PrintEditCellText(w, "comment", "Text", toUtf8(comment))
-
-	_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\">", lopnr)
-	_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"action\" name=\"action\" value=\"update\">")
-	_, _ = fmt.Fprintf(w, "<input type=\"submit\" value=\"Uppdatera\">")
-	_, _ = fmt.Fprintf(w, "</form>\n")
-	_, _ = fmt.Fprintf(w, "<p>\n")
+	t := template.New("Transaktion5")
+	t, _ = t.Parse(htmltrans5)
+	data := Trans5Data{
+		FromAcc: toUtf8(fromAcc),
+		Dest: toUtf8(toAcc),
+		Typ: toUtf8(tType),
+		Datum: toUtf8(date),
+		Vad: toUtf8(what),
+		Vem: toUtf8(who),
+		Belopp: toUtf8(amount),
+		Fixed: strconv.FormatBool(fixed),
+		Text: toUtf8(comment),
+		Löpnr: strconv.Itoa(lopnr),
+	}
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Println("While serving HTTP trans4: ", err)
+	}
 }
 
 func updateTransaction(w http.ResponseWriter, lopnr int, req *http.Request, db *sql.DB) {
