@@ -93,33 +93,65 @@ type Trans4Data struct {
 	Transaktioner []TransactionType
 }
 
-func printTransactions(w http.ResponseWriter, db *sql.DB, startDate string, endDate string, limitcomment string) {
-	var transactions []TransactionType
-
+func printTransactions(w http.ResponseWriter, db *sql.DB, startDate string, endDate string, limitcomment string, fromacc string, toacc string, place string, vad string, minbelopp string, maxbelopp string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var err error
 	var res *sql.Rows
 
+	var querystring string
+	var queryargs []string
+
+	querystring1 := `SELECT FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Löpnr,Saldo,Fastöverföring,[Text] from transaktioner
+`
+	querystring2 := `
+ where (datum < ?) and (datum >= ?)
+`
+	querystring3 := `
+order by datum,löpnr
+`
+	queryargs = append(queryargs, endDate)
+	queryargs = append(queryargs, startDate)
+	
 	if len(limitcomment) > 0 {
-		fmt.Println("Query with text limit")
-
-		res, err = db.QueryContext(ctx,
-			`SELECT FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Löpnr,Saldo,Fastöverföring,[Text] from transaktioner
-  where (datum < ?) and (datum >= ?) and (Text like ?)
-order by datum,löpnr`, endDate, startDate, limitcomment)
-	} else {
-		fmt.Println("Query without text limit")
-
-		res, err = db.QueryContext(ctx,
-			`SELECT FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Löpnr,Saldo,Fastöverföring,[Text] from transaktioner
-  where (datum < ?) and (datum >= ?)
-order by datum,löpnr`, endDate, startDate)
+		querystring2 = querystring2 + ` and (Text like ?) `
+		queryargs = append(queryargs, limitcomment)
 	}
+	if len(fromacc) > 0 {
+		querystring2 = querystring2 + ` and (FrånKonto = ?) `
+		queryargs = append(queryargs, fromacc)
+	}
+	if len(toacc) > 0 {
+		querystring2 = querystring2 + ` and (TillKonto = ?) `
+		queryargs = append(queryargs, toacc)
+	}
+	if len(place) > 0 {
+		querystring2 = querystring2 + ` and (TillKonto = ?) `
+		queryargs = append(queryargs, place)
+	}
+	if len(vad) > 0 {
+		querystring2 = querystring2 + ` and (Vad = ?) `
+		queryargs = append(queryargs, vad)
+	}
+	if len(minbelopp) > 0 {
+		querystring2 = querystring2 + ` and (Belopp >= ?) `
+		queryargs = append(queryargs, minbelopp)
+	}
+	if len(maxbelopp) > 0 {
+		querystring2 = querystring2 + ` and (Belopp <= ?) `
+		queryargs = append(queryargs, maxbelopp)
+	}
+
+	querystring = querystring1 + querystring2 + querystring3
+	b := make([]interface{},0,len(queryargs))
+	for _,i:= range queryargs {
+		b = append(b,i)
+	}
+	res, err = db.QueryContext(ctx, querystring, b...)
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	
 	var fromAcc []byte // size 40
 	var toAcc []byte   // size 40
 	var tType []byte   // size 40
@@ -132,6 +164,8 @@ order by datum,löpnr`, endDate, startDate)
 	var fixed bool     // Boolean
 	var comment []byte // size 60
 	
+	var transactions []TransactionType
+
 	for res.Next() {
 		err = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
 		
@@ -174,6 +208,9 @@ type Trans3Data struct {
 	FormStartDay string
 	FormLastDay string
 	FormComment string
+	Kontonamn []string
+	Platser []string
+	Vad     []string
 }
 
 func handletransactions(w http.ResponseWriter, req *http.Request) {
@@ -212,8 +249,11 @@ func handletransactions(w http.ResponseWriter, req *http.Request) {
 			log.Print(err)
 		}
 
-		printTransactions(w, db, startDate, endDate, req.FormValue("comment"))
+		printTransactions(w, db, startDate, endDate, req.FormValue("comment"), req.FormValue("fromacc"), req.FormValue("toacc"), req.FormValue("place"), req.FormValue("vad"), req.FormValue("minamount"), req.FormValue("maxamount"))
 
+		trtypes := []string{""}
+		trtypes = append(trtypes, getTypeInNames()...)
+		trtypes = append(trtypes, getTypeOutNames()...)
 		t := template.New("Transaktion3")
 		t, _ = t.Parse(htmltrans3)
 		data := Trans3Data{
@@ -222,6 +262,9 @@ func handletransactions(w http.ResponseWriter, req *http.Request) {
 			FormStartDay: startDate,
 			FormLastDay: endDate,
 			FormComment: req.FormValue("comment"),
+			Kontonamn: append([]string{""}, getAccNames()...),
+			Platser: append([]string{""}, getPlaceNames()...),
+			Vad: trtypes,
 		}
 		err = t.Execute(w, data)
 		if err != nil {

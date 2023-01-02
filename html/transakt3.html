@@ -2,18 +2,49 @@
 Databasens första transaktion {{.DBFirstDay}}<br>
 Databasens sista transaktion {{.DBLastDay}}<p>
 
-<form method="POST" action="/transactions">
-<label for="startdate">Startdatum:</label>
-<input type="date" id="startdate" name="startdate" value="{{.FormStartDay}}" title="Inklusive">
-<label for="enddate">Slutdatum:</label>
-<input type="date" id="enddate" name="enddate" value="{{.FormLastDay}}" title="Exclusive">
-<label for="comment">Kommentar:</label>
-<input id="comment" name="comment" value="{{.FormComment}}" placeholder="wildcards %_" title="Söktext
-%% är noll, ett eller många tecken.
+  <form method="POST" action="/transactions">
+    <label for="fromacc">Från konto:</label>
+    <select name="fromacc" id="fromacc">
+      {{range .Kontonamn}}
+      <option value="{{.}}">{{.}}</option>
+      {{end}}
+    </select>
+    
+    <label for="toacc">Till konto:</label>
+    <select name="toacc" id="toacc">
+      {{range .Kontonamn}}
+      <option value="{{.}}">{{.}}</option>
+      {{end}}
+    </select>
+    <label for="place">Till plats:</label>
+    <select name="place" id="place">
+      {{range .Platser}}
+      <option value="{{.}}">{{.}}</option>
+      {{end}}
+    </select>
+    <label for="vad">Vad:</label>
+    <select name="vad" id="vad">
+      {{range .Vad}}
+      <option value="{{.}}">{{.}}</option>
+      {{end}}
+    </select>
+
+    <label for="minamount">Min Belopp:</label>
+    <input type="text" id="minamount" name="minamount" pattern="[0-9]+([,\.][0-9]+)?">
+    <label for="maxamount">Max Belopp:</label>
+    <input type="text" id="maxamount" name="maxamount" pattern="[0-9]+([,\.][0-9]+)?">
+
+    <label for="startdate">Startdatum:</label>
+    <input type="date" id="startdate" name="startdate" value="{{.FormStartDay}}" title="Inklusive">
+    <label for="enddate">Slutdatum:</label>
+    <input type="date" id="enddate" name="enddate" value="{{.FormLastDay}}" title="Exclusive">
+    <label for="comment">Kommentar:</label>
+    <input id="comment" name="comment" value="{{.FormComment}}" placeholder="wildcards %_" title="Söktext
+% är noll, ett eller många tecken.
 _ är ett tecken.
 Tomt fält betyder inget filtreras.">
 
-<input type="submit" value="Visa">
-</form>
-
-<form method="POST" action="/transactions">
+    <input type="submit" value="Visa">
+  </form>
+  
+  <form method="POST" action="/transactions">
