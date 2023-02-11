@@ -36,6 +36,8 @@ type ResultatData struct {
 }
 
 func hanteraYResult(w http.ResponseWriter, req *http.Request) {
+	log.Println("Func hanteraYResult")
+
 	err := req.ParseForm()
 	if err != nil {
 		log.Fatal(err)
@@ -109,6 +111,11 @@ func hanteraYResult(w http.ResponseWriter, req *http.Request) {
 	for i := firstYear; i <= lastYear; i++ {
 		years = append(years, strconv.Itoa(i))
 	}
+
+	log.Println("Func hanteraYResult year:", strconv.Itoa(selectYear))
+	log.Println("Func hanteraYResult sumin:", sumin.String())
+	log.Println("Func hanteraYResult sumut:", sumut.String())
+	log.Println("Func hanteraYResult sumutplats:", sumutplats.String())
 
 	tmpl1 := template.New("wHHEK Årsresultat")
 	tmpl1, _ = tmpl1.Parse(htmlresultat)
