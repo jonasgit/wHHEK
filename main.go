@@ -46,6 +46,15 @@
 // Visa budget
 // Redigera budget
 // Hantera lösenordsskyddad databas
+// kommandorads help-option
+// Efter lagt till transaktion, visa den tillagda
+// Visa transaktioner, filter: Frånkonto
+// Visa transaktioner, filter: Tillkonto
+// Visa transaktioner, filter: Summa
+// Visa transaktioner, filter: Plats
+// Visa transaktioner, filter: Vad
+// Visa resultat-tabellen, helår
+// Skapa ny fil (sqlite), kompatibel
 
 // ROADMAP/TODO/The Future Is In Flux
 // ============
@@ -53,22 +62,14 @@
 // localize decimal.String()
 // escape & in all html. escapeHTML verkar inte fungera. Use template?
 // hantera fel: för lång text till comment
-// kommandorads help-option
 // kommandoradsoption för att välja katalog med databas
 // kommandoradsoption för att välja databas
 // kommandoradsoption för att sätta portnummer
 // kommandoradsoption för att lägga till transaktion
 // startscript: starta med rätt argument samt starta webläsare
 // Installationsinstruktion (ladda ner exe, skapa ikon, brandvägg)
-// Efter lagt till transaktion, visa den tillagda
-// Visa transaktioner, filter: Frånkonto
-// Visa transaktioner, filter: Tillkonto
-// Visa transaktioner, filter: Summa
-// Visa transaktioner, filter: Plats
 // Visa transaktioner, filter: Person
-// Visa transaktioner, filter: Vad
 // Visa resultat-tabellen, aktuell/vald månad
-// Visa resultat-tabellen, helår
 // Visa resultat-tabellen, delår till och med aktuell månad
 // Graf som i månadsvyn fast för senaste året
 // Visa fasta överföringar
@@ -79,7 +80,6 @@
 // Redigera fast betalning
 // Registrera fasta överföringar
 // Registrera fasta betalningar
-// Skapa ny fil (sqlite), kompatibel
 // Skapa budget enligt Konsumentverkets riktlinjer
 // REST-api: visa transaktioner
 // REST-api: månadskontoutdrag
@@ -153,6 +153,8 @@ var currentDatabase = "NONE"
 var dbdecimaldot bool = false
 
 func hello(w http.ResponseWriter, req *http.Request) {
+	log.Println("Func hello")
+	
 	_, _ = fmt.Fprintf(w, "hello\n")
 }
 
@@ -213,6 +215,8 @@ func imgbars(w http.ResponseWriter, req *http.Request) {
 }
 
 func restapi(w http.ResponseWriter, req *http.Request) {
+	log.Println("Func restapi")
+	
 	if req.URL.String() == "/r/main/accounts" {
 		printSummaryTable(w, db)
 	} else {
@@ -222,6 +226,8 @@ func restapi(w http.ResponseWriter, req *http.Request) {
 }
 
 func headers(w http.ResponseWriter, req *http.Request) {
+	log.Println("Func headers")
+	
 	_, _ = fmt.Fprintf(w, "Host: %s\n\n", req.Host)
 
 	for name, headers := range req.Header {
@@ -383,6 +389,8 @@ var htmlmain12 string
 var htmlmain13 string
 
 func checkpwd(w http.ResponseWriter, req *http.Request) {
+	log.Println("Func checkpwd")
+	
 	if nopwDb == nil {
 		t := template.New("Main12")
 		t, _ = t.Parse(htmlmain12)
@@ -579,6 +587,8 @@ func createdb(w http.ResponseWriter, req *http.Request) {
 var htmlmain2 string
 
 func generateSummary(w http.ResponseWriter, req *http.Request) {
+	log.Println("Func generateSummary")
+	
 	printSummaryHead(w)
 	if db != nil {
 		checkÖverföringar(w, db)
@@ -1044,8 +1054,24 @@ func getTypeOutNames() []string {
 var html1 string
 
 func help1(w http.ResponseWriter, req *http.Request) {
+	log.Println("Func help1")
+	
 	t := template.New("Hjälp example")
 	t, _ = t.Parse(html1)
+	err := t.Execute(w, t)
+	if err != nil {
+		return
+	}
+}
+
+//go:embed html/faq1.html
+var htmlfaq1 string
+
+func faq1(w http.ResponseWriter, req *http.Request) {
+	log.Println("Func faq1")
+	
+	t := template.New("FAQ example")
+	t, _ = t.Parse(htmlfaq1)
 	err := t.Execute(w, t)
 	if err != nil {
 		return
@@ -1089,6 +1115,7 @@ func main() {
 	http.HandleFunc("/acccmp", compareaccount)
 	http.HandleFunc("/passwd", passwordmgmt)
 	http.HandleFunc("/help1", help1)
+	http.HandleFunc("/faq1", faq1)
 	http.HandleFunc("/", root)
 
 	//ip, _ := externalIP()
