@@ -603,6 +603,7 @@ func generateSummary(w http.ResponseWriter, req *http.Request) {
 		_, _ = fmt.Fprintf(w, "</td></tr></table>\n")
 	} else {
 		_, _ = fmt.Fprintf(w, "Ingen databas.\n")
+		_, _ = fmt.Fprintf(w, "<a href=\"/\">Tillbaka</a>.\n")
 	}
 
 	_, _ = fmt.Fprintf(w, "</body>\n")
