@@ -1078,6 +1078,20 @@ func faq1(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+//go:embed html/components.html
+var htmlcomps string
+
+func comps(w http.ResponseWriter, req *http.Request) {
+	log.Println("Func comps")
+	
+	t := template.New("Components example")
+	t, _ = t.Parse(htmlcomps)
+	err := t.Execute(w, t)
+	if err != nil {
+		return
+	}
+}
+
 func main() {
 	helpPtr := flag.Bool("help", false, "Skriv ut hjälptext.")
 	
@@ -1116,6 +1130,7 @@ func main() {
 	http.HandleFunc("/passwd", passwordmgmt)
 	http.HandleFunc("/help1", help1)
 	http.HandleFunc("/faq1", faq1)
+	http.HandleFunc("/components", comps)
 	http.HandleFunc("/", root)
 
 	//ip, _ := externalIP()
