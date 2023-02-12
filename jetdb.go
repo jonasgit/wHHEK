@@ -68,8 +68,6 @@ var TOMDB []byte
 // retur False = använd decimalpunkt
 func detectdbdec() bool {
 	//log.Println("START detectdbdec")
-	// Skapa tom DB
-	var db *sql.DB = nil
 	
 	// Create and write file
 	f, err := os.CreateTemp("", "db*.mdb")

@@ -169,6 +169,11 @@ var htmlroot string
 
 func root(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func root")
+
+	if db != nil {
+		generateSummary(w, req)
+		return
+	}
 	
 	tmpl := template.New("wHHEK root")
 	tmpl, _ = tmpl.Parse(htmlroot)
@@ -495,10 +500,14 @@ func opendb(w http.ResponseWriter, req *http.Request) {
 }
 
 func closeDB() {
-	_ = db.Close()
-	dbtype = 0
-	db = nil
-	currentDatabase = "NONE"
+	if db != nil {
+		_ = db.Close()
+		dbtype = 0
+		db = nil
+		currentDatabase = "NONE"
+	} else {
+		log.Println("closeDB() trying to close nil")
+	}
 }
 
 //go:embed html/main7.html
