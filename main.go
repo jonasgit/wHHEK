@@ -168,6 +168,8 @@ type RootPageData struct {
 var htmlroot string
 
 func root(w http.ResponseWriter, req *http.Request) {
+	log.Println("Func root")
+	
 	tmpl := template.New("wHHEK root")
 	tmpl, _ = tmpl.Parse(htmlroot)
 

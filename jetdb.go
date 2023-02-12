@@ -117,7 +117,7 @@ func detectdbdec() bool {
 	result = CheckTransaction(db, "1,001,23") */
 	result :=  CheckTransaction(db, "1,23")
 
-	db.Close()
+	closeDB()
 	
 	// Radera testDB
 	os.Remove(filename)
