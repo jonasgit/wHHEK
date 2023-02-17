@@ -18,7 +18,7 @@
     
   </select>
   <label for="date">Datum:</label>
-  <input type="date" id="date" name="date">
+  <input type="date" id="date" name="date" value="{{.Today}}">
   <label for="what">Vad:</label>
   <select name="what" id="what">
     {{range .VadUtgift}}
@@ -51,7 +51,7 @@
     
   </select>
   <label for="date">Datum:</label>
-  <input type="date" id="date" name="date">
+  <input type="date" id="date" name="date" value="{{.Today}}">
   <label for="what">Vad:</label>
   <select name="what" id="what">
     {{range .VadInkomst}}
@@ -84,7 +84,7 @@
     
   </select>
   <label for="date">Datum:</label>
-  <input type="date" id="date" name="date">
+  <input type="date" id="date" name="date" value="{{.Today}}">
   <label for="who">Vem:</label>
   <select name="who" id="who">
     {{range .Personer}}
@@ -117,7 +117,7 @@
     
   </select>
   <label for="date">Datum:</label>
-  <input type="date" id="date" name="date">
+  <input type="date" id="date" name="date" value="{{.Today}}">
   <label for="who">Vem:</label>
   <select name="who" id="who">
     {{range .Personer}}

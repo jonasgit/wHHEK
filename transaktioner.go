@@ -342,11 +342,12 @@ type NewTrans1Data struct {
 	PageName string
 }
 type NewTrans2Data struct {
-	Kontonamn []string
-	Platser []string
-	Personer []string
+	Kontonamn  []string
+	Platser    []string
+	Personer   []string
 	VadInkomst []string
-	VadUtgift []string
+	VadUtgift  []string
+	Today      string
 }
 
 
@@ -372,6 +373,9 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 	addtransaction(w, req)
 
 	// del 2
+	currentTime := time.Now()
+	currDate := currentTime.Format("2006-01-02")
+
 	tmpl2 := template.New("wHHEK newtrans2")
 	tmpl2, _ = tmpl2.Parse(newtrans2)
 	data2 := NewTrans2Data{
@@ -380,6 +384,7 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 		Personer: personer,
 		VadInkomst: vadInkomst,
 		VadUtgift: vadUtgift,
+		Today: currDate,
 	}
 	_ = tmpl2.Execute(w, data2)
 }
