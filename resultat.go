@@ -66,10 +66,10 @@ func hanteraYResult(w http.ResponseWriter, req *http.Request) {
 	katin := getTypeInNames()
 	for _, kat := range katin {
 		belopp := sumKatYear(kat, selectYear, true)
-		sum := AmountDec2DBStr(belopp)
+		sum := Dec2Str(belopp)
 		decimal.DivisionPrecision = 2
 		beloppm := belopp.Div(dec12)
-		summ := AmountDec2DBStr(beloppm)
+		summ := Dec2Str(beloppm)
 		if showNulls || (!belopp.Equal(decZero)) {
 			inkomster = append(inkomster, kategoriType{kat, sum, summ})
 		}
@@ -79,9 +79,9 @@ func hanteraYResult(w http.ResponseWriter, req *http.Request) {
 	katut := getTypeOutNames()
 	for _, kat := range katut {
 		belopp := sumKatYear(kat, selectYear, false)
-		sum := AmountDec2DBStr(belopp)
+		sum := Dec2Str(belopp)
 		beloppm := belopp.Div(dec12)
-		summ := AmountDec2DBStr(beloppm)
+		summ := Dec2Str(beloppm)
 		if showNulls || (!belopp.Equal(decZero)) {
 			utgifter = append(utgifter, kategoriType{kat, sum, summ})
 		}
@@ -91,9 +91,9 @@ func hanteraYResult(w http.ResponseWriter, req *http.Request) {
 	places := getPlaceNames()
 	for _, place := range places {
 		belopp := sumPlaceYear(place, selectYear)
-		sum := AmountDec2DBStr(belopp)
+		sum := Dec2Str(belopp)
 		beloppm := belopp.Div(dec12)
-		summ := AmountDec2DBStr(beloppm)
+		summ := Dec2Str(beloppm)
 		if showNulls || (!belopp.Equal(decZero)) {
 			utgifterplats = append(utgifterplats, kategoriType{place, sum, summ})
 		}
@@ -122,11 +122,11 @@ func hanteraYResult(w http.ResponseWriter, req *http.Request) {
 	data := ResultatData{
 		SelectedYear:  strconv.Itoa(selectYear),
 		Inkomster:     inkomster,
-		SumIn:         sumin.String(),
+		SumIn:         Dec2Str(sumin),
 		Utgifter:      utgifter,
-		SumUt:         sumut.String(),
+		SumUt:         Dec2Str(sumut),
 		UtgifterPlats: utgifterplats,
-		SumUtPlats:    sumutplats.String(),
+		SumUtPlats:    Dec2Str(sumutplats),
 		Years:         years,
 	}
 	_ = tmpl1.Execute(w, data)

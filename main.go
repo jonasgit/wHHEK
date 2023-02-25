@@ -376,7 +376,7 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 		}
 		DaySaldo, TotSaldo := saldonKonto(db, acc, currDate)
 		
-		konton = append(konton, sumType{acc, AmountDec2DBStr(DbSaldo), AmountDec2DBStr(DaySaldo), AmountDec2DBStr(TotSaldo)})
+		konton = append(konton, sumType{acc, Dec2Str(DbSaldo), Dec2Str(DaySaldo), Dec2Str(TotSaldo)})
 	}
 	res.Close()
 	t := template.New("Main11")
@@ -741,8 +741,11 @@ order by datum,löpnr`, endDate, accName, accName)
 			transaction.Vad = toUtf8(what)
 			transaction.Datum = toUtf8(date)
 			transaction.Vem = toUtf8(who)
-			transaction.Belopp = toUtf8(amount)
-			transaction.Saldo = currSaldo.String()
+			
+			str := toUtf8(amount)
+			dec, _ := decimal.NewFromString(str)
+			transaction.Belopp = Dec2Str(dec)
+			transaction.Saldo = Dec2Str(currSaldo)
 			transaction.Text = toUtf8(comment)
 			transaction.Fixed = strconv.FormatBool(fixed)
 			transactions = append(transactions, transaction)

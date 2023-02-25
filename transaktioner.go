@@ -177,7 +177,11 @@ order by datum,löpnr
 		transaction.Vad = toUtf8(what)
 		transaction.Datum = toUtf8(date)
 		transaction.Vem = toUtf8(who)
-		transaction.Belopp = toUtf8(amount)
+
+		str := toUtf8(amount)
+		dec, _ := decimal.NewFromString(str)
+		transaction.Belopp = Dec2Str(dec)
+
 		transaction.Text = toUtf8(comment)
 		transaction.Fixed = strconv.FormatBool(fixed)
 		transactions = append(transactions, transaction)

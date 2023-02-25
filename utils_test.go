@@ -135,3 +135,126 @@ func TestDec1(t *testing.T) {
 		t.Error("TestDec1 failed: " + n.String())
 	}
 }
+
+func TestDec2Str(t *testing.T) {
+	var n = decimal.NewFromInt(0)
+	amount := Dec2Str(n)
+	expected := "0,00"
+	if amount == expected {
+		t.Log("T1 succeeded.")
+	} else {
+		t.Error("T1 failed: " + amount + " " + expected)
+	}
+	n = decimal.NewFromInt(10)
+	amount = Dec2Str(n)
+	expected = "10,00"
+	if amount == expected {
+		t.Log("T1 succeeded.")
+	} else {
+		t.Error("T1 failed: " + amount + " " + expected)
+	}
+	n = decimal.NewFromInt(123)
+	amount = Dec2Str(n)
+	expected = "123,00"
+	if amount == expected {
+		t.Log("T1 succeeded.")
+	} else {
+		t.Error("T1 failed: " + amount + " " + expected)
+	}
+	n = decimal.NewFromInt(1000)
+	amount = Dec2Str(n)
+	expected = "1 000,00"
+	if amount == expected {
+		t.Log("T1 succeeded.")
+	} else {
+		t.Error("T1 failed: " + amount + " " + expected)
+	}
+	n = decimal.NewFromInt(10000)
+	amount = Dec2Str(n)
+	expected = "10 000,00"
+	if amount == expected {
+		t.Log("T1 succeeded.")
+	} else {
+		t.Error("T1 failed: " + amount + " " + expected)
+	}
+	n = decimal.NewFromInt(1000000)
+	amount = Dec2Str(n)
+	expected = "1 000 000,00"
+	if amount == expected {
+		t.Log("T1 succeeded.")
+	} else {
+		t.Error("T1 failed: " + amount + " " + expected)
+	}
+	n,_ = decimal.NewFromString("0.1")
+	amount = Dec2Str(n)
+	expected = "0,10"
+	if amount == expected {
+		t.Log("T1 succeeded.")
+	} else {
+		t.Error("T1 failed: " + amount + " " + expected)
+	}
+	n,_ = decimal.NewFromString("0.12")
+	amount = Dec2Str(n)
+	expected = "0,12"
+	if amount == expected {
+		t.Log("T1 succeeded.")
+	} else {
+		t.Error("T1 failed: " + amount + " " + expected)
+	}
+	n,_ = decimal.NewFromString("0.123")
+	amount = Dec2Str(n)
+	expected = "0,123"
+	if amount == expected {
+		t.Log("T1 succeeded.")
+	} else {
+		t.Error("T1 failed: " + amount + " " + expected)
+	}
+	n,_ = decimal.NewFromString("3000000.12")
+	amount = Dec2Str(n)
+	expected = "3 000 000,12"
+	if amount == expected {
+		t.Log("T1 succeeded.")
+	} else {
+		t.Error("T1 failed: " + amount + " " + expected)
+	}
+	n,_ = decimal.NewFromString("3123456.12")
+	amount = Dec2Str(n)
+	expected = "3 123 456,12"
+	if amount == expected {
+		t.Log("T1 succeeded.")
+	} else {
+		t.Error("T1 failed: " + amount + " " + expected)
+	}
+	n,_ = decimal.NewFromString("3567.12")
+	amount = Dec2Str(n)
+	expected = "3 567,12"
+	if amount == expected {
+		t.Log("T1 succeeded.")
+	} else {
+		t.Error("T1 failed: " + amount + " " + expected)
+	}
+	n,_ = decimal.NewFromString("-0.12")
+	amount = Dec2Str(n)
+	expected = "-0,12"
+	if amount == expected {
+		t.Log("T1 succeeded.")
+	} else {
+		t.Error("T1 failed: " + amount + " " + expected)
+	}
+	n,_ = decimal.NewFromString("-378.70")
+	amount = Dec2Str(n)
+	expected = "-378,70"
+	if amount == expected {
+		t.Log("T1 succeeded.")
+	} else {
+		t.Error("T1 failed: " + amount + " " + expected)
+	}
+	n,_ = decimal.NewFromString("-2378.70")
+	amount = Dec2Str(n)
+	expected = "-2 378,70"
+	if amount == expected {
+		t.Log("T1 succeeded.")
+	} else {
+		t.Error("T1 failed: " + amount + " " + expected)
+	}
+}

@@ -104,3 +104,40 @@ func sanitizeFilename(fname string) string {
 
 	return fname
 }
+
+func Dec2Str(summa decimal.Decimal) string {
+	var sign string
+	isnegative := summa.IsNegative()
+	if isnegative {
+		sign="-"
+		summa = summa.Abs()
+	} else {
+		sign=""
+	}
+	// byt punkt till komma
+	s2 := strings.ReplaceAll(summa.String(), ".", ",")
+
+	// dela upp mellan heltal och decimaler
+	ss := strings.Split(s2, ",")
+	var ints, decs string
+	if len(ss)==1 {
+		ints = ss[0]
+		decs = ",00"
+	} else {
+		ints = ss[0]
+		decs = "," + ss[1]
+	}
+	// fyll ut till minst två decimaler
+	for len(decs) < 3 {
+		decs += "0"
+	}
+	// dela upp heltal med mellanslag
+	if len(ints) > 6 {
+		len := len(ints)
+		ints = ints[0:len-6] + " " + ints[len-6:len-3] + " " +ints[len-3:len]
+	} else if len(ints) > 3 {
+		len := len(ints)
+		ints = ints[0:len-3] + " " + ints[len-3:len]
+	}
+	return sign+ints+decs
+}

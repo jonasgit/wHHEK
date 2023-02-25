@@ -24,8 +24,8 @@ Valt år: {{.SelectedYear}}<p>
       {{range .Inkomster}}
       <tr>
 	<td>{{.Name}}</td>
-	<td>{{.Beloppy}}</td>
-	<td>{{.Beloppm}}</td>
+	<td align="right"><nobr>{{.Beloppy}}</nobr></td>
+	<td align="right"><nobr>{{.Beloppm}}</nobr></td>
       </tr>
       {{end}}
     </table>
@@ -42,8 +42,8 @@ Valt år: {{.SelectedYear}}<p>
     {{range .Utgifter}}
     <tr>
       <td>{{.Name}}</td>
-      <td>{{.Beloppy}}</td>
-      <td>{{.Beloppm}}</td>
+      <td align="right"><nobr>{{.Beloppy}}</nobr></td>
+      <td align="right"><nobr>{{.Beloppm}}</nobr></td>
     </tr>
     {{end}}
   </table>
@@ -60,8 +60,8 @@ Valt år: {{.SelectedYear}}<p>
     {{range .UtgifterPlats}}
     <tr>
       <td>{{.Name}}</td>
-      <td>{{.Beloppy}}</td>
-      <td>{{.Beloppm}}</td>
+      <td align="right"><nobr>{{.Beloppy}}</nobr></td>
+      <td align="right"><nobr>{{.Beloppm}}</nobr></td>
     </tr>
     {{end}}
   </table>
