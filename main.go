@@ -1140,6 +1140,7 @@ func main() {
 	http.HandleFunc("/konton", hanterakonton)
 	http.HandleFunc("/budget", hanteraBudget)
 	http.HandleFunc("/yresult", hanteraYResult)
+	http.HandleFunc("/ybr", hanteraYBR)
 	http.HandleFunc("/summary", generateSummary)
 	http.HandleFunc("/acccmp", compareaccount)
 	http.HandleFunc("/passwd", passwordmgmt)
