@@ -19,8 +19,8 @@ Aktuellt år: {{.CurrentYear}}<p>
     <table style="width:100%">
       <tr>
 	<th>Kategori</th>
-	<th>Belopp Året</th>
 	<th>Belopp Budget</th>
+	<th>Belopp Året</th>
 	<th>Förbrukad budget %</th>
 	<th>Prognos helår %</th>
       </tr>
@@ -28,19 +28,19 @@ Aktuellt år: {{.CurrentYear}}<p>
       {{range .Inkomster}}
       <tr>
 	<td>{{.Name}}</td>
-	<td align="right"><nobr>{{.Beloppy}}</nobr></td>
 	<td align="right"><nobr>{{.BeloppB}}</nobr></td>
+	<td align="right"><nobr>{{.Beloppy}}</nobr></td>
 	<td align="right"><nobr>{{.RegP}}</nobr></td>
 	<td align="right"><nobr>{{.ProgP}}</nobr></td>
       </tr>
       {{end}}
     </table>
-    Summa inkomster: {{.SumIn}}
 <p>
   <h3>Utgifter - typ</h3>
   <table style="width:100%">
     <tr>
       <th>Kategori</th>
+      <th>Belopp Budget</th>
       <th>Belopp Året</th>
       <th>Förbrukad budget %</th>
       <th>Prognos helår %</th>
@@ -49,16 +49,16 @@ Aktuellt år: {{.CurrentYear}}<p>
     {{range .Utgifter}}
     <tr>
       <td>{{.Name}}</td>
-      <td align="right"><nobr>{{.Beloppy}}</nobr></td>
       <td align="right"><nobr>{{.BeloppB}}</nobr></td>
+      <td align="right"><nobr>{{.Beloppy}}</nobr></td>
       <td align="right"><nobr>{{.RegP}}</nobr></td>
       <td align="right"><nobr>{{.ProgP}}</nobr></td>
     </tr>
     {{end}}
   </table>
-  Summa utgifter: {{.SumUt}}
-<p>
-  Förbrukad budget bygger på registrerade transaktioner till och med idag. Detsamma gäller prognos för helår. Det senare är en prognos för vad slutresultatet för året blir om resten av året har samma mängd transaktioner som hittils i år.<p>
+<p> Belopp Året är vad som är transaktioner från årskifte till och med i dag.<br>
+  Förbrukad budget bygger på registrerade transaktioner till och med idag. Detsamma gäller prognos för helår. Det senare är en prognos för vad slutresultatet för året blir om resten av året har samma mängd transaktioner (kr/dag) som hittils i år.<br>
+  Procentsiffror är heltal, decimaler ignoreras i utskriften.<p>
   <a href="summary">Översikt</a><br>
   Hjälp/information <a href="help1">Hjälp</a><br>
 </body>

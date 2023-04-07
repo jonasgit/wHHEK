@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/shopspring/decimal" // MIT License
 )
 
 func printBudget(w http.ResponseWriter, db *sql.DB) {
@@ -348,4 +350,62 @@ func getAllBudgetposter(db *sql.DB) [][2]string {
 	}
 	res.Close()
 	return result
+}
+
+func addDecStr(v1 decimal.Decimal, v2 string) decimal.Decimal {
+	
+	tot, err := decimal.NewFromString(v2)
+	if err != nil {
+		log.Println("addDecStr strasig decimal sträng: ", v2)
+		panic(err)
+	}
+	return v1.Add(tot)
+}
+
+// Returnera årssumman för en specifik kategori
+func getKatYearSum(db *sql.DB, kategori string) decimal.Decimal {
+	var ret decimal.Decimal
+	
+	if db == nil {
+		log.Println("getKatYearSum db=nil")
+		return ret
+	}
+
+	var Jan []byte        // BCD / Decimal Precision 19
+	var Feb []byte        // BCD / Decimal Precision 19
+	var Mar []byte        // BCD / Decimal Precision 19
+	var Apr []byte        // BCD / Decimal Precision 19
+	var Maj []byte        // BCD / Decimal Precision 19
+	var Jun []byte        // BCD / Decimal Precision 19
+	var Jul []byte        // BCD / Decimal Precision 19
+	var Aug []byte        // BCD / Decimal Precision 19
+	var Sep []byte        // BCD / Decimal Precision 19
+	var Okt []byte        // BCD / Decimal Precision 19
+	var Nov []byte        // BCD / Decimal Precision 19
+	var Dec []byte        // BCD / Decimal Precision 19
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	err := db.QueryRowContext(ctx,
+		`SELECT Jan,Feb,Mar,Apr,Maj,Jun,Jul,Aug,Sep,Okt,Nov,Dec FROM Budget WHERE (Typ=?)`, kategori).Scan(&Jan, &Feb, &Mar, &Apr, &Maj, &Jun, &Jul, &Aug, &Sep, &Okt, &Nov, &Dec)
+	
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ret = addDecStr(ret, toUtf8(Jan))
+	ret = addDecStr(ret, toUtf8(Feb))
+	ret = addDecStr(ret, toUtf8(Mar))
+	ret = addDecStr(ret, toUtf8(Apr))
+	ret = addDecStr(ret, toUtf8(Maj))
+	ret = addDecStr(ret, toUtf8(Jun))
+	ret = addDecStr(ret, toUtf8(Jul))
+	ret = addDecStr(ret, toUtf8(Aug))
+	ret = addDecStr(ret, toUtf8(Sep))
+	ret = addDecStr(ret, toUtf8(Okt))
+	ret = addDecStr(ret, toUtf8(Nov))
+	ret = addDecStr(ret, toUtf8(Dec))
+
+	return ret
 }

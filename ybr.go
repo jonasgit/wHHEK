@@ -3,6 +3,9 @@
 package main
 
 import (
+	"context"
+	"database/sql"
+	"fmt"
 	_ "embed"
 	"html/template"
 	"log"
@@ -34,6 +37,53 @@ type YBRData struct {
 	SumUt         string
 }
 
+func sumKatToday(kat string, selectYear int, intyp bool) decimal.Decimal {
+	result := decimal.NewFromInt32(0)
+
+	year := decimal.NewFromInt(int64(selectYear)).String()
+	startstring := year + "-01-01"
+	now := time.Now()
+	day := now.Day()
+	month := now.Month()
+	endstring := fmt.Sprintf("%s-%02d-%02d", year, month, day)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var err error
+	var res *sql.Rows
+
+	if intyp {
+		res, err = db.QueryContext(ctx,
+			`SELECT Belopp from transaktioner
+  where (Typ = ? or Typ = ?) and Vad = ? and Datum >= ? and Datum <= ?`, "Insättning", "Fast Inkomst", kat, startstring, endstring)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		res, err = db.QueryContext(ctx,
+			`SELECT Belopp from transaktioner
+  where (Typ = ? or Typ = ?) and Vad = ? and Datum >= ? and Datum <= ?`, "Inköp", "Fast Utgift", kat, startstring, endstring)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	var amount []byte // BCD / Decimal Precision 19
+
+	for res.Next() {
+		err = res.Scan(&amount)
+
+		decamount, err := decimal.NewFromString(toUtf8(amount))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		result = result.Add(decamount)
+	}
+	res.Close()
+	return result
+}
+
 func hanteraYBR(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func hanteraYBR")
 
@@ -42,72 +92,72 @@ func hanteraYBR(w http.ResponseWriter, req *http.Request) {
 		log.Fatal(err)
 	}
 
-	formYear := 0
-	selectYear := time.Now().Year()
-	if len(req.FormValue("formYear")) > 3 {
-		formYear, err = strconv.Atoi(req.FormValue("formYear"))
-		if formYear > 1900 && formYear < 2200 {
-			selectYear = formYear
-		}
-	}
-
+	now := time.Now()
+	selectYear := now.Year()
+	yrday := now.YearDay()
+	yrdayp := int((float64(yrday) / 365.0)*100) // Bryr mig inte om skottår nu
+	
 	showNulls := false
-	sumin := decimal.NewFromInt32(0)
-	sumut := decimal.NewFromInt32(0)
-	sumutplats := decimal.NewFromInt32(0)
 
 	var inkomster []YBRkategoriType
 	var utgifter []YBRkategoriType
 
+	decimal.DivisionPrecision = 2
+
 	decZero := decimal.NewFromInt(0)
+	dec100 := decimal.NewFromInt(100)
+	dec365 := decimal.NewFromInt(365)
+	decDay := decimal.NewFromInt(int64(yrday))
 	katin := getTypeInNames()
 	for _, kat := range katin {
-		belopp := sumKatYear(kat, selectYear, true)
+		belopp := sumKatToday(kat, selectYear, true)
 		sum := Dec2Str(belopp)
-		decimal.DivisionPrecision = 2
-		if showNulls || (!belopp.Equal(decZero)) {
-			inkomster = append(inkomster, YBRkategoriType{kat, sum, "TBD", "TBD", "TBD"})
-		}
+		budgetsum := getKatYearSum(db, kat)
+		var budgetproc string
+		var prognos string
+		if decZero.Equals(budgetsum) {
+			budgetproc = "∞"
+			prognos = "∞"
+		} else {
+			budgetproc = belopp.Div(budgetsum).Mul(dec100).String()
+			beloppdag := belopp.Div(decDay).Mul(dec365).Div(budgetsum).Mul(dec100)
+			prognos = beloppdag.String()
 
-		sumin = sumin.Add(belopp)
+		}
+		if showNulls || (!belopp.Equal(decZero)) {
+			inkomster = append(inkomster, YBRkategoriType{kat, sum, Dec2Str(budgetsum), budgetproc, prognos})
+		}
 	}
 	katut := getTypeOutNames()
 	for _, kat := range katut {
-		belopp := sumKatYear(kat, selectYear, false)
+		belopp := sumKatToday(kat, selectYear, false)
 		sum := Dec2Str(belopp)
-		if showNulls || (!belopp.Equal(decZero)) {
-			utgifter = append(utgifter, YBRkategoriType{kat, sum, "TBD", "TBD", "TBD"})
+		budgetsum := getKatYearSum(db, kat)
+		var budgetproc string
+		var prognos string
+		if decZero.Equals(budgetsum) {
+			budgetproc = "∞"
+			prognos = "∞"
+		} else {
+			budgetproc = belopp.Div(budgetsum).Mul(dec100).String()
+			beloppdag := belopp.Div(decDay).Mul(dec365).Div(budgetsum).Mul(dec100)
+			prognos = beloppdag.String()
 		}
-
-		sumut = sumut.Add(belopp)
-	}
-
-	var date []byte // size 10
-	err = db.QueryRow("SELECT MIN(Datum) FROM Transaktioner").Scan(&date)
-	firstYear, err := strconv.Atoi(toUtf8(date)[0:4])
-	err = db.QueryRow("SELECT MAX(Datum) FROM Transaktioner").Scan(&date)
-	lastYear, err := strconv.Atoi(toUtf8(date)[0:4])
-
-	var years []string
-	for i := firstYear; i <= lastYear; i++ {
-		years = append(years, strconv.Itoa(i))
+		if showNulls || (!belopp.Equal(decZero)) {
+			utgifter = append(utgifter, YBRkategoriType{kat, sum, Dec2Str(budgetsum), budgetproc, prognos})
+		}
 	}
 
 	log.Println("Func hanteraYBR year:", strconv.Itoa(selectYear))
-	log.Println("Func hanteraYBR sumin:", sumin.String())
-	log.Println("Func hanteraYBR sumut:", sumut.String())
-	log.Println("Func hanteraYBR sumutplats:", sumutplats.String())
 
 	tmpl1 := template.New("wHHEK Årsstatus")
 	tmpl1, _ = tmpl1.Parse(htmlybr)
 	data := YBRData{
-		CurrentYear:   "TBD",
-		CurrentDay:    "TBD",
-		CurrentDayPercent: "TBD",
+		CurrentYear:   strconv.Itoa(selectYear),
+		CurrentDay:    strconv.Itoa(yrday),
+		CurrentDayPercent: strconv.Itoa(yrdayp),
 		Inkomster:     inkomster,
-		SumIn:         Dec2Str(sumin),
 		Utgifter:      utgifter,
-		SumUt:         Dec2Str(sumut),
 	}
 	_ = tmpl1.Execute(w, data)
 }
