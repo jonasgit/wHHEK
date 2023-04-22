@@ -93,7 +93,7 @@ type Trans4Data struct {
 	Transaktioner []TransactionType
 }
 
-func printTransactions(w http.ResponseWriter, db *sql.DB, startDate string, endDate string, limitcomment string, fromacc string, toacc string, place string, vad string, minbelopp string, maxbelopp string) {
+func printTransactions(w http.ResponseWriter, db *sql.DB, startDate string, endDate string, limitcomment string, fromacc string, kontoeller bool, toacc string, place string, vad string, minbelopp string, maxbelopp string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var err error
@@ -118,11 +118,19 @@ order by datum,löpnr
 		queryargs = append(queryargs, limitcomment)
 	}
 	if len(fromacc) > 0 {
-		querystring2 = querystring2 + ` and (FrånKonto = ?) `
+		if kontoeller && (len(toacc) > 0) {
+			querystring2 = querystring2 + ` and ( (FrånKonto = ?) `
+		} else {
+			querystring2 = querystring2 + ` and (FrånKonto = ?) `
+		}
 		queryargs = append(queryargs, fromacc)
 	}
 	if len(toacc) > 0 {
-		querystring2 = querystring2 + ` and (TillKonto = ?) `
+		if kontoeller && (len(fromacc) > 0) {
+			querystring2 = querystring2 + ` or (TillKonto = ?)) `
+		} else {
+			querystring2 = querystring2 + ` and (TillKonto = ?) `
+		}
 		queryargs = append(queryargs, toacc)
 	}
 	if len(place) > 0 {
@@ -236,6 +244,12 @@ func handletransactions(w http.ResponseWriter, req *http.Request) {
 	if len(req.FormValue("enddate")) > 3 {
 		endDate = req.FormValue("enddate")
 	}
+	var kontoeller bool
+	if len(req.FormValue("kontoeller")) > 3 {
+		kontoeller = true
+	} else {
+		kontoeller = false
+	}
 
 	if db == nil {
 		_, _ = fmt.Fprintf(w, "Transactions: No database open<p>\n")
@@ -253,7 +267,7 @@ func handletransactions(w http.ResponseWriter, req *http.Request) {
 			log.Print(err)
 		}
 
-		printTransactions(w, db, startDate, endDate, req.FormValue("comment"), req.FormValue("fromacc"), req.FormValue("toacc"), req.FormValue("place"), req.FormValue("vad"), req.FormValue("minamount"), req.FormValue("maxamount"))
+		printTransactions(w, db, startDate, endDate, req.FormValue("comment"), req.FormValue("fromacc"), kontoeller, req.FormValue("toacc"), req.FormValue("place"), req.FormValue("vad"), req.FormValue("minamount"), req.FormValue("maxamount"))
 
 		trtypes := []string{""}
 		trtypes = append(trtypes, getTypeInNames()...)
