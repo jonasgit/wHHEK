@@ -89,7 +89,6 @@ order by datum,löpnr`, endDate, startDate, kontonamn, kontonamn)
 //go:embed html/transakt4.html
 var htmltrans4 string
 type Trans4Data struct {
-	DBName string
 	Transaktioner []TransactionType
 }
 
@@ -199,7 +198,6 @@ order by datum,löpnr
 	t := template.New("Transaktion4")
 	t, _ = t.Parse(htmltrans4)
 	data := Trans4Data{
-		DBName: currentDatabase,
 		Transaktioner: transactions,
 	}
 	err = t.Execute(w, data)
@@ -225,7 +223,7 @@ type Trans3Data struct {
 	Vad     []string
 }
 
-func handletransactions(w http.ResponseWriter, req *http.Request) {
+func htransactions(w http.ResponseWriter, req *http.Request) {
 	currentTime := time.Now()
 	startDate := currentTime.Format("2006-01-02")
 	startDate = startDate[0:8] + "01"
@@ -254,6 +252,33 @@ func handletransactions(w http.ResponseWriter, req *http.Request) {
 	if db == nil {
 		_, _ = fmt.Fprintf(w, "Transactions: No database open<p>\n")
 	} else {
+		printTransactions(w, db, startDate, endDate, req.FormValue("comment"), req.FormValue("fromacc"), kontoeller, req.FormValue("toacc"), req.FormValue("place"), req.FormValue("vad"), req.FormValue("minamount"), req.FormValue("maxamount"))
+	}
+}
+
+func handletransactions(w http.ResponseWriter, req *http.Request) {
+	currentTime := time.Now()
+	startDate := currentTime.Format("2006-01-02")
+	startDate = startDate[0:8] + "01"
+	endDay := currentTime.AddDate(0, 1, 0)
+	endDate := endDay.Format("2006-01-02")
+	endDate = endDate[0:8] + "01"
+
+	err := req.ParseForm()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if len(req.FormValue("startdate")) > 3 {
+		startDate = req.FormValue("startdate")
+	}
+	if len(req.FormValue("enddate")) > 3 {
+		endDate = req.FormValue("enddate")
+	}
+
+	if db == nil {
+		_, _ = fmt.Fprintf(w, "Transactions: No database open<p>\n")
+	} else {
 		var date []byte // size 10
 		err = db.QueryRow("SELECT MIN(Datum) FROM Transaktioner").Scan(&date)
 		kontostartdatum, err := isobytetodate(date)
@@ -266,8 +291,6 @@ func handletransactions(w http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			log.Print(err)
 		}
-
-		printTransactions(w, db, startDate, endDate, req.FormValue("comment"), req.FormValue("fromacc"), kontoeller, req.FormValue("toacc"), req.FormValue("place"), req.FormValue("vad"), req.FormValue("minamount"), req.FormValue("maxamount"))
 
 		trtypes := []string{""}
 		trtypes = append(trtypes, getTypeInNames()...)
@@ -293,13 +316,19 @@ func handletransactions(w http.ResponseWriter, req *http.Request) {
 
 //go:embed html/transakt1.html
 var htmltrans1 string
+type Trans1Data struct {
+	DBName string
+}
 //go:embed html/transakt2.html
 var htmltrans2 string
 
 func transactions(w http.ResponseWriter, req *http.Request) {
 	t := template.New("Transaktion1")
 	t, _ = t.Parse(htmltrans1)
-	err := t.Execute(w, nil)
+	data := Trans1Data{
+		DBName: currentDatabase,
+	}
+	err := t.Execute(w, data)
 	if err != nil {
 		log.Println("While serving HTTP trans1: ", err)
 	}

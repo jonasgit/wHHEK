@@ -2,12 +2,13 @@
 Databasens första transaktion {{.DBFirstDay}}<br>
 Databasens sista transaktion {{.DBLastDay}}<p>
 
-  <form method="POST" action="/transactions">
+  <form hx-post="/htransactions" hx-target="#newtrans-div" hx-swap="innerHTML">
     <label for="fromacc">Från konto:</label>
     <select name="fromacc" id="fromacc">
       {{range .Kontonamn}}
       <option value="{{.}}">{{.}}</option>
       {{end}}
+      autofocus
     </select>
 
     <input type="checkbox" id="kontoeller" name="kontoeller" value="Eller">
@@ -49,5 +50,3 @@ Tomt fält betyder inget filtreras.">
 
     <input type="submit" value="Visa">
   </form>
-  
-  <form method="POST" action="/transactions">

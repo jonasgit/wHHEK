@@ -1136,6 +1136,7 @@ func main() {
 	//	http.HandleFunc("/addtrans", addtransaction)
 	http.HandleFunc("/monthly", monthly)
 	http.HandleFunc("/transactions", transactions)
+	http.HandleFunc("/htransactions", htransactions)
 	http.HandleFunc("/platser", hanteraplatser)
 	http.HandleFunc("/personer", hanterapersoner)
 	http.HandleFunc("/konton", hanterakonton)
