@@ -373,9 +373,6 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 	_ = tmpl1.Execute(w, data)
 
 
-	// handle submitted form
-	addtransaction(w, req)
-
 	// del 2
 	currentTime := time.Now()
 	currDate := currentTime.Format("2006-01-02")
@@ -491,6 +488,8 @@ func addTransaktionÖverföring(fromacc string, toacc string, date string, who s
 }
 
 func addtransaction(w http.ResponseWriter, req *http.Request) {
+	log.Println("addtransaction: start")
+	
 	err := req.ParseForm()
 	if err != nil {
 		log.Fatal(err)
@@ -606,6 +605,7 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 		_, _ = fmt.Fprintf(w, "%s", sqlStmt)
 		_, _ = fmt.Fprintf(w, "</table>\n")
 	}
+	log.Println("addtransaction: end")
 }
 
 //go:embed html/transakt5.html

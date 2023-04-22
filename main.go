@@ -1131,6 +1131,7 @@ func main() {
 	http.HandleFunc("/close", closedb)
 	http.HandleFunc("/quit", quitapp)
 	http.HandleFunc("/newtrans", newtransaction)
+	http.HandleFunc("/hnewtrans", addtransaction)
 	http.HandleFunc("/fixedtrans", fixedtransactionHTML)
 	//	http.HandleFunc("/addtrans", addtransaction)
 	http.HandleFunc("/monthly", monthly)

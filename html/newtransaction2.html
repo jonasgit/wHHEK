@@ -1,14 +1,14 @@
 <!-- //-*- coding: utf-8 -*-  -->
 <!--	Inköp -->
 <h3>Inköp</h3>
-<form method="POST" action="/newtrans">
+<form hx-post="/hnewtrans" hx-target="#newtrans-div" hx-swap="innerHTML">
   <input type="hidden" id="transtyp" name="transtyp" value="Inköp">
   <label for="fromacc">Från:</label>
   <select name="fromacc" id="fromacc">
     {{range .Kontonamn}}
     <option value="{{.}}">{{.}}</option>
     {{end}}
-    
+    autofocus
   </select>
   <label for="place">Plats:</label>
   <select name="place" id="place">
@@ -37,11 +37,12 @@
   <input type="text" id="amount" name="amount" pattern="[0-9]+([,\.][0-9]+)?">
   <label for="text">Text:</label>
   <input type="text" id="text" name="text" >
-  <input type="submit" value="Submit"></form>
+  <input type="submit" value="Submit">
+</form>
 
 <!--	Insättning  -->
 <h3>Insättning</h3>
-<form method="POST" action="/newtrans">
+<form hx-post="/hnewtrans" hx-target="#newtrans-div" hx-swap="innerHTML">
   <input type="hidden" id="transtyp" name="transtyp" value="Insättning">
   <label for="toacc">Till:</label>
   <select name="toacc" id="fromacc">
@@ -70,11 +71,12 @@
   <input type="text" id="amount" name="amount" pattern="[0-9]+([,\.][0-9]+)?">
   <label for="text">Text:</label>
   <input type="text" id="text" name="text">
-  <input type="submit" value="Submit"></form>
+  <input type="submit" value="Submit">
+</form>
 
 <!--	Uttag  -->
 <h3>Uttag</h3>
-<form method="POST" action="/newtrans">
+<form hx-post="/hnewtrans" hx-target="#newtrans-div" hx-swap="innerHTML">
   <input type="hidden" id="transtyp" name="transtyp" value="Uttag">
   <label for="fromacc">Från:</label>
   <select name="fromacc" id="fromacc">
@@ -96,11 +98,12 @@
   <input type="text" id="amount" name="amount" pattern="[0-9]+([,\.][0-9]+)?">
   <label for="text">Text:</label>
   <input type="text" id="text" name="text">
-  <input type="submit" value="Submit"></form>
+  <input type="submit" value="Submit">
+</form>
 
 <!--	Överföring  -->
 <h3>Överföring</h3>
-<form method="POST" action="/newtrans">
+<form hx-post="/hnewtrans" hx-target="#newtrans-div" hx-swap="innerHTML">
   <input type="hidden" id="transtyp" name="transtyp" value="Överföring">
   <label for="fromacc">Från:</label>
   <select name="fromacc" id="fromacc">
@@ -129,7 +132,8 @@
   <input type="text" id="amount" name="amount" pattern="[0-9]+([,\.][0-9]+)?">
   <label for="text">Text:</label>
   <input type="text" id="text" name="text">
-  <input type="submit" value="Submit"></form>
+  <input type="submit" value="Submit">
+</form>
 
 <a href="summary">Översikt</a>
 </body>
