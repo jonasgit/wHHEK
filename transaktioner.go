@@ -532,7 +532,7 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 		sqlStmt += "<td>" + what + "</td>"
 		sqlStmt += "<td>" + date + "</td>"
 		sqlStmt += "<td>" + who + "</td>"
-		sqlStmt += "<td>" + amount.String() + "</td>"
+		sqlStmt += "<td>" + Dec2Str(amount) + "</td>"
 		sqlStmt += "<td>" + html.EscapeString(text) + "</td>\n"
 		sqlStmt += "</tr>"
 		_, _ = fmt.Fprintf(w, "%s", sqlStmt)
@@ -554,7 +554,7 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 		sqlStmt += "<td>" + what + "</td>"
 		sqlStmt += "<td>" + date + "</td>"
 		sqlStmt += "<td>" + who + "</td>"
-		sqlStmt += "<td>" + amount.String() + "</td>"
+		sqlStmt += "<td>" + Dec2Str(amount) + "</td>"
 		sqlStmt += "<td>" + html.EscapeString(text) + "</td>\n"
 		sqlStmt += "</tr>"
 		_, _ = fmt.Fprintf(w, "%s", sqlStmt)
@@ -576,7 +576,7 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 		sqlStmt += "<td>" + transtyp + "</td>"
 		sqlStmt += "<td>" + date + "</td>"
 		sqlStmt += "<td>" + who + "</td>"
-		sqlStmt += "<td>" + amount.String() + "</td>"
+		sqlStmt += "<td>" + Dec2Str(amount) + "</td>"
 		sqlStmt += "<td>" + html.EscapeString(text) + "</td>\n"
 		sqlStmt += "</tr>"
 		_, _ = fmt.Fprintf(w, "%s", sqlStmt)
@@ -599,7 +599,7 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 		sqlStmt += "<td>" + transtyp + "</td>"
 		sqlStmt += "<td>" + date + "</td>"
 		sqlStmt += "<td>" + who + "</td>"
-		sqlStmt += "<td>" + amount.String() + "</td>"
+		sqlStmt += "<td>" + Dec2Str(amount) + "</td>"
 		sqlStmt += "<td>" + html.EscapeString(text) + "</td>\n"
 		sqlStmt += "</tr>"
 		_, _ = fmt.Fprintf(w, "%s", sqlStmt)
