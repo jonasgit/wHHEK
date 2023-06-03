@@ -307,10 +307,11 @@ func hanteraplatser(w http.ResponseWriter, req *http.Request) {
 	printPlatserFooter(w)
 }
 
+// Hämtar alla platser, både från tabellen Platser och från tabellen Transaktioner
 func getPlaceNames() []string {
 	names := make([]string, 0)
 
-	res, err := db.Query("SELECT Namn FROM Platser ORDER BY Namn")
+	res, err := db.Query("select DISTINCT Namn from Platser union select DISTINCT TillKonto from Transaktioner where TillKonto <> '---' and (Typ = 'Inköp' or Typ = 'Fast Utgift') order by Namn")
 
 	if err != nil {
 		log.Fatal(err)

@@ -653,7 +653,20 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 
 //go:embed html/transakt5.html
 var htmltrans5 string
+//go:embed html/transakt5ink.html
+var htmltrans5ink string
+//go:embed html/transakt5ins.html
+var htmltrans5ins string
+//go:embed html/transakt5ovf.html
+var htmltrans5ovf string
+//go:embed html/transakt5ut.html
+var htmltrans5ut string
 type Trans5Data struct {
+	Kontonamn []string
+	Platser []string
+	Personer []string
+	Vadin []string
+	Vadut []string
 	FromAcc string
 	Dest string
 	Typ string
@@ -690,8 +703,26 @@ func editformTransaction(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	}
 
 	t := template.New("Transaktion5")
-	t, _ = t.Parse(htmltrans5)
+	switch toUtf8(tType) {
+	case "Fast Inkomst": fallthrough
+	case "Insättning":
+		t, _ = t.Parse(htmltrans5ins)
+	case "Fast Utgift": fallthrough
+	case "Inköp":
+		t, _ = t.Parse(htmltrans5ink)
+	case "Uttag":
+		t, _ = t.Parse(htmltrans5ut)
+	case "Överföring":
+		t, _ = t.Parse(htmltrans5ovf)
+	default:
+		t, _ = t.Parse(htmltrans5)
+	}
 	data := Trans5Data{
+		Kontonamn: getAccNames(),
+		Personer: getPersonNames(),
+		Platser: getPlaceNames(),
+		Vadin: getTypeInNames(),
+		Vadut: getTypeOutNames(),
 		FromAcc: toUtf8(fromAcc),
 		Dest: toUtf8(toAcc),
 		Typ: toUtf8(tType),
@@ -705,7 +736,7 @@ func editformTransaction(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	}
 	err = t.Execute(w, data)
 	if err != nil {
-		log.Println("While serving HTTP trans4: ", err)
+		log.Println("While serving HTTP trans5: ", err)
 	}
 }
 

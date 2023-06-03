@@ -235,7 +235,7 @@ func hanterapersoner(w http.ResponseWriter, req *http.Request) {
 func getPersonNames() []string {
 	names := make([]string, 0)
 
-	res, err := db.Query("SELECT Namn FROM Personer ORDER BY Namn")
+	res, err := db.Query("select DISTINCT Namn from Personer union select DISTINCT Vem from Transaktioner order by Namn")
 
 	if err != nil {
 		log.Fatal(err)

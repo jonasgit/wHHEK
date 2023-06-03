@@ -1,18 +1,24 @@
 <!-- -*- coding: utf-8 -*- -->
-Redigera transaktion av okänd typ<br>
+Redigera transaktion, uttag<br>
 <form method="POST" action="/transactions">
   <label for="fromAcc">Från konto:</label>
-  <input type="text" id="fromAcc" name="fromAcc" value="{{.FromAcc}}" >
-  <label for="toAcc">Till konto/Plats:</label>
-  <input type="text" id="toAcc" name="toAcc" value="{{.Dest}}" >
-  <label for="tType">Typ:</label>
-  <input type="text" id="tType" name="tType" value="{{.Typ}}" >
+  <select name="fromAcc" id="fromAcc">
+    {{range .Kontonamn}}
+    <option {{ if eq . $.FromAcc }}selected{{ end }} value="{{.}}">{{.}}</option>
+    {{end}}
+    autofocus
+  </select>
+  <input type="hidden" id="toAcc" name="toAcc" value="{{.Dest}}">
+  <input type="hidden" id="tType" name="tType" value="{{.Typ}}">
   <label for="date">Datum:</label>
-  <input type="text" id="date" name="date" value="{{.Datum}}" >
-  <label for="what">Vad:</label>
-  <input type="text" id="what" name="what" value="{{.Vad}}" >
+  <input type="date" id="date" name="date" value="{{.Datum}}" title="Datum">
+  <input type="hidden" id="what" name="what" value="{{.Vad}}">
   <label for="who">Vem:</label>
-  <input type="text" id="who" name="who" value="{{.Vem}}" >
+  <select name="who" id="who">
+    {{range .Personer}}
+    <option {{ if eq . $.Vem }}selected{{ end }} value="{{.}}">{{.}}</option>
+    {{end}}
+  </select>
   <label for="amount">Summa:</label>
   <input type="text" id="amount" name="amount" value="{{.Belopp}}" >
   <label for="fixed">Fast transaktion:</label>
