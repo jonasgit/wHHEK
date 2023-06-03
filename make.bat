@@ -28,6 +28,7 @@ IF "%ARG1%"=="setup" (
   go get github.com/shopspring/decimal
   go get github.com/extrame/xls
   go get github.com/xuri/excelize/v2
+  go get github.com/pkg/browser
   ECHO Klar.
   EXIT
 )

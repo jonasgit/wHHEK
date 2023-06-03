@@ -143,6 +143,7 @@ import (
 
 	_ "github.com/mattn/go-sqlite3" // MIT License
 	"github.com/shopspring/decimal" // MIT License
+	"github.com/pkg/browser" // BSD-2-Clause
 )
 
 // Global variables
@@ -1154,6 +1155,7 @@ func main() {
 	//ip, _ := externalIP()
 	fmt.Println("Öppna URL i webläsaren:  http://localhost:8090/")
 	//fmt.Printf(" eller :  http://%s:8090/\n", ip)
+	browser.OpenURL("http://localhost:8090/")
 	_ = context.Background()
 	srv := &http.Server{
 		Addr:           "127.0.0.1:8090",
