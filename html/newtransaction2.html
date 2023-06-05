@@ -42,7 +42,7 @@
 
 <!--	Insättning  -->
 <h3>Insättning</h3>
-<form hx-post="/hnewtrans" hx-target="#newtrans-div" hx-swap="innerHTML">
+<form hx-post="/hnewtrans" hx-target="#newtrans-div" hx-swap="beforeend">
   <input type="hidden" id="transtyp" name="transtyp" value="Insättning">
   <label for="toacc">Till:</label>
   <select name="toacc" id="fromacc">
@@ -76,7 +76,7 @@
 
 <!--	Uttag  -->
 <h3>Uttag</h3>
-<form hx-post="/hnewtrans" hx-target="#newtrans-div" hx-swap="innerHTML">
+<form hx-post="/hnewtrans" hx-target="#newtrans-div" hx-swap="beforeend">
   <input type="hidden" id="transtyp" name="transtyp" value="Uttag">
   <label for="fromacc">Från:</label>
   <select name="fromacc" id="fromacc">
@@ -103,7 +103,7 @@
 
 <!--	Överföring  -->
 <h3>Överföring</h3>
-<form hx-post="/hnewtrans" hx-target="#newtrans-div" hx-swap="innerHTML">
+<form hx-post="/hnewtrans" hx-target="#newtrans-div" hx-swap="beforeend">
   <input type="hidden" id="transtyp" name="transtyp" value="Överföring">
   <label for="fromacc">Från:</label>
   <select name="fromacc" id="fromacc">
