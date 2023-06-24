@@ -1,6 +1,6 @@
 <!-- -*- coding: utf-8 -*- -->
 Redigera transaktion, insättning<br>
-<form method="POST" action="/transactions">
+<form hx-post="/r/e/transaction" hx-target="#edit_trans-div" hx-swap="innerHTML">
   <input type="hidden" id="fromAcc" name="fromAcc" value="{{.FromAcc}}">
   <label for="toAcc">Till konto:</label>
   <select name="toAcc" id="toAcc">

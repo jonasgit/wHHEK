@@ -1122,6 +1122,7 @@ func main() {
 	log.Println("Setting dbdecimaldot: ", dbdecimaldot)
 
 	http.HandleFunc("/hello", hello)
+	http.HandleFunc("/r/e/transaction", r_e_transaction)
 	http.HandleFunc("/r/", restapi)
 	http.HandleFunc("/htmx.js", htmx)
 	http.HandleFunc("/img/bars.svg", imgbars)

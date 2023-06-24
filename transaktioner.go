@@ -347,10 +347,6 @@ func transactions(w http.ResponseWriter, req *http.Request) {
 	switch formaction {
 	case "radera":
 		raderaTransaction(w, lopnr, db)
-	case "editform":
-		editformTransaction(w, lopnr, db)
-	case "update":
-		updateTransaction(w, lopnr, req, db)
 	default:
 		fmt.Println("Okänd action: ", formaction)
 	}
@@ -362,6 +358,28 @@ func transactions(w http.ResponseWriter, req *http.Request) {
 	err = t.Execute(w, nil)
 	if err != nil {
 		log.Println("While serving HTTP trans2: ", err)
+	}
+}
+
+func r_e_transaction(w http.ResponseWriter, req *http.Request) {
+	err := req.ParseForm()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	formaction := req.FormValue("action")
+	var lopnr = -1
+	if len(req.FormValue("lopnr")) > 0 {
+		lopnr, err = strconv.Atoi(req.FormValue("lopnr"))
+	}
+
+	switch formaction {
+	case "editform":
+		editformTransaction(w, lopnr, db)
+	case "update":
+		updateTransaction(w, lopnr, req, db)
+	default:
+		fmt.Println("Okänd action: ", formaction)
 	}
 }
 
@@ -740,6 +758,12 @@ func editformTransaction(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	}
 }
 
+//go:embed html/transakt6.html
+var htmltrans6 string
+type Trans6Data struct {
+	Lopnr int
+}
+
 func updateTransaction(w http.ResponseWriter, lopnr int, req *http.Request, db *sql.DB) {
 	fmt.Println("updateTransaktion lopnr: ", lopnr)
 
@@ -802,8 +826,16 @@ func updateTransaction(w http.ResponseWriter, lopnr int, req *http.Request, db *
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	_, _ = fmt.Fprintf(w, "Transaktion %d uppdaterad.<br>", lopnr)
+	
+	t := template.New("Transaktion6")
+	t, _ = t.Parse(htmltrans6)
+	data := Trans6Data{
+		Lopnr: lopnr,
+	}
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Println("While serving HTTP trans6: ", err)
+	}
 }
 
 func antalTransaktioner(db *sql.DB) int {

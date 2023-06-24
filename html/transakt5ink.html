@@ -1,6 +1,6 @@
 <!-- -*- coding: utf-8 -*- -->
 Redigera transaktion, inköp<br>
-<form method="POST" action="/transactions">
+<form hx-post="/r/e/transaction" hx-target="#edit_trans-div" hx-swap="innerHTML">
   <label for="fromAcc">Från konto:</label>
   <select name="fromAcc" id="fromAcc">
     {{range .Kontonamn}}

@@ -28,7 +28,7 @@
     <td>{{.Text}}</td>
     <td>{{.Fixed}}</td>
     <td>
-      <form method="POST" action="/transactions">
+      <form hx-post="/r/e/transaction" hx-target="#edit_trans-div" hx-swap="innerHTML">
 	<input type="hidden" id="lopnr" name="lopnr" value="{{.Löpnr}}">
 	<input type="hidden" id="action" name="action" value="editform">
 	<input type="submit" value="Redigera">
