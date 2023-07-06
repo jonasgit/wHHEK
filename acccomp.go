@@ -76,6 +76,8 @@ func readXlsxFile(filen multipart.File) (res [][]string) {
 func readCsvFile(f multipart.File, filtyp string) [][]string {
 	var res [][]string
 	var r io.Reader
+	
+	// Select char encoding, UTF-8 or ISO8859
  	if filtyp == "okq8csv" {
 		r = f
 	} else if filtyp == "lunarcsv" {
@@ -222,7 +224,7 @@ func findAmount(rad []string, filtyp string) string {
 	case "okq8csv":
 		return rad[3]
 	case "lunarcsv":
-		return rad[6]
+		return rad[8]
 	default:
 		log.Fatal("Okänd filtyp:", filtyp)
 	}
