@@ -607,6 +607,8 @@ func compareaccount(w http.ResponseWriter, req *http.Request) {
 	var kontonamn = ""
 	var filtyp = ""
 
+	_ = req.ParseMultipartForm(32 << 20)
+
 	if err != nil {
 		log.Println("compareacc parseerr:", err)
 	} else {
@@ -641,7 +643,6 @@ func compareaccount(w http.ResponseWriter, req *http.Request) {
 		_, _ = fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
 		_, _ = fmt.Fprintf(w, "<h2>Avstämning konto</h2>\n")
 		
-		_ = req.ParseMultipartForm(32 << 20)
 		kontonamnlista := getAccNames()
 
 		_, _ = fmt.Fprintf(w, "<form enctype=\"multipart/form-data\" method=\"POST\" action=\"/acccmp\">\n")
