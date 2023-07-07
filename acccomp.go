@@ -439,8 +439,6 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 	fmt.Println("printavstämning kontonamn:", kontonamn)
 	fmt.Println("printavstämning filtyp:", filtyp)
 
-	_, _ = fmt.Fprintf(w, "<!-- ")
-	
 	var records [][]string
 	switch filtyp {
 	case "komplettcsv":
@@ -476,8 +474,7 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, _ = fmt.Fprintf(w, "Datum från %s till %s<p>", firstdate.Format("2006-01-02"), lastdate.Format("2006-01-02"))
-	fmt.Println("Datum från ", firstdate.Format("2006-01-02"), " till ", lastdate.Format("2006-01-02"))
+
 	bankfirstdate := firstdate
 	banklastdate := lastdate
 	// expand date range for use in database
@@ -493,23 +490,15 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 	var bankheader []string
 	var bankrader []ItemDataArr
 	
-	_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\">")
-	_, _ = fmt.Fprintf(w, "<tr>Transaktioner från bankens fil</tr>")
 	for radnr, rad := range records {
-		_, _ = fmt.Fprintf(w, "<tr>")
 		if radnr < headlines {
-			_, _ = fmt.Fprintf(w, "<th>Radnr</th>")
-			_, _ = fmt.Fprintf(w, "<th>Matchande löpnr</th>")
 			for _, data := range rad {
-				_, _ = fmt.Fprintf(w, "<th>%s</th>", data)
 				bankheader = append(bankheader, data)
 			}
 		} else {
 			var bankrad []ItemData
 
-			_, _ = fmt.Fprintf(w, "<td>%d</td>", radnr)
-			lopnr, radnrInAvst, klassning := radnrInAvst(radnr, avst)
-			_, _ = fmt.Fprintf(w, "<td>%d</td>", lopnr)
+			_, radnrInAvst, klassning := radnrInAvst(radnr, avst)
 			for colnr, data := range rad {
 				var item ItemData
 				if filtyp == "eurocardxls" && colnr < 2 {
@@ -521,93 +510,67 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 				}
 				if radnrInAvst {
 					if klassning == 1 {
-						_, _ = fmt.Fprintf(w, "<td bgcolor=\"green\">%s</td>", data)
 						item.Matches = true
 					} else if klassning == 2 {
-						_, _ = fmt.Fprintf(w, "<td bgcolor=\"orange\">%s</td>", data)
 						item.FuzzyMatches = true
-					} else {
-						_, _ = fmt.Fprintf(w, "<td>%s</td>", data)
 					}
-				} else {
-					_, _ = fmt.Fprintf(w, "<td>%s</td>", data)
 				}
 				item.Data = data
 				bankrad = append(bankrad, item)
 			}
 			bankrader = append(bankrader, bankrad)
 		}
-		_, _ = fmt.Fprintf(w, "</tr>")
 	}
-	_, _ = fmt.Fprintf(w, "</table>")
-	_, _ = fmt.Fprintf(w, "<p>")
 
-	dbheader := []string{"lopnr", "radnr", "fromAcc", "toAcc", "tType", "what", "date", "who", "amount", "comment", "fixed"}
+	dbheader := []string{"Löpnr", "Radnr", "Från konto", "Till konto", "Typ", "Vad", "Datum", "Vem", "Belopp", "Text", "Fast"}
 	var dbrader []ItemDataArr
-	_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\">")
-	_, _ = fmt.Fprintf(w, "<tr>Transaktioner från databasen</tr>")
 	for _, rad := range dbtrans {
 		var dbrad []ItemData
-		_, _ = fmt.Fprintf(w, "<tr>")
-
 		var item ItemData
+
 		radnr, lopnrInAvst, klassning := lopnrInAvst(rad.lopnr, avst)
 		if lopnrInAvst {
 			if klassning == 1 {
-				_, _ = fmt.Fprintf(w, "<td bgcolor=\"green\">%d</td>", rad.lopnr)
 				item.Matches = true
 			} else if klassning == 2 {
-				_, _ = fmt.Fprintf(w, "<td bgcolor=\"orange\">%d</td>", rad.lopnr)
 				item.FuzzyMatches = true
-			} else {
-				_, _ = fmt.Fprintf(w, "<td>%d</td>", rad.lopnr)
 			}
-		} else {
-			_, _ = fmt.Fprintf(w, "<td>%d</td>", rad.lopnr)
 		}
 		item.Data = strconv.Itoa(rad.lopnr)
 		dbrad = append(dbrad, item)
 
-		_, _ = fmt.Fprintf(w, "<td>%d</td>", radnr)
 		item.Data = strconv.Itoa(radnr)
 		dbrad = append(dbrad, item)
 
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", rad.fromAcc)
 		item.Data = rad.fromAcc
 		dbrad = append(dbrad, item)
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", rad.toAcc)
+
 		item.Data = rad.toAcc
 		dbrad = append(dbrad, item)
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", rad.tType)
+
 		item.Data = rad.tType
 		dbrad = append(dbrad, item)
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", rad.what)
+
 		item.Data = rad.what
 		dbrad = append(dbrad, item)
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", rad.date.Format("2006-01-02"))
+
 		item.Data = rad.date.Format("2006-01-02")
 		dbrad = append(dbrad, item)
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", rad.who)
+
 		item.Data = rad.who
 		dbrad = append(dbrad, item)
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", rad.amount)
+
 		item.Data = Dec2Str(rad.amount)
 		dbrad = append(dbrad, item)
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", rad.comment)
+
 		item.Data = rad.comment
 		dbrad = append(dbrad, item)
-		_, _ = fmt.Fprintf(w, "<td>%t</td>", rad.fixed)
+
 		item.Data = strconv.FormatBool(rad.fixed)
 		dbrad = append(dbrad, item)
 
-		_, _ = fmt.Fprintf(w, "</tr>")
 		dbrader = append(dbrader, dbrad)
 	}
-	_, _ = fmt.Fprintf(w, "</table>")
-
-	_, _ = fmt.Fprintf(w, "<p>Grön bakgrund betyder att raden/transaktionen matchar väl. Orange betyder att de matchar mindre bra men kan stämma. Övriga rader matchar inte alls.\n")
-
-	_, _ = fmt.Fprintf(w, "-->\n")
 
 	t := template.New("Acccomp2")
 	t, _ = t.Parse(htmlacccomp2)
