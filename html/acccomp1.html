@@ -1,0 +1,33 @@
+<!-- -*- coding: utf-8 -*- -->
+<html>
+  <head>
+    <style>
+      table,th,td { border: 1px solid black }
+    </style>
+  </head>
+  <body>
+    <h1>{{.DBName}}</h1>
+    <h2>Avstämning konto</h2>
+    <form enctype="multipart/form-data" method="POST" action="/acccmp">
+      <label for="kontonamn">Konto:</label>
+      
+      <select name="kontonamn" id="kontonamn">
+	{{range .Konton}}
+	<option value="{{.Label}}">{{.DisplayName}}</option>
+	{{end}}
+	</select><br>
+
+      <label for="filtyp">Filtyp:</label>
+      <select name="filtyp" id="filtyp">
+	{{range .Filtyp}}
+	<option value="{{.Label}}">{{.DisplayName}}</option>
+	{{end}}
+      </select><br>
+      
+      <input type="file" name="uploadfile" />
+</select><br>
+
+<input type="submit" value="Submit"></form>
+<p><a href="summary">Översikt</a>
+</body>
+</html>

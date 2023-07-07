@@ -590,10 +590,16 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 	
 }
 
-func printAccCompFooter(w http.ResponseWriter) {
-	_, _ = fmt.Fprintf(w, "<p><a href=\"summary\">Översikt</a>\n")
-	_, _ = fmt.Fprintf(w, "</body>\n")
-	_, _ = fmt.Fprintf(w, "</html>\n")
+//go:embed html/acccomp1.html
+var htmlacccomp1 string
+type OptionData struct {
+	Label string
+	DisplayName string
+}
+type Acccomp1Data struct {
+	DBName string
+	Konton []OptionData
+	Filtyp []OptionData
 }
 
 func compareaccount(w http.ResponseWriter, req *http.Request) {
@@ -607,8 +613,7 @@ func compareaccount(w http.ResponseWriter, req *http.Request) {
 	var kontonamn = ""
 	var filtyp = ""
 
-	_ = req.ParseMultipartForm(32 << 20)
-
+	err = req.ParseMultipartForm(32 << 20) // buffer 32MB
 	if err != nil {
 		log.Println("compareacc parseerr:", err)
 	} else {
@@ -629,48 +634,47 @@ func compareaccount(w http.ResponseWriter, req *http.Request) {
 
 		printAvstämning(w, db, kontonamn, filtyp, file)
 	} else {
-		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
-		w.WriteHeader(200)
-		
-		_, _ = fmt.Fprintf(w, "<html>\n")
-		_, _ = fmt.Fprintf(w, "<head>\n")
-		_, _ = fmt.Fprintf(w, "<style>\n")
-		_, _ = fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
-		_, _ = fmt.Fprintf(w, "</style>\n")
-		_, _ = fmt.Fprintf(w, "</head>\n")
-		_, _ = fmt.Fprintf(w, "<body>\n")
-		
-		_, _ = fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
-		_, _ = fmt.Fprintf(w, "<h2>Avstämning konto</h2>\n")
-		
 		kontonamnlista := getAccNames()
-
-		_, _ = fmt.Fprintf(w, "<form enctype=\"multipart/form-data\" method=\"POST\" action=\"/acccmp\">\n")
-
-		_, _ = fmt.Fprintf(w, "  <label for=\"kontonamn\">Konto:</label>")
-		_, _ = fmt.Fprintf(w, "  <select name=\"kontonamn\" id=\"kontonamn\">")
+		var konton []OptionData
 		for _, s := range kontonamnlista {
-			_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", s, s)
+			var konto OptionData
+			konto.Label = s
+			konto.DisplayName = s
+			konton = append(konton, konto)
 		}
-		_, _ = fmt.Fprintf(w, "  </select><br>\n")
 
-		_, _ = fmt.Fprintf(w, "  <label for=\"filtyp\">Filtyp:</label>")
-		_, _ = fmt.Fprintf(w, "  <select name=\"filtyp\" id=\"filtyp\">")
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "komplettcsv", "KomplettBank CSV")
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "komplettxlsx", "KomplettBank Excel")
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "swedbcsv", "Swedbank/Sparbankerna CSV")
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "resursxlsx", "Resursbank/Fordkortet Xlsx")
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "revolutcsv", "Revolut CSV(Excel)")
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "eurocardxls", "Eurocard Xls")
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "okq8csv", "OKQ8 CSV")
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\">%s</option>", "lunarcsv", "Lunar CSV")
-		_, _ = fmt.Fprintf(w, "  </select><br>\n")
+		var filtyper []OptionData
+		var filtyp OptionData
 
-		_, _ = fmt.Fprintf(w, "<input type=\"file\" name=\"uploadfile\" />")
-		_, _ = fmt.Fprintf(w, "  </select><br>\n")
-
-		_, _ = fmt.Fprintf(w, "<input type=\"submit\" value=\"Submit\"></form>\n")
-
-		printAccCompFooter(w)
+		filtyp = OptionData{Label: "komplettcsv", DisplayName: "KomplettBank CSV"}
+		filtyper = append(filtyper, filtyp)
+		
+		filtyp = OptionData{Label: "komplettxlsx", DisplayName: "KomplettBank Excel"}
+		filtyper = append(filtyper, filtyp)
+		filtyp = OptionData{Label: "swedbcsv", DisplayName: "Swedbank/Sparbankerna CSV"}
+		filtyper = append(filtyper, filtyp)
+		filtyp = OptionData{Label: "resursxlsx", DisplayName: "Resursbank/Fordkortet Xlsx"}
+		filtyper = append(filtyper, filtyp)
+		filtyp = OptionData{Label: "revolutcsv", DisplayName: "Revolut CSV(Excel)"}
+		filtyper = append(filtyper, filtyp)
+		filtyp = OptionData{Label: "eurocardxls", DisplayName: "Eurocard Xls"}
+		filtyper = append(filtyper, filtyp)
+		filtyp = OptionData{Label: "okq8csv", DisplayName: "OKQ8 CSV"}
+		filtyper = append(filtyper, filtyp)
+		filtyp = OptionData{Label: "lunarcsv", DisplayName: "Lunar CSV"}
+		filtyper = append(filtyper, filtyp)
+		
+		t := template.New("Acccomp1")
+		t, _ = t.Parse(htmlacccomp1)
+		data := Acccomp1Data{
+			DBName: currentDatabase,
+			Konton: konton,
+			Filtyp: filtyper,
+		}
+		log.Println("FOo:", data)
+		err = t.Execute(w, data)
+		if err != nil {
+			log.Println("While serving HTTP acccomp1: ", err)
+		}
 	}
 }
