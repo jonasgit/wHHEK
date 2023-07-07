@@ -1,0 +1,48 @@
+<!-- -*- coding: utf-8 -*- -->
+<html>
+  <head>
+    <style>
+      table,th,td { border: 1px solid black }
+    </style>
+  </head>
+  <body>
+    <h1>{{.DBName}}</h1>
+    <h2>Avstämning konto</h2>
+    Datum från {{.StartDate}} till {{.EndDate}}<p>
+      <table style="width:100%">
+	<tr>Transaktioner från bankens fil</tr>
+	<tr>
+	  {{range .BankHeader}}
+	  <th>{{.}}</th>
+	  {{end}}
+	</tr>
+	{{range .BankRader}}
+	<tr>
+	  {{range .}}
+	  <td {{if .Matches}} bgcolor="green" {{else if .FuzzyMatches}}  bgcolor="orange" {{end}} >{{.Data}}</td>
+	  {{end}}
+	</tr>
+	{{end}}
+      </table>
+    <p>
+      <table style="width:100%">
+	<tr>Transaktioner från databasen</tr>
+	<tr>
+	  {{range .DBHeader}}
+	  <th>{{.}}</th>
+	  {{end}}
+	</tr>
+	{{range .DBRader}}
+	<tr>
+	  {{range .}}
+	  <td {{if .Matches}} bgcolor="green" {{else if .FuzzyMatches}}  bgcolor="orange" {{end}} >{{.Data}}</td>
+	  {{end}}
+	</tr>
+	{{end}}
+      </table>
+    <p>
+      Grön bakgrund betyder att raden/transaktionen matchar väl. Orange betyder att de matchar mindre bra men kan stämma. Övriga rader matchar inte alls.
+    <p>
+      <a href="summary">Översikt</a>
+  </body>
+</html>

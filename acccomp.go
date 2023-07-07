@@ -5,8 +5,10 @@ package main
 import (
 	"bufio"
 	"database/sql"
+	_ "embed"
 	"encoding/csv"
 	"fmt"
+	"html/template"
 	"io"
 	"log"
 	"mime/multipart"
@@ -17,7 +19,7 @@ import (
 
 	"github.com/extrame/xls"        // Apache-2.0 License
 	"github.com/shopspring/decimal" // MIT License
-	"github.com/xuri/excelize/v2"   //  BSD-3-Clause License
+	"github.com/xuri/excelize/v2"   // BSD-3-Clause License
 	"golang.org/x/text/encoding/charmap"
 )
 
@@ -414,10 +416,31 @@ func matchaUtdrag(records [][]string, dbtrans []transaction, kontonamn string, f
 	return result
 }
 
+//go:embed html/acccomp2.html
+var htmlacccomp2 string
+type ItemData struct {
+	Data string
+	Matches bool
+	FuzzyMatches bool
+}
+type ItemDataArr []ItemData
+
+type Acccomp2Data struct {
+	DBName string
+	StartDate string
+	EndDate string
+	BankHeader []string
+	BankRader []ItemDataArr
+	DBHeader []string
+	DBRader []ItemDataArr
+}
+
 func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filtyp string, filen multipart.File) {
 	fmt.Println("printavstämning kontonamn:", kontonamn)
 	fmt.Println("printavstämning filtyp:", filtyp)
 
+	_, _ = fmt.Fprintf(w, "<!-- ")
+	
 	var records [][]string
 	switch filtyp {
 	case "komplettcsv":
@@ -455,6 +478,8 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 	}
 	_, _ = fmt.Fprintf(w, "Datum från %s till %s<p>", firstdate.Format("2006-01-02"), lastdate.Format("2006-01-02"))
 	fmt.Println("Datum från ", firstdate.Format("2006-01-02"), " till ", lastdate.Format("2006-01-02"))
+	bankfirstdate := firstdate
+	banklastdate := lastdate
 	// expand date range for use in database
 	firstdate = firstdate.AddDate(0, 0, -10)
 	lastdate = lastdate.AddDate(0, 0, +10)
@@ -465,6 +490,9 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 
 	avst := matchaUtdrag(records, dbtrans, kontonamn, filtyp)
 
+	var bankheader []string
+	var bankrader []ItemDataArr
+	
 	_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\">")
 	_, _ = fmt.Fprintf(w, "<tr>Transaktioner från bankens fil</tr>")
 	for radnr, rad := range records {
@@ -474,12 +502,16 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 			_, _ = fmt.Fprintf(w, "<th>Matchande löpnr</th>")
 			for _, data := range rad {
 				_, _ = fmt.Fprintf(w, "<th>%s</th>", data)
+				bankheader = append(bankheader, data)
 			}
 		} else {
+			var bankrad []ItemData
+
 			_, _ = fmt.Fprintf(w, "<td>%d</td>", radnr)
 			lopnr, radnrInAvst, klassning := radnrInAvst(radnr, avst)
 			_, _ = fmt.Fprintf(w, "<td>%d</td>", lopnr)
 			for colnr, data := range rad {
+				var item ItemData
 				if filtyp == "eurocardxls" && colnr < 2 {
 					days, err := strconv.Atoi(data)
 					if err != nil {
@@ -490,55 +522,109 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 				if radnrInAvst {
 					if klassning == 1 {
 						_, _ = fmt.Fprintf(w, "<td bgcolor=\"green\">%s</td>", data)
+						item.Matches = true
 					} else if klassning == 2 {
 						_, _ = fmt.Fprintf(w, "<td bgcolor=\"orange\">%s</td>", data)
+						item.FuzzyMatches = true
 					} else {
 						_, _ = fmt.Fprintf(w, "<td>%s</td>", data)
 					}
 				} else {
 					_, _ = fmt.Fprintf(w, "<td>%s</td>", data)
 				}
+				item.Data = data
+				bankrad = append(bankrad, item)
 			}
+			bankrader = append(bankrader, bankrad)
 		}
 		_, _ = fmt.Fprintf(w, "</tr>")
 	}
 	_, _ = fmt.Fprintf(w, "</table>")
 	_, _ = fmt.Fprintf(w, "<p>")
 
+	dbheader := []string{"lopnr", "radnr", "fromAcc", "toAcc", "tType", "what", "date", "who", "amount", "comment", "fixed"}
+	var dbrader []ItemDataArr
 	_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\">")
 	_, _ = fmt.Fprintf(w, "<tr>Transaktioner från databasen</tr>")
 	for _, rad := range dbtrans {
+		var dbrad []ItemData
 		_, _ = fmt.Fprintf(w, "<tr>")
 
+		var item ItemData
 		radnr, lopnrInAvst, klassning := lopnrInAvst(rad.lopnr, avst)
 		if lopnrInAvst {
 			if klassning == 1 {
 				_, _ = fmt.Fprintf(w, "<td bgcolor=\"green\">%d</td>", rad.lopnr)
+				item.Matches = true
 			} else if klassning == 2 {
 				_, _ = fmt.Fprintf(w, "<td bgcolor=\"orange\">%d</td>", rad.lopnr)
+				item.FuzzyMatches = true
 			} else {
 				_, _ = fmt.Fprintf(w, "<td>%d</td>", rad.lopnr)
 			}
 		} else {
 			_, _ = fmt.Fprintf(w, "<td>%d</td>", rad.lopnr)
 		}
+		item.Data = strconv.Itoa(rad.lopnr)
+		dbrad = append(dbrad, item)
+
 		_, _ = fmt.Fprintf(w, "<td>%d</td>", radnr)
+		item.Data = strconv.Itoa(radnr)
+		dbrad = append(dbrad, item)
 
 		_, _ = fmt.Fprintf(w, "<td>%s</td>", rad.fromAcc)
+		item.Data = rad.fromAcc
+		dbrad = append(dbrad, item)
 		_, _ = fmt.Fprintf(w, "<td>%s</td>", rad.toAcc)
+		item.Data = rad.toAcc
+		dbrad = append(dbrad, item)
 		_, _ = fmt.Fprintf(w, "<td>%s</td>", rad.tType)
+		item.Data = rad.tType
+		dbrad = append(dbrad, item)
 		_, _ = fmt.Fprintf(w, "<td>%s</td>", rad.what)
+		item.Data = rad.what
+		dbrad = append(dbrad, item)
 		_, _ = fmt.Fprintf(w, "<td>%s</td>", rad.date.Format("2006-01-02"))
+		item.Data = rad.date.Format("2006-01-02")
+		dbrad = append(dbrad, item)
 		_, _ = fmt.Fprintf(w, "<td>%s</td>", rad.who)
+		item.Data = rad.who
+		dbrad = append(dbrad, item)
 		_, _ = fmt.Fprintf(w, "<td>%s</td>", rad.amount)
+		item.Data = Dec2Str(rad.amount)
+		dbrad = append(dbrad, item)
 		_, _ = fmt.Fprintf(w, "<td>%s</td>", rad.comment)
+		item.Data = rad.comment
+		dbrad = append(dbrad, item)
 		_, _ = fmt.Fprintf(w, "<td>%t</td>", rad.fixed)
+		item.Data = strconv.FormatBool(rad.fixed)
+		dbrad = append(dbrad, item)
 
 		_, _ = fmt.Fprintf(w, "</tr>")
+		dbrader = append(dbrader, dbrad)
 	}
 	_, _ = fmt.Fprintf(w, "</table>")
 
 	_, _ = fmt.Fprintf(w, "<p>Grön bakgrund betyder att raden/transaktionen matchar väl. Orange betyder att de matchar mindre bra men kan stämma. Övriga rader matchar inte alls.\n")
+
+	_, _ = fmt.Fprintf(w, "-->\n")
+
+	t := template.New("Acccomp2")
+	t, _ = t.Parse(htmlacccomp2)
+	data := Acccomp2Data{
+		DBName: currentDatabase,
+		StartDate: bankfirstdate.Format("2006-01-02"),
+		EndDate: banklastdate.Format("2006-01-02"),
+		BankHeader: bankheader,
+		BankRader: bankrader,
+		DBHeader: dbheader,
+		DBRader: dbrader,
+	}
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Println("While serving HTTP acccomp2: ", err)
+	}
+	
 }
 
 func printAccCompFooter(w http.ResponseWriter) {
@@ -548,21 +634,6 @@ func printAccCompFooter(w http.ResponseWriter) {
 }
 
 func compareaccount(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
-	w.WriteHeader(200)
-
-	_, _ = fmt.Fprintf(w, "<html>\n")
-	_, _ = fmt.Fprintf(w, "<head>\n")
-	_, _ = fmt.Fprintf(w, "<style>\n")
-	_, _ = fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
-	_, _ = fmt.Fprintf(w, "</style>\n")
-	_, _ = fmt.Fprintf(w, "</head>\n")
-	_, _ = fmt.Fprintf(w, "<body>\n")
-
-	_, _ = fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
-	_, _ = fmt.Fprintf(w, "<h2>Avstämning konto</h2>\n")
-
-	_ = req.ParseMultipartForm(32 << 20)
 	file, fileMetaData, err := req.FormFile("uploadfile")
 	if file != nil {
 		defer func(file multipart.File) {
@@ -593,6 +664,21 @@ func compareaccount(w http.ResponseWriter, req *http.Request) {
 
 		printAvstämning(w, db, kontonamn, filtyp, file)
 	} else {
+		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+		w.WriteHeader(200)
+		
+		_, _ = fmt.Fprintf(w, "<html>\n")
+		_, _ = fmt.Fprintf(w, "<head>\n")
+		_, _ = fmt.Fprintf(w, "<style>\n")
+		_, _ = fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
+		_, _ = fmt.Fprintf(w, "</style>\n")
+		_, _ = fmt.Fprintf(w, "</head>\n")
+		_, _ = fmt.Fprintf(w, "<body>\n")
+		
+		_, _ = fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
+		_, _ = fmt.Fprintf(w, "<h2>Avstämning konto</h2>\n")
+		
+		_ = req.ParseMultipartForm(32 << 20)
 		kontonamnlista := getAccNames()
 
 		_, _ = fmt.Fprintf(w, "<form enctype=\"multipart/form-data\" method=\"POST\" action=\"/acccmp\">\n")
@@ -621,6 +707,6 @@ func compareaccount(w http.ResponseWriter, req *http.Request) {
 
 		_, _ = fmt.Fprintf(w, "<input type=\"submit\" value=\"Submit\"></form>\n")
 
+		printAccCompFooter(w)
 	}
-	printAccCompFooter(w)
 }
