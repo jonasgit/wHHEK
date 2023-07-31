@@ -55,11 +55,40 @@
 // Visa transaktioner, filter: Vad
 // Visa resultat-tabellen, helår
 // Skapa ny fil (sqlite), kompatibel
+// localize decimal.String()
 
 // ROADMAP/TODO/The Future Is In Flux
 // ============
+// Döp om konto.
+// 
+// 1. Ändra kolumn Benamning i tabellen Konton.
+// 2. Ändra alla förekomster (Tillkonto, Frånkonto) i tabellen Transaktioner.
+// 3. Ändra alla förekomster (Tillkonto, Frånkonto) i tabellen Överföringar.
+// 
+// Note: Får ej byta namn till existerande konto eller plats. Gäller även för plats. Lägg in spärr vid nytt konto/plats och namnbyte.
+//
+//
+// Vad gör Årskiftesrutin?
+// 
+// 1. Påpekar vikten av säkerhetskopia och att det går att backa till en sådan.
+// 2. Fråga om hur budget ska uppdateras:
+//    Föregående års utfall
+//    Föregående års budget
+//    Nollställ budget (sätt alla månader/kategorier till noll)
+// 3. Uppdatera budget enligt val
+// 4. Uppdatera kolumn SaldoArsskifte i tabellen Konton. Inga andra kolumner ändras, inte ens "Startmanad".
+// 
+// Vad gör Säkerhetskopiering/Återföring?
+// 1. Gör ny fil med ändelse HBK
+// 2. Lägg in headers/strängar i klartext (iso-8859?):
+//    Version: "Ver1.00"
+//    Path: "C:\...\" fix längd (80bytes) på fältet? Används som förslag på filnamn/path att läsa tillbaka till.
+//    En siffra: "1     " (6 bytes)
+//    Datum för backupen: "YYMMDDHHMMSS"
+//    Storlek på mdb-filen i bytes. (12bytes inkl) Några mellanslag: "     " (troligen fix storlek på fältet för filstorlek)
+// 3. kopiera in mdb-filen (troligen byte-för-byte). Börjar med ^A^@ vilket är första icke-skrivbara tecken i HBK-filen också.
+// 
 // BUG: Teckenkodning i lösenord
-// localize decimal.String()
 // escape & in all html. escapeHTML verkar inte fungera. Use template?
 // hantera fel: för lång text till comment
 // kommandoradsoption för att välja katalog med databas

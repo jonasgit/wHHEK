@@ -671,7 +671,6 @@ func compareaccount(w http.ResponseWriter, req *http.Request) {
 			Konton: konton,
 			Filtyp: filtyper,
 		}
-		log.Println("FOo:", data)
 		err = t.Execute(w, data)
 		if err != nil {
 			log.Println("While serving HTTP acccomp1: ", err)
