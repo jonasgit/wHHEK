@@ -76,7 +76,8 @@
 //    Föregående års budget
 //    Nollställ budget (sätt alla månader/kategorier till noll)
 // 3. Uppdatera budget enligt val
-// 4. Uppdatera kolumn SaldoArsskifte i tabellen Konton. Inga andra kolumner ändras, inte ens "Startmanad".
+// 4. Uppdatera kolumn SaldoArsskifte i tabellen Konton. Note: Saldot är totalen för kontot, dvs inte bara fram till årsskiftet.
+// 5. Uppdatera kolumn ArsskifteManad till "Jan" i tabellen Konton.
 // 
 // Vad gör Säkerhetskopiering/Återföring?
 // 1. Gör ny fil med ändelse HBK
