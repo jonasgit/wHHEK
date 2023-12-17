@@ -60,16 +60,16 @@
 // ROADMAP/TODO/The Future Is In Flux
 // ============
 // Döp om konto.
-// 
+//
 // 1. Ändra kolumn Benamning i tabellen Konton.
 // 2. Ändra alla förekomster (Tillkonto, Frånkonto) i tabellen Transaktioner.
 // 3. Ändra alla förekomster (Tillkonto, Frånkonto) i tabellen Överföringar.
-// 
+//
 // Note: Får ej byta namn till existerande konto eller plats. Gäller även för plats. Lägg in spärr vid nytt konto/plats och namnbyte.
 //
 //
 // Vad gör Årskiftesrutin?
-// 
+//
 // 1. Påpekar vikten av säkerhetskopia och att det går att backa till en sådan.
 // 2. Fråga om hur budget ska uppdateras:
 //    Föregående års utfall
@@ -78,7 +78,7 @@
 // 3. Uppdatera budget enligt val
 // 4. Uppdatera kolumn SaldoArsskifte i tabellen Konton. Note: Saldot är totalen för kontot, dvs inte bara fram till årsskiftet.
 // 5. Uppdatera kolumn ArsskifteManad till "Jan" i tabellen Konton.
-// 
+//
 // Vad gör Säkerhetskopiering/Återföring?
 // 1. Gör ny fil med ändelse HBK
 // 2. Lägg in headers/strängar i klartext (iso-8859?):
@@ -88,7 +88,7 @@
 //    Datum för backupen: "YYMMDDHHMMSS"
 //    Storlek på mdb-filen i bytes. (12bytes inkl) Några mellanslag: "     " (troligen fix storlek på fältet för filstorlek)
 // 3. kopiera in mdb-filen (troligen byte-för-byte). Börjar med ^A^@ vilket är första icke-skrivbara tecken i HBK-filen också.
-// 
+//
 // BUG: Teckenkodning i lösenord
 // escape & in all html. escapeHTML verkar inte fungera. Use template?
 // hantera fel: för lång text till comment
@@ -172,8 +172,8 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3" // MIT License
+	"github.com/pkg/browser"        // BSD-2-Clause
 	"github.com/shopspring/decimal" // MIT License
-	"github.com/pkg/browser" // BSD-2-Clause
 )
 
 // Global variables
@@ -185,7 +185,7 @@ var dbdecimaldot bool = false
 
 func hello(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func hello")
-	
+
 	_, _ = fmt.Fprintf(w, "hello\n")
 }
 
@@ -205,7 +205,7 @@ func root(w http.ResponseWriter, req *http.Request) {
 		generateSummary(w, req)
 		return
 	}
-	
+
 	tmpl := template.New("wHHEK root")
 	tmpl, _ = tmpl.Parse(htmlroot)
 
@@ -254,7 +254,7 @@ func imgbars(w http.ResponseWriter, req *http.Request) {
 
 func restapi(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func restapi")
-	
+
 	if req.URL.String() == "/r/main/accounts" {
 		printSummaryTable(w, db)
 	} else {
@@ -265,7 +265,7 @@ func restapi(w http.ResponseWriter, req *http.Request) {
 
 func headers(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func headers")
-	
+
 	_, _ = fmt.Fprintf(w, "Host: %s\n\n", req.Host)
 
 	for name, headers := range req.Header {
@@ -283,12 +283,14 @@ func GetCountPendingÖverföringar(db *sql.DB, currDate string) int {
 
 //go:embed html/main4.html
 var htmlmain4 string
+
 type Main4Data struct {
 	Antal int
 }
 
 //go:embed html/main5.html
 var htmlmain5 string
+
 type Main5Data struct {
 	Antal int
 }
@@ -335,7 +337,7 @@ var htmlmain1 string
 
 type Main1Data struct {
 	CurrDBName string
-	CurrDate string
+	CurrDate   string
 }
 
 func printSummaryHead(w http.ResponseWriter) {
@@ -346,7 +348,7 @@ func printSummaryHead(w http.ResponseWriter) {
 	t, _ = t.Parse(htmlmain1)
 	data := Main1Data{
 		CurrDBName: currentDatabase,
-		CurrDate: currDate,
+		CurrDate:   currDate,
 	}
 	_ = t.Execute(w, data)
 }
@@ -372,6 +374,7 @@ type sumType struct {
 
 //go:embed html/main11.html
 var htmlmain11 string
+
 type Main11Data struct {
 	Konton []sumType
 }
@@ -399,14 +402,14 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 
 	for res.Next() {
 		err = res.Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &Löpnr, &SaldoArsskifte, &ArsskifteManad)
-		
+
 		acc := toUtf8(Benämning)
 		DbSaldo, err2 := decimal.NewFromString(strings.ReplaceAll(toUtf8(Saldo), ",", "."))
 		if err2 != nil {
 			log.Fatal("printSummaryTable:", err)
 		}
 		DaySaldo, TotSaldo := saldonKonto(db, acc, currDate)
-		
+
 		konton = append(konton, sumType{acc, Dec2Str(DbSaldo), Dec2Str(DaySaldo), Dec2Str(TotSaldo)})
 	}
 	res.Close()
@@ -423,12 +426,13 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 
 //go:embed html/main12.html
 var htmlmain12 string
+
 //go:embed html/main13.html
 var htmlmain13 string
 
 func checkpwd(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func checkpwd")
-	
+
 	if nopwDb == nil {
 		t := template.New("Main12")
 		t, _ = t.Parse(htmlmain12)
@@ -470,11 +474,14 @@ func showsummary(w http.ResponseWriter) {
 
 //go:embed html/main14.html
 var htmlmain14 string
+
 type Main14Data struct {
 	Filnamn string
 }
+
 //go:embed html/main15.html
 var htmlmain15 string
+
 //go:embed html/main16.html
 var htmlmain16 string
 
@@ -505,7 +512,7 @@ func opendb(w http.ResponseWriter, req *http.Request) {
 			}
 		}
 	}
-	
+
 	if nopwDb == nil {
 		t := template.New("Main15")
 		t, _ = t.Parse(htmlmain15)
@@ -569,7 +576,7 @@ func quitapp(w http.ResponseWriter, req *http.Request) {
 	if db != nil {
 		closedb(w, req)
 	}
-	
+
 	if f, ok := w.(http.Flusher); ok {
 		f.Flush()
 	}
@@ -580,12 +587,14 @@ func quitapp(w http.ResponseWriter, req *http.Request) {
 
 //go:embed html/main9.html
 var htmlmain9 string
+
 type Main9Data struct {
 	Filnamn string
 }
 
 //go:embed html/main10.html
 var htmlmain10 string
+
 type Main10Data struct {
 	Filnamn string
 }
@@ -630,7 +639,7 @@ var htmlmain2 string
 
 func generateSummary(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func generateSummary")
-	
+
 	printSummaryHead(w)
 	if db != nil {
 		checkÖverföringar(w, db)
@@ -681,15 +690,16 @@ type TextType struct {
 
 //go:embed html/main20.html
 var htmlmain20 string
+
 type Main20Data struct {
-	Filename string
-	AccName string
-	Year string
-	Month string
+	Filename     string
+	AccName      string
+	Year         string
+	Month        string
 	Transactions []TransactionType
-	ZeroLine string
-	MonthValues []MonthValueType
-	Texts []TextType
+	ZeroLine     string
+	MonthValues  []MonthValueType
+	Texts        []TextType
 }
 
 func printMonthly(w http.ResponseWriter, db *sql.DB, accName string, accYear int, accMonth int) {
@@ -772,7 +782,7 @@ order by datum,löpnr`, endDate, accName, accName)
 			transaction.Vad = toUtf8(what)
 			transaction.Datum = toUtf8(date)
 			transaction.Vem = toUtf8(who)
-			
+
 			str := toUtf8(amount)
 			dec, _ := decimal.NewFromString(str)
 			transaction.Belopp = Dec2Str(dec)
@@ -818,11 +828,11 @@ order by datum,löpnr`, endDate, accName, accName)
 		y2f, _ := y2.Float64()
 		yf = val / (y2f / (500.0 - 0.0))
 		y = int(yf)
-		
-		monthValue.X = strconv.Itoa((i-1)*colWidth)
+
+		monthValue.X = strconv.Itoa((i - 1) * colWidth)
 		monthValue.Y = strconv.Itoa(y)
 		monthValue.Width = strconv.Itoa(colWidth)
-		monthValue.Height = strconv.Itoa(500-int(y))
+		monthValue.Height = strconv.Itoa(500 - int(y))
 		monthValues = append(monthValues, monthValue)
 	}
 	// zero line
@@ -839,24 +849,24 @@ order by datum,löpnr`, endDate, accName, accName)
 	text.Y = "550"
 	text.Text = "1"
 	texts = append(texts, text)
-	text.X = strconv.Itoa((10-1)*colWidth)
+	text.X = strconv.Itoa((10 - 1) * colWidth)
 	text.Y = "550"
 	text.Text = "10"
 	texts = append(texts, text)
-	text.X = strconv.Itoa((20-1)*colWidth)
+	text.X = strconv.Itoa((20 - 1) * colWidth)
 	text.Y = "550"
 	text.Text = "20"
 	texts = append(texts, text)
-	text.X = strconv.Itoa((30-1)*colWidth)
+	text.X = strconv.Itoa((30 - 1) * colWidth)
 	text.Y = "550"
 	text.Text = "30"
 	texts = append(texts, text)
 
-	text.X = strconv.Itoa(33*colWidth)
+	text.X = strconv.Itoa(33 * colWidth)
 	text.Y = "10"
 	text.Text = maxSaldo.String()
 	texts = append(texts, text)
-	text.X = strconv.Itoa(33*colWidth)
+	text.X = strconv.Itoa(33 * colWidth)
 	text.Y = "500"
 	text.Text = minSaldo.String()
 	texts = append(texts, text)
@@ -864,14 +874,14 @@ order by datum,löpnr`, endDate, accName, accName)
 	t := template.New("Main20")
 	t, _ = t.Parse(htmlmain20)
 	data := Main20Data{
-		Filename: currentDatabase,
-		AccName: accName,
-		Year: strconv.Itoa(accYear),
-		Month: strconv.Itoa(accMonth),
+		Filename:     currentDatabase,
+		AccName:      accName,
+		Year:         strconv.Itoa(accYear),
+		Month:        strconv.Itoa(accMonth),
 		Transactions: transactions,
-		ZeroLine: strconv.Itoa(zeroLine),
-		MonthValues: monthValues,
-		Texts: texts,
+		ZeroLine:     strconv.Itoa(zeroLine),
+		MonthValues:  monthValues,
+		Texts:        texts,
 	}
 	err = t.Execute(w, data)
 	if err != nil {
@@ -882,6 +892,7 @@ order by datum,löpnr`, endDate, accName, accName)
 
 //go:embed html/main17.html
 var htmlmain17 string
+
 type Main17Data struct {
 	NoDB bool
 }
@@ -898,18 +909,21 @@ type yearType struct {
 	Name     string
 	Selected bool
 }
+
 //go:embed html/main18.html
 var htmlmain18 string
+
 type Main18Data struct {
-	Konton []kontoType
-	Years []yearType
-	Months []monthType
+	Konton      []kontoType
+	Years       []yearType
+	Months      []monthType
 	SelectKonto string
-	NextYear string
-	NextMonth string
-	PrevYear string
-	PrevMonth string
+	NextYear    string
+	NextMonth   string
+	PrevYear    string
+	PrevMonth   string
 }
+
 //go:embed html/main19.html
 var htmlmain19 string
 
@@ -933,14 +947,27 @@ func monthly(w http.ResponseWriter, req *http.Request) {
 	var accName string
 
 	if len(req.FormValue("accYear")) > 3 {
+		// data from form
 		accYear, err = strconv.Atoi(req.FormValue("accYear"))
 		accMonth, err = strconv.Atoi(req.FormValue("accMonth"))
 		accName = req.FormValue("accName")
 	} else {
+		// default data
 		var date []byte // size 10
+		// find date of last transaction
 		err = db.QueryRow("SELECT MAX(Datum) FROM Transaktioner").Scan(&date)
 		accYear, err = strconv.Atoi(toUtf8(date)[0:4])
 		accMonth, err = strconv.Atoi(toUtf8(date)[5:7])
+
+		// adjust date to today if last is later
+		now := time.Now()
+		currentYear, currentMonth, _ := now.Date()
+		if accYear > currentYear {
+			accYear = currentYear
+		} else if (accYear == currentYear) && (accMonth > int(currentMonth)) {
+			accMonth = int(currentMonth)
+		}
+
 		var namn []byte // size 10
 		err = db.QueryRow("SELECT TOP 1 Benämning FROM Konton").Scan(&namn)
 		accName = toUtf8(namn)
@@ -957,7 +984,7 @@ func monthly(w http.ResponseWriter, req *http.Request) {
 
 		kontolista := getAccNames()
 		var konton []kontoType
-		for _,j := range kontolista {
+		for _, j := range kontolista {
 			var k kontoType
 			k.Name = j
 			if k.Name == accName {
@@ -996,18 +1023,18 @@ func monthly(w http.ResponseWriter, req *http.Request) {
 			prevMonth = 12
 			prevYear = prevYear - 1
 		}
-		
+
 		t := template.New("Main18")
 		t, _ = t.Parse(htmlmain18)
 		data := Main18Data{
-			Konton: konton,
-			Years: years,
-			Months: months,
+			Konton:      konton,
+			Years:       years,
+			Months:      months,
 			SelectKonto: accName,
-			NextYear: strconv.Itoa(nextYear),
-			NextMonth: strconv.Itoa(nextMonth),
-			PrevYear: strconv.Itoa(prevYear),
-			PrevMonth: strconv.Itoa(prevMonth),
+			NextYear:    strconv.Itoa(nextYear),
+			NextMonth:   strconv.Itoa(nextMonth),
+			PrevYear:    strconv.Itoa(prevYear),
+			PrevMonth:   strconv.Itoa(prevMonth),
 		}
 		err = t.Execute(w, data)
 		if err != nil {
@@ -1101,7 +1128,7 @@ var html1 string
 
 func help1(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func help1")
-	
+
 	t := template.New("Hjälp example")
 	t, _ = t.Parse(html1)
 	err := t.Execute(w, t)
@@ -1115,7 +1142,7 @@ var htmlfaq1 string
 
 func faq1(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func faq1")
-	
+
 	t := template.New("FAQ example")
 	t, _ = t.Parse(htmlfaq1)
 	err := t.Execute(w, t)
@@ -1129,7 +1156,7 @@ var htmlcomps string
 
 func comps(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func comps")
-	
+
 	t := template.New("Components example")
 	t, _ = t.Parse(htmlcomps)
 	err := t.Execute(w, t)
@@ -1140,9 +1167,9 @@ func comps(w http.ResponseWriter, req *http.Request) {
 
 func main() {
 	helpPtr := flag.Bool("help", false, "Skriv ut hjälptext.")
-	
+
 	flag.Parse()
-	
+
 	if *helpPtr {
 		flag.Usage()
 		os.Exit(1)
