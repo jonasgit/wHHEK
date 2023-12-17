@@ -119,7 +119,7 @@ type Fasta1Data struct {
 	Transaktioner []transType
 }
 
-func showFastaTransaktioner(w http.ResponseWriter, db *sql.DB) {
+func showFastaTransaktioner(w http.ResponseWriter, db *sql.DB, showall bool) {
 	now := time.Now()
 	currentYear, currentMonth, _ := now.Date()
 	currentLocation := now.Location()
@@ -128,8 +128,15 @@ func showFastaTransaktioner(w http.ResponseWriter, db *sql.DB) {
 	lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
 	currDate := lastOfMonth.Format("2006-01-02")
 	antal := GetCountPendingÖverföringar(db, currDate)
-	if antal > 0 {
-		res, err := db.Query("SELECT FrånKonto,TillKonto,Belopp,Datum,HurOfta,Vad,Vem,Löpnr,Kontrollnr,TillDatum,Rakning FROM Överföringar WHERE Datum <= ?", currDate)
+	if antal > 0 || showall {
+		var res *sql.Rows
+		var err error
+		if showall {
+			res, err = db.Query("SELECT FrånKonto,TillKonto,Belopp,Datum,HurOfta,Vad,Vem,Löpnr,Kontrollnr,TillDatum,Rakning FROM Överföringar ")
+		} else {
+			res, err = db.Query("SELECT FrånKonto,TillKonto,Belopp,Datum,HurOfta,Vad,Vem,Löpnr,Kontrollnr,TillDatum,Rakning FROM Överföringar WHERE Datum <= ?", currDate)
+
+		}
 
 		if err != nil {
 			log.Fatal(err)
@@ -508,7 +515,7 @@ func fixedtransactionHTML(w http.ResponseWriter, req *http.Request) {
 
 	addfixedtransaction(w, req, db)
 
-	showFastaTransaktioner(w, db)
+	showFastaTransaktioner(w, db, false)
 
 	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
 	_, _ = fmt.Fprintf(w, "</body>\n")
@@ -596,7 +603,7 @@ func hämtaFastTransaktion(db *sql.DB, lopnr int) (result fixedtransaction) {
 	return result
 }
 
-func edit fixedtransactionHTML(w http.ResponseWriter, req *http.Request) {
+func editfixedtransactionHTML(w http.ResponseWriter, req *http.Request) {
 	log.Println("fixedtransactionHTML start")
 	_, _ = fmt.Fprintf(w, "<html>\n")
 	_, _ = fmt.Fprintf(w, "<head>\n")
@@ -607,9 +614,7 @@ func edit fixedtransactionHTML(w http.ResponseWriter, req *http.Request) {
 	_, _ = fmt.Fprintf(w, "<body>\n")
 	_, _ = fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
 
-	addfixedtransaction(w, req, db)
-
-	showFastaTransaktioner(w, db)
+	showFastaTransaktioner(w, db, true)
 
 	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
 	_, _ = fmt.Fprintf(w, "</body>\n")

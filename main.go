@@ -964,6 +964,7 @@ func monthly(w http.ResponseWriter, req *http.Request) {
 		currentYear, currentMonth, _ := now.Date()
 		if accYear > currentYear {
 			accYear = currentYear
+			accMonth = int(currentMonth)
 		} else if (accYear == currentYear) && (accMonth > int(currentMonth)) {
 			accMonth = int(currentMonth)
 		}
