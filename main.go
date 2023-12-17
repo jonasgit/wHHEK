@@ -1165,6 +1165,7 @@ func main() {
 	http.HandleFunc("/newtrans", newtransaction)
 	http.HandleFunc("/hnewtrans", addtransaction)
 	http.HandleFunc("/fixedtrans", fixedtransactionHTML)
+	http.HandleFunc("/editfixedtrans", editfixedtransactionHTML)
 	//	http.HandleFunc("/addtrans", addtransaction)
 	http.HandleFunc("/monthly", monthly)
 	http.HandleFunc("/transactions", transactions)

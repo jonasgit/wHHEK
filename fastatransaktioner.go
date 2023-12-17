@@ -595,3 +595,24 @@ func hämtaFastTransaktion(db *sql.DB, lopnr int) (result fixedtransaction) {
 	}
 	return result
 }
+
+func edit fixedtransactionHTML(w http.ResponseWriter, req *http.Request) {
+	log.Println("fixedtransactionHTML start")
+	_, _ = fmt.Fprintf(w, "<html>\n")
+	_, _ = fmt.Fprintf(w, "<head>\n")
+	_, _ = fmt.Fprintf(w, "<style>\n")
+	_, _ = fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
+	_, _ = fmt.Fprintf(w, "</style>\n")
+	_, _ = fmt.Fprintf(w, "</head>\n")
+	_, _ = fmt.Fprintf(w, "<body>\n")
+	_, _ = fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
+
+	addfixedtransaction(w, req, db)
+
+	showFastaTransaktioner(w, db)
+
+	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
+	_, _ = fmt.Fprintf(w, "</body>\n")
+	_, _ = fmt.Fprintf(w, "</html>\n")
+	log.Println("fixedtransactionHTML slut")
+}
