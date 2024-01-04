@@ -696,6 +696,8 @@ type Main20Data struct {
 	AccName      string
 	Year         string
 	Month        string
+	SaldoDatum   string
+	SlutSaldo    string
 	Transactions []TransactionType
 	ZeroLine     string
 	MonthValues  []MonthValueType
@@ -871,6 +873,13 @@ order by datum,löpnr`, endDate, accName, accName)
 	text.Text = minSaldo.String()
 	texts = append(texts, text)
 
+	now := time.Now()
+	currentLocation := now.Location()
+	firstOfMonth := time.Date(accYear, time.Month(accMonth), 1, 0, 0, 0, 0, currentLocation)
+	lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
+	saldoDatum := lastOfMonth
+	DaySaldo, _ := saldonKonto(db, accName, lastOfMonth.Format("2006-01-02"))
+
 	t := template.New("Main20")
 	t, _ = t.Parse(htmlmain20)
 	data := Main20Data{
@@ -878,6 +887,8 @@ order by datum,löpnr`, endDate, accName, accName)
 		AccName:      accName,
 		Year:         strconv.Itoa(accYear),
 		Month:        strconv.Itoa(accMonth),
+		SaldoDatum:   saldoDatum.Format("2006-01-02"),
+		SlutSaldo:    Dec2Str(DaySaldo),
 		Transactions: transactions,
 		ZeroLine:     strconv.Itoa(zeroLine),
 		MonthValues:  monthValues,

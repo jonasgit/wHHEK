@@ -16,7 +16,7 @@ Månad: {{.Month}}<br>
       <th>Belopp</th>
       <th>Saldo</th>
       <th>Text</th>
-      <th>Fast överföring</th>
+      <th id="FixedCol" style="display: none;">Fast överföring</th>
     </tr>
     {{range .Transactions}}
     <tr>
@@ -30,10 +30,13 @@ Månad: {{.Month}}<br>
       <td align="right"><nobr>{{.Belopp}}</nobr></td>
       <td align="right"><nobr>{{.Saldo}}</nobr></td>
       <td>{{.Text}}</td>
-      <td>{{.Fixed}}</td>
+      <td id="FixedCol" style="display: none;">{{.Fixed}}</td>
     </tr>
     {{end}}
   </table>
+  <p align="right">Saldo {{.SaldoDatum}}:
+    <nobr>{{.SlutSaldo}}</nobr>
+  </p>
   <p>Diagram:</p>
   <svg width="900" height="600">
     {{range .MonthValues}}
