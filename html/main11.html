@@ -7,7 +7,11 @@
     <th>Saldo uträknat totalt</th>
   </tr>
   {{range .Konton}}
-  <tr>
+  <tr
+    {{if .Hidden}}
+    id="HiddenRow" style="display: none;"
+    {{end}}
+    >
     <td>{{.Name}}</td>
     {{if and (eq .DbSaldo .DaySaldo) (eq .DbSaldo .TotSaldo)}}
     <td colspan="3">{{.DbSaldo}}</td>
@@ -25,3 +29,9 @@
   </tr>
   {{end}}
 </table>
+<p>
+  Dolda konton:
+  {{range .DoldaNamn}}
+  {{ . }},
+  {{end}}
+</p>

@@ -367,6 +367,7 @@ func printAccounts(w http.ResponseWriter) {
 
 type sumType struct {
 	Name     string
+	Hidden   bool
 	DbSaldo  string
 	DaySaldo string
 	TotSaldo string
@@ -376,7 +377,8 @@ type sumType struct {
 var htmlmain11 string
 
 type Main11Data struct {
-	Konton []sumType
+	Konton    []sumType
+	DoldaNamn []string
 }
 
 func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
@@ -410,13 +412,45 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 		}
 		DaySaldo, TotSaldo := saldonKonto(db, acc, currDate)
 
-		konton = append(konton, sumType{acc, Dec2Str(DbSaldo), Dec2Str(DaySaldo), Dec2Str(TotSaldo)})
+		konton = append(konton, sumType{acc, false, Dec2Str(DbSaldo), Dec2Str(DaySaldo), Dec2Str(TotSaldo)})
 	}
 	res.Close()
+
+	// Dölj oanvända konton
+	var nolla = decimal.NewFromInt(0)
+	var kontonDolda []sumType
+	var doldaNamn []string
+	for _, konto := range konton {
+		DaySaldo, err2 := decimal.NewFromString(
+			strings.ReplaceAll(
+				strings.ReplaceAll(konto.DaySaldo, ",", "."),
+				" ", ""))
+		if err2 != nil {
+			log.Fatal("Dölj konton:", err2)
+		}
+
+		if DaySaldo.Equal(nolla) {
+			now := time.Now()
+			currentYear, currentMonth, currentDay := now.Date()
+			currentLocation := now.Location()
+
+			today := time.Date(currentYear, currentMonth, currentDay, 0, 0, 0, 0, currentLocation)
+			firstofperiod := today.AddDate(0, -3, 0)
+
+			trans := getTransactionsInDateRange(db, konto.Name, firstofperiod.Format("2006-01-02"), today.Format("2006-01-02"))
+			if (len(trans) == 0) {
+				konto.Hidden=true
+				doldaNamn = append(doldaNamn, konto.Name)
+			}
+		}
+		kontonDolda = append(kontonDolda, konto)
+	}
+
 	t := template.New("Main11")
 	t, _ = t.Parse(htmlmain11)
 	data := Main11Data{
-		Konton: konton,
+		Konton:    kontonDolda,
+		DoldaNamn: doldaNamn,
 	}
 	err = t.Execute(w, data)
 	if err != nil {
@@ -896,7 +930,7 @@ order by datum,löpnr`, endDate, accName, accName)
 	}
 	err = t.Execute(w, data)
 	if err != nil {
-		log.Println("While serving HTTP main11: ", err)
+		log.Println("While serving HTTP main20: ", err)
 	}
 
 }
