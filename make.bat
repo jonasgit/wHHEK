@@ -16,7 +16,7 @@ IF NOT "%GOOS%"=="windows" (
   EXIT
 )
 
-DEL wHHEK.exe
+DEL wHHEK.exe wHHEK_x86.exe wHHEK_x64.exe
 
 
 IF "%ARG1%"=="setup" (
@@ -50,7 +50,7 @@ IF "%ARG1%"=="test" (
     SET BUILDCMD=test -p 1
   )
 ) else (
-  SET BUILDCMD=build -o wHHEK.exe
+  SET BUILDCMD=build
 )
 
 IF "%ARG1%"=="release" (
@@ -61,8 +61,17 @@ IF "%ARG1%"=="release" (
 
 ECHO Bygger...
 
-@echo on
-go %BUILDCMD% %LINKCMD%
-@echo off
+IF "%ARG1%"=="test" (
+  @echo on
+  go %BUILDCMD% %LINKCMD%
+  @echo off
+) else (
+  @echo on
+  SET GOARCH=386
+  go %BUILDCMD% %LINKCMD% -o wHHEK_x86.exe
+  SET GOARCH=amd64
+  go %BUILDCMD% %LINKCMD% -o wHHEK_x64.exe
+  @echo off
+)
 
 ECHO Klar.
