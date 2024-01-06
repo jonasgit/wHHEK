@@ -1,3 +1,4 @@
+//-*- coding: utf-8 -*-
 //go:build !(windows && 386)
 
 package main

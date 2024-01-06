@@ -21,11 +21,13 @@ func SkapaTomMDB(t *testing.T, filename string) {
 	}
 
 	// Create and write file
-	err := ioutil.WriteFile(filename, TOMDB, 0644)
-	if err != nil {
-		t.Error("Failed to create file. ", err)
-	} else {
-		t.Log("OpenMDB testfile created. OK.")
+	if JetDBSupport {
+	   err := ioutil.WriteFile(filename, TOMDB, 0644)
+	   if err != nil {
+	      t.Error("Failed to create file. ", err)
+	   } else {
+	      t.Log("OpenMDB testfile created. OK.")
+	   }
 	}
 }
 

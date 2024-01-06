@@ -2,8 +2,8 @@
 REM Första gången      : ./make.bat setup
 REM Kör tester         : ./make.bat test
 REM Kör tester pratsamt: ./make.bat test verbose
-REM Bygg för användning: ./make.sh release
-REM Bygg för utveckling: ./make.sh
+REM Bygg för användning: ./make.bat release
+REM Bygg för utveckling: ./make.bat
 
 SET ARG1=%1
 SET ARG2=%2
