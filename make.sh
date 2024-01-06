@@ -70,7 +70,7 @@ else
     export GOOS="windows"
     export GOARCH="386"
     set -x
-    go $BUILDCMD $LINKCMD
+    go $BUILDCMD $LINKCMD -o wHHEK_x86.exe
     set +x
 fi
 

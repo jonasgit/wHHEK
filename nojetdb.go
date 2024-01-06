@@ -15,6 +15,8 @@ func openJetDB(filename string, ro bool) *sql.DB {
 	return nil
 }
 
+var TOMDB []byte  // ONLY REQUIRED FOR Go UNIT TEST
+
 // se jetdb.go
 func detectdbdec() bool {
 	return false
