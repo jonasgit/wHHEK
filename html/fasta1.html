@@ -1,43 +1,55 @@
 <!-- //-*- coding: utf-8 -*- -->
-<p>{{ .Antal }} fasta transaktioner till hela denna månaden väntar på att hanteras:<br>
+{{if $.TypeEdit}}
+<p>{{ .Antal }} fasta transaktioner till hela denna månaden väntar på att hanteras:</p>
+{{else}}
+<p>{{ .Antal }} fasta transaktioner</p>
+{{end}}
 
-  <table style="width:100%">
-    <tr>
-      <th>Löpnr</th>
-      <th>Frånkonto</th>
-      <th>Tillkonto/Plats</th>
-      <th>Belopp</th>
-      <th>Datum</th>
-      <th>Hur Ofta</th>
-      <th>Vad</th>
-      <th>Vem</th>
-      <th>Kontrollnr</th>
-      <th>Till datum</th>
-      <th>Räkning</th>
-      <th>Agera</th>
-    </tr>
+<table style="width:100%">
+  <tr>
+    <th>Löpnr</th>
+    <th>Frånkonto</th>
+    <th>Tillkonto/Plats</th>
+    <th>Belopp</th>
+    <th>Datum</th>
+    <th>Hur Ofta</th>
+    <th>Vad</th>
+    <th>Vem</th>
+    <th>Kontrollnr</th>
+    <th>Till datum</th>
+    <th>Räkning</th>
+    <th>Agera</th>
+  </tr>
 
-    {{range .Transaktioner}}
-    <tr>
-      <td>{{ .Löpnr }}</td>
-      <td>{{ .FranKonto }}</td>
-      <td>{{ .TillKonto }}</td>
-      <td>{{ .Belopp }}</td>
-      <td>{{ .Datum }}</td>
-      <td>{{ .HurOfta }}</td>
-      <td>{{ .Vad }}</td>
-      <td>{{ .Vem }}</td>
-      <td>{{ .Kontrollnr }}</td>
-      <td>{{ .TillDatum }}</td>
-      <td>{{ .Rakning }}</td>
-      <td>
-	<form method="POST" action="/fixedtrans">
-	  <input type="hidden" id="transtyp" name="transtyp" value="FastTrans">
-	  <input type="hidden" id="transid" name="transid" value="{{ .Löpnr }}">
-	  <input type="submit" value="Registrera">
-	</form>
-      </td>
-    </tr>
-    {{end}}
+  {{range .Transaktioner}}
+  <tr>
+    <td>{{ .Löpnr }}</td>
+    <td>{{ .FranKonto }}</td>
+    <td>{{ .TillKonto }}</td>
+    <td>{{ .Belopp }}</td>
+    <td>{{ .Datum }}</td>
+    <td>{{ .HurOfta }}</td>
+    <td>{{ .Vad }}</td>
+    <td>{{ .Vem }}</td>
+    <td>{{ .Kontrollnr }}</td>
+    <td>{{ .TillDatum }}</td>
+    <td>{{ .Rakning }}</td>
+    <td>
+      {{if $.TypeEdit}}
+      <form method="POST" action="/editfixedtrans">
+        <input type="hidden" id="transtyp" name="transtyp" value="FastTrans">
+        <input type="hidden" id="transid" name="transid" value="{{ .Löpnr }}">
+        <input type="submit" value="Redigera">
+      </form>
+      {{else}}
+      <form method="POST" action="/fixedtrans">
+        <input type="hidden" id="transtyp" name="transtyp" value="FastTrans">
+        <input type="hidden" id="transid" name="transid" value="{{ .Löpnr }}">
+        <input type="submit" value="Registrera">
+      </form>
+      {{end}}
+    </td>
+  </tr>
+  {{end}}
 
 </table>

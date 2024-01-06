@@ -116,10 +116,11 @@ var htmlfasta1 string
 
 type Fasta1Data struct {
 	Antal         string
+	TypeEdit      bool
 	Transaktioner []transType
 }
 
-func showFastaTransaktioner(w http.ResponseWriter, db *sql.DB, showall bool) {
+func showFastaTransaktioner(w http.ResponseWriter, db *sql.DB, showedit bool) {
 	now := time.Now()
 	currentYear, currentMonth, _ := now.Date()
 	currentLocation := now.Location()
@@ -128,10 +129,10 @@ func showFastaTransaktioner(w http.ResponseWriter, db *sql.DB, showall bool) {
 	lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
 	currDate := lastOfMonth.Format("2006-01-02")
 	antal := GetCountPendingÖverföringar(db, currDate)
-	if antal > 0 || showall {
+	if antal > 0 || showedit {
 		var res *sql.Rows
 		var err error
-		if showall {
+		if showedit {
 			res, err = db.Query("SELECT FrånKonto,TillKonto,Belopp,Datum,HurOfta,Vad,Vem,Löpnr,Kontrollnr,TillDatum,Rakning FROM Överföringar ")
 		} else {
 			res, err = db.Query("SELECT FrånKonto,TillKonto,Belopp,Datum,HurOfta,Vad,Vem,Löpnr,Kontrollnr,TillDatum,Rakning FROM Överföringar WHERE Datum <= ?", currDate)
@@ -174,8 +175,8 @@ func showFastaTransaktioner(w http.ResponseWriter, db *sql.DB, showall bool) {
 			transaktioner = append(transaktioner, transaktion)
 		}
 
-		res.Close();
-		
+		res.Close()
+
 		tmpl1 := template.New("wHHEK Fasta")
 		tmpl1, err = tmpl1.Parse(htmlfasta1)
 		if err != nil {
@@ -183,6 +184,7 @@ func showFastaTransaktioner(w http.ResponseWriter, db *sql.DB, showall bool) {
 		}
 		data := Fasta1Data{
 			Antal:         strconv.Itoa(antal),
+			TypeEdit:      showedit,
 			Transaktioner: transaktioner,
 		}
 		_ = tmpl1.Execute(w, data)
@@ -257,7 +259,7 @@ func registreraFastTransaktion(db *sql.DB, transid int) {
 	if err != nil {
 		log.Println("OK: registreraFastTransaktion, trasig/saknar amount ", amountstr, err)
 	}
-	
+
 	sqlStmt := ""
 	sqlStmt += "<tr><td>" + toUtf8(Löpnr) + "</td>"
 	sqlStmt += "<td>" + toUtf8(FrånKonto) + "</td>"
@@ -400,7 +402,7 @@ func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.D
 	}
 
 	res.Close()
-	
+
 	// Register transaction
 	if toUtf8(Vad) == "---" {
 		// Fasta överföringar
@@ -614,10 +616,104 @@ func editfixedtransactionHTML(w http.ResponseWriter, req *http.Request) {
 	_, _ = fmt.Fprintf(w, "<body>\n")
 	_, _ = fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
 
+	editfixedtransaction(w, req, db)
+
 	showFastaTransaktioner(w, db, true)
 
 	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
 	_, _ = fmt.Fprintf(w, "</body>\n")
 	_, _ = fmt.Fprintf(w, "</html>\n")
 	log.Println("fixedtransactionHTML slut")
+}
+
+//go:embed html/fasta2.html
+var htmlfasta2 string
+
+type Fasta2Data struct {
+	Transaktion     transType
+	KontonamnLista  []string
+	PlatserLista    []string
+	PersonerLista   []string
+	VadInkomstLista []string
+	VadUtgiftLista  []string
+}
+
+func editfixedtransaction(w http.ResponseWriter, req *http.Request, db *sql.DB) {
+	log.Println("editfixedtransaction start")
+	err := req.ParseForm()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	transtyp := req.FormValue("transtyp")
+	date := req.FormValue("date")
+	who := req.FormValue("who")
+	amount := req.FormValue("amount")
+	text := req.FormValue("text")
+	log.Println("Val: ", transtyp)
+	log.Println("Val: ", date)
+	log.Println("Val: ", who)
+	log.Println("Val: ", amount)
+	log.Println("Val: ", text)
+
+	if transtyp == "FastTrans" {
+		transid := req.FormValue("transid")
+		transidnum, _ := strconv.Atoi(transid)
+
+		var err error
+
+		var FrånKonto []byte  // size 40
+		var TillKonto []byte  // size 40
+		var Belopp []byte     // BCD / Decimal Precision 19
+		var Datum []byte      // size 10
+		var HurOfta []byte    // size 15
+		var Vad []byte        // size 40
+		var Vem []byte        // size 40
+		var Löpnr []byte      // Autoinc Primary Key, index
+		var Kontrollnr []byte // Borde vara?Integer
+		var TillDatum []byte  // size 10
+		var Rakning []byte    // size 1
+
+		var transaktion transType
+
+		err = db.QueryRow("SELECT FrånKonto,TillKonto,Belopp,Datum,HurOfta,Vad,Vem,Löpnr,Kontrollnr,TillDatum,Rakning FROM Överföringar WHERE Löpnr = ?", transidnum).Scan(&FrånKonto, &TillKonto, &Belopp, &Datum, &HurOfta, &Vad, &Vem, &Löpnr, &Kontrollnr, &TillDatum, &Rakning)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		transaktion.Löpnr = toUtf8(Löpnr)
+		transaktion.FranKonto = toUtf8(FrånKonto)
+		transaktion.TillKonto = toUtf8(TillKonto)
+		transaktion.Belopp = toUtf8(Belopp)
+		transaktion.Datum = toUtf8(Datum)
+		transaktion.HurOfta = toUtf8(HurOfta)
+		transaktion.Vad = toUtf8(Vad)
+		transaktion.Vem = toUtf8(Vem)
+		transaktion.Kontrollnr = toUtf8(Kontrollnr)
+		transaktion.TillDatum = toUtf8(TillDatum)
+		transaktion.Rakning = toUtf8(Rakning)
+
+		kontonamnlista := getAccNames()
+		platserlista := getPlaceNames()
+		personerlista := getPersonNames()
+		vadinkomstlista := getTypeInNames()
+		vadutgiftlista := getTypeOutNames()
+
+		t := template.New("EditFixed2")
+		t, _ = t.Parse(htmlfasta2)
+		data := Fasta2Data{
+			Transaktion:     transaktion,
+			KontonamnLista:  kontonamnlista,
+			PlatserLista:    platserlista,
+			PersonerLista:   personerlista,
+			VadInkomstLista: vadinkomstlista,
+			VadUtgiftLista:  vadutgiftlista,
+		}
+		err = t.Execute(w, data)
+		if err != nil {
+			return
+		}
+	}
+	log.Println("editfixedtransaction slut")
 }

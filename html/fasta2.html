@@ -1,0 +1,44 @@
+<!-- //-*- coding: utf-8 -*- -->
+<p>Redigera fast transaktion</p>
+
+<form hx-post="/r/e/fixedtransaction" hx-target="#edit_trans-div" hx-swap="innerHTML">
+    <label for="fromAcc">Från konto:</label>
+    <select name="fromAcc" id="fromAcc">
+      {{range .Kontonamn}}
+      <option {{ if eq . $.FromAcc }}selected{{ end }} value="{{.}}">{{.}}</option>
+      {{end}}
+      autofocus
+    </select>
+    <label for="toAcc">Till plats:</label>
+    <select name="toAcc" id="toAcc">
+      {{range .Platser}}
+      <option {{ if eq . $.Dest }}selected{{ end }} value="{{.}}">{{.}}</option>
+      {{end}}
+    </select>
+    <input type="hidden" id="tType" name="tType" value="{{.Typ}}">
+    <label for="date">Datum:</label>
+    <input type="date" id="date" name="date" value="{{.Datum}}" title="Datum">
+    <label for="what">Vad:</label>
+    <select name="what" id="what">
+      {{range .Vadut}}
+      <option {{ if eq . $.Vad }}selected{{ end }} value="{{.}}">{{.}}</option>
+      {{end}}
+    </select>
+    <label for="who">Vem:</label>
+    <select name="who" id="who">
+      {{range .Personer}}
+      <option {{ if eq . $.Vem }}selected{{ end }} value="{{.}}">{{.}}</option>
+      {{end}}
+    </select>
+    <label for="amount">Summa:</label>
+    <input type="text" id="amount" name="amount" value="{{.Belopp}}" >
+    <label for="fixed">Fast transaktion:</label>
+    <input type="text" id="fixed" name="fixed" value="{{.Fixed}}" >
+    <label for="comment">Text:</label>
+    <input type="text" id="comment" name="comment" value="{{.Text}}" >
+    <input type="hidden" id="lopnr" name="lopnr" value="{{.Löpnr}}">
+    <input type="hidden" id="action" name="action" value="update">
+    <input type="submit" value="Uppdatera">
+  </form>
+  <p>
+</table>

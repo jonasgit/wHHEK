@@ -4,9 +4,10 @@ package main
 
 import (
 	//"fmt"
-	"golang.org/x/text/encoding/charmap"
 	"strings"
 	"unicode"
+
+	"golang.org/x/text/encoding/charmap"
 
 	"github.com/shopspring/decimal" // MIT License
 )
@@ -86,13 +87,6 @@ func toUtf8(inBuf []byte) string {
 	return stringVal
 }
 
-func unEscapeSQL(inBuf string) string {
-	// UnEscape chars for SQL
-	stringVal2 := strings.ReplaceAll(inBuf, "''", "'")
-	stringVal3 := strings.ReplaceAll(stringVal2, "\"\"", "\"")
-	return stringVal3
-}
-
 func sanitizeFilename(fname string) string {
 	fname = strings.Replace(fname, "\\", "", -1)
 	fname = strings.Replace(fname, "/", "", -1)
@@ -109,10 +103,10 @@ func Dec2Str(summa decimal.Decimal) string {
 	var sign string
 	isnegative := summa.IsNegative()
 	if isnegative {
-		sign="-"
+		sign = "-"
 		summa = summa.Abs()
 	} else {
-		sign=""
+		sign = ""
 	}
 	// byt punkt till komma
 	s2 := strings.ReplaceAll(summa.String(), ".", ",")
@@ -120,7 +114,7 @@ func Dec2Str(summa decimal.Decimal) string {
 	// dela upp mellan heltal och decimaler
 	ss := strings.Split(s2, ",")
 	var ints, decs string
-	if len(ss)==1 {
+	if len(ss) == 1 {
 		ints = ss[0]
 		decs = ",00"
 	} else {
@@ -134,10 +128,10 @@ func Dec2Str(summa decimal.Decimal) string {
 	// dela upp heltal med mellanslag
 	if len(ints) > 6 {
 		len := len(ints)
-		ints = ints[0:len-6] + " " + ints[len-6:len-3] + " " +ints[len-3:len]
+		ints = ints[0:len-6] + " " + ints[len-6:len-3] + " " + ints[len-3:len]
 	} else if len(ints) > 3 {
 		len := len(ints)
 		ints = ints[0:len-3] + " " + ints[len-3:len]
 	}
-	return sign+ints+decs
+	return sign + ints + decs
 }
