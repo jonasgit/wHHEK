@@ -615,6 +615,7 @@ func editfixedtransactionHTML(w http.ResponseWriter, req *http.Request) {
 	_, _ = fmt.Fprintf(w, "</head>\n")
 	_, _ = fmt.Fprintf(w, "<body>\n")
 	_, _ = fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
+	_, _ = fmt.Fprintf(w, "<h1>EDIT FIXED</h1>\n")
 
 	editfixedtransaction(w, req, db)
 
@@ -636,6 +637,16 @@ type Fasta2Data struct {
 	PersonerLista   []string
 	VadInkomstLista []string
 	VadUtgiftLista  []string
+	FromAcc         string
+	Dest            string
+	Typ             string
+	Datum           string
+	Vad             string
+	Vem             string
+	Belopp          string
+	Fixed           string
+	Text            string
+	Löpnr           string
 }
 
 func editfixedtransaction(w http.ResponseWriter, req *http.Request, db *sql.DB) {
@@ -709,6 +720,16 @@ func editfixedtransaction(w http.ResponseWriter, req *http.Request, db *sql.DB) 
 			PersonerLista:   personerlista,
 			VadInkomstLista: vadinkomstlista,
 			VadUtgiftLista:  vadutgiftlista,
+			FromAcc:         "TODO",
+			Dest:            "TODO",
+			Typ:             "TODO",
+			Datum:           "TODO",
+			Vad:             "TODO",
+			Vem:             "TODO",
+			Belopp:          "TODO",
+			Fixed:           "TODO",
+			Text:            "TODO",
+			Löpnr:           "TODO",
 		}
 		err = t.Execute(w, data)
 		if err != nil {
