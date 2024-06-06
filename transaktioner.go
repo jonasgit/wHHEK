@@ -348,7 +348,7 @@ func transactions(w http.ResponseWriter, req *http.Request) {
 	case "radera":
 		raderaTransaction(w, lopnr, db)
 	default:
-		fmt.Println("Okänd action: ", formaction)
+		fmt.Println("Okänd form action: ", formaction)
 	}
 
 	handletransactions(w, req)
@@ -379,12 +379,12 @@ func r_e_transaction(w http.ResponseWriter, req *http.Request) {
 	case "update":
 		updateTransaction(w, lopnr, req, db)
 	default:
-		fmt.Println("Okänd action: ", formaction)
+		fmt.Println("Okänd form action: ", formaction)
 	}
 }
 
 func raderaTransaction(w http.ResponseWriter, lopnr int, db *sql.DB) {
-	fmt.Println("raderaTransaction lopnr: ", lopnr)
+	//fmt.Println("raderaTransaction lopnr: ", lopnr)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -462,15 +462,15 @@ func addTransaktionSQL(transtyp string, fromacc string, toacc string, date strin
 	sqlStatement := `
 	INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Saldo,[Fastöverföring],[Text])
 	VALUES (?,?,?,?,?,?,?,?,?,?)`
-	fmt.Println("addTransaktionSQL: ", sqlStatement)
-	fmt.Println("addTransaktionSQL: ", fromacc)
-	fmt.Println("addTransaktionSQL: ", toacc)
-	fmt.Println("addTransaktionSQL: ", transtyp)
-	fmt.Println("addTransaktionSQL: ", date)
-	fmt.Println("addTransaktionSQL: ", what)
-	fmt.Println("addTransaktionSQL: ", who)
-	fmt.Println("addTransaktionSQL: ", amount)
-	fmt.Println("addTransaktionSQL: ", text)
+	//fmt.Println("addTransaktionSQL: ", sqlStatement)
+	//fmt.Println("addTransaktionSQL: ", fromacc)
+	//fmt.Println("addTransaktionSQL: ", toacc)
+	//fmt.Println("addTransaktionSQL: ", transtyp)
+	//fmt.Println("addTransaktionSQL: ", date)
+	//fmt.Println("addTransaktionSQL: ", what)
+	//fmt.Println("addTransaktionSQL: ", who)
+	//fmt.Println("addTransaktionSQL: ", amount)
+	//fmt.Println("addTransaktionSQL: ", text)
 
 	_, err := db.Exec(sqlStatement, fromacc, toacc, transtyp, date, what, who, amount, nil, false, text)
 	if err != nil {
@@ -549,7 +549,7 @@ func addTransaktionÖverföring(fromacc string, toacc string, date string, who s
 }
 
 func addtransaction(w http.ResponseWriter, req *http.Request) {
-	log.Println("addtransaction: start")
+	//log.Println("addtransaction: start")
 	
 	err := req.ParseForm()
 	if err != nil {
@@ -666,7 +666,7 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 		_, _ = fmt.Fprintf(w, "%s", sqlStmt)
 		_, _ = fmt.Fprintf(w, "</table>\n")
 	}
-	log.Println("addtransaction: end")
+	//log.Println("addtransaction: end")
 }
 
 //go:embed html/transakt5.html
@@ -698,7 +698,7 @@ type Trans5Data struct {
 }
 
 func editformTransaction(w http.ResponseWriter, lopnr int, db *sql.DB) {
-	fmt.Println("editformTransaktion lopnr: ", lopnr)
+	//fmt.Println("editformTransaktion lopnr: ", lopnr)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -765,7 +765,7 @@ type Trans6Data struct {
 }
 
 func updateTransaction(w http.ResponseWriter, lopnr int, req *http.Request, db *sql.DB) {
-	fmt.Println("updateTransaktion lopnr: ", lopnr)
+	//fmt.Println("updateTransaktion lopnr: ", lopnr)
 
 	var fromAcc = ""
 	if len(req.FormValue("fromAcc")) > 0 {

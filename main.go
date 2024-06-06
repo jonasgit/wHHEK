@@ -177,6 +177,7 @@ import (
 )
 
 // Global variables
+const DEBUG_ON bool = true
 var db *sql.DB = nil
 var nopwDb *sql.DB = nil
 var dbtype uint8 = 0 // 0=none, 1=mdb/Access2.0, 2=sqlite3
@@ -382,9 +383,14 @@ type Main11Data struct {
 }
 
 func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
+	// Record the start time
+	duration_start := time.Now()
+
+	// Find date of today
 	currentTime := time.Now()
 	currDate := currentTime.Format("2006-01-02")
 
+	// Find accounts
 	res, err := db.Query("SELECT KontoNummer,Benämning,Saldo,StartSaldo,StartManad,Löpnr,SaldoArsskifte,ArsskifteManad FROM Konton ORDER BY Benämning")
 
 	if err != nil {
@@ -410,8 +416,8 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 		if err2 != nil {
 			log.Fatal("printSummaryTable:", err)
 		}
+		
 		DaySaldo, TotSaldo := saldonKonto(db, acc, currDate)
-
 		konton = append(konton, sumType{acc, false, Dec2Str(DbSaldo), Dec2Str(DaySaldo), Dec2Str(TotSaldo)})
 	}
 	res.Close()
@@ -455,6 +461,10 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 	err = t.Execute(w, data)
 	if err != nil {
 		log.Println("While serving HTTP main11: ", err)
+	}
+	if DEBUG_ON {
+		endtime := time.Now()
+		log.Println("Duration for print summary: ", endtime.Sub(duration_start))
 	}
 }
 

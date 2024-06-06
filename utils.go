@@ -3,7 +3,8 @@
 package main
 
 import (
-	//"fmt"
+	"fmt"
+	"runtime"
 	"strings"
 	"unicode"
 
@@ -134,4 +135,10 @@ func Dec2Str(summa decimal.Decimal) string {
 		ints = ints[0:len-3] + " " + ints[len-3:len]
 	}
 	return sign + ints + decs
+}
+
+// getCurrentFuncName will return the current function's name.
+func getCurrentFuncName() string {
+	pc, _, _, _ := runtime.Caller(1)
+	return fmt.Sprintf("%s", runtime.FuncForPC(pc).Name())
 }
