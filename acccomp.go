@@ -85,6 +85,8 @@ func readCsvFile(f multipart.File, filtyp string) [][]string {
 		r = f
 	} else if filtyp == "lunarcsv" {
 		r = f
+	} else if filtyp == "morrowcsv" {
+		r = f
 	} else {
 		r = charmap.ISO8859_1.NewDecoder().Reader(f)
 	}
@@ -205,6 +207,8 @@ func amountEquals(dbrad transaction, amount decimal.Decimal, kontonamn string, f
 	}
 	if (dbrad.tType == "Överföring") && (dbrad.fromAcc == kontonamn) {
 		if filtyp == "eurocardxls" {
+			return dbrad.amount.Equals(amount)
+		} else if filtyp == "morrowcsv" {
 			return dbrad.amount.Equals(amount)
 		} else {
 			return dbrad.amount.Equals(amount.Neg())
