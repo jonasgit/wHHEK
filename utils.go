@@ -3,7 +3,6 @@
 package main
 
 import (
-	"fmt"
 	"runtime"
 	"strings"
 	"unicode"
@@ -79,6 +78,8 @@ func AmountStr2DBStr(summa string) string {
 	return summa
 }
 
+// Konvertera en byte-array till sträng
+// Arrayen antas vara Windows1252
 func toUtf8(inBuf []byte) string {
 	buf := inBuf
 	if dbtype == 1 {
@@ -88,6 +89,7 @@ func toUtf8(inBuf []byte) string {
 	return stringVal
 }
 
+// Rensa bort känsliga tecken i filnamn
 func sanitizeFilename(fname string) string {
 	fname = strings.Replace(fname, "\\", "", -1)
 	fname = strings.Replace(fname, "/", "", -1)
@@ -100,6 +102,10 @@ func sanitizeFilename(fname string) string {
 	return fname
 }
 
+// Konvertera decimal-typen till string enligt svensk standard för belopp
+// Referenser
+// Myndigheternas skrivregler Ds 2009:38, kap 9.5
+// Valuta tas ej med (ISO 4217)
 func Dec2Str(summa decimal.Decimal) string {
 	var sign string
 	isnegative := summa.IsNegative()
@@ -140,5 +146,5 @@ func Dec2Str(summa decimal.Decimal) string {
 // getCurrentFuncName will return the current function's name.
 func getCurrentFuncName() string {
 	pc, _, _, _ := runtime.Caller(1)
-	return fmt.Sprintf("%s", runtime.FuncForPC(pc).Name())
+	return runtime.FuncForPC(pc).Name()
 }
