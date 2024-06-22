@@ -348,7 +348,7 @@ func transactions(w http.ResponseWriter, req *http.Request) {
 	case "radera":
 		raderaTransaction(w, lopnr, db)
 	default:
-		fmt.Println("Okänd form action: ", formaction)
+		log.Println("Okänd form action: ", formaction, getCurrentFuncName())
 	}
 
 	handletransactions(w, req)
@@ -379,7 +379,7 @@ func r_e_transaction(w http.ResponseWriter, req *http.Request) {
 	case "update":
 		updateTransaction(w, lopnr, req, db)
 	default:
-		fmt.Println("Okänd form action: ", formaction)
+		log.Println("Okänd form action: ", formaction, getCurrentFuncName())
 	}
 }
 
@@ -567,19 +567,19 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 	}
 
 	text := req.FormValue("text")
-	fmt.Println("Val tt: ", transtyp)
-	fmt.Println("Val d: ", date)
-	fmt.Println("Val w: ", who)
-	fmt.Println("Val a: ", amount)
-	fmt.Println("Val t: ", text)
+	//log.Println("Val tt: ", transtyp)
+	//log.Println("Val d: ", date)
+	//log.Println("Val w: ", who)
+	//log.Println("Val a: ", amount)
+	//log.Println("Val t: ", text)
 
 	if transtyp == "Inköp" {
 		fromacc := req.FormValue("fromacc")
 		place := req.FormValue("place")
 		what := req.FormValue("what")
-		fmt.Println("Val: ", fromacc)
-		fmt.Println("Val: ", place)
-		fmt.Println("Val: ", what)
+		//log.Println("Val: ", fromacc)
+		//log.Println("Val: ", place)
+		//log.Println("Val: ", what)
 
 		_, _ = fmt.Fprintf(w, "Registrerar Inköp...<br> ")
 
@@ -602,8 +602,8 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 	if transtyp == "Insättning" {
 		toacc := req.FormValue("toacc")
 		what := req.FormValue("what")
-		fmt.Println("Val: ", toacc)
-		fmt.Println("Val: ", what)
+		//log.Println("Val: ", toacc)
+		//log.Println("Val: ", what)
 
 		_, _ = fmt.Fprintf(w, "Registrerar Insättning...<br> ")
 		addTransaktionInsättning(toacc, date, what, who, amount, text)
@@ -623,9 +623,7 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 	}
 	if transtyp == "Uttag" {
 		fromacc := req.FormValue("fromacc")
-		what := req.FormValue("what")
-		fmt.Println("Val: ", fromacc)
-		fmt.Println("Val: ", what)
+		//log.Println("Val: ", fromacc, getCurrentFuncName())
 
 		_, _ = fmt.Fprintf(w, "Registrerar Uttag...<br> ")
 
@@ -646,8 +644,8 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 	if transtyp == "Överföring" {
 		fromacc := req.FormValue("fromacc")
 		toacc := req.FormValue("toacc")
-		fmt.Println("Val: ", fromacc)
-		fmt.Println("Val: ", toacc)
+		//log.Println("Val: ", fromacc, getCurrentFuncName())
+		//log.Println("Val: ", toacc)
 
 		_, _ = fmt.Fprintf(w, "Registrerar Överföring...<br> ")
 

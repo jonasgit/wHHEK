@@ -228,7 +228,7 @@ func root(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	var antal = strconv.Itoa(len(filer))
-	log.Println("Hittade filer", antal)
+	log.Println("Hittade filer", antal, getCurrentFuncName())
 	data := RootPageData{
 		FilerFinns: len(filer) > 0,
 		AntalFiler: antal,

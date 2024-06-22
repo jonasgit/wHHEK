@@ -203,7 +203,7 @@ func addfixedtransaction(w http.ResponseWriter, req *http.Request, db *sql.DB) {
 	who := req.FormValue("who")
 	amount := req.FormValue("amount")
 	text := req.FormValue("text")
-	log.Println("Val: ", transtyp)
+	log.Println("Val: ", transtyp, getCurrentFuncName())
 	log.Println("Val: ", date)
 	log.Println("Val: ", who)
 	log.Println("Val: ", amount)
@@ -605,17 +605,26 @@ func hämtaFastTransaktion(db *sql.DB, lopnr int) (result fixedtransaction) {
 	return result
 }
 
+//go:embed html/fasta3.html
+var htmlfasta3 string
+
+type Fasta3Data struct {
+	CurrDBName string
+	CurrDate   string
+}
+
 func editfixedtransactionHTML(w http.ResponseWriter, req *http.Request) {
-	log.Println("fixedtransactionHTML start")
-	_, _ = fmt.Fprintf(w, "<html>\n")
-	_, _ = fmt.Fprintf(w, "<head>\n")
-	_, _ = fmt.Fprintf(w, "<style>\n")
-	_, _ = fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
-	_, _ = fmt.Fprintf(w, "</style>\n")
-	_, _ = fmt.Fprintf(w, "</head>\n")
-	_, _ = fmt.Fprintf(w, "<body>\n")
-	_, _ = fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
-	_, _ = fmt.Fprintf(w, "<h1>EDIT FIXED</h1>\n")
+	log.Println("editfixedtransactionHTML start")
+	currentTime := time.Now()
+	currDate := currentTime.Format("2006-01-02")
+
+	t := template.New("Fasta3")
+	t, _ = t.Parse(htmlfasta3)
+	data := Fasta3Data{
+		CurrDBName: currentDatabase,
+		CurrDate:   currDate,
+	}
+	_ = t.Execute(w, data)
 
 	editfixedtransaction(w, req, db)
 
@@ -661,7 +670,7 @@ func editfixedtransaction(w http.ResponseWriter, req *http.Request, db *sql.DB) 
 	who := req.FormValue("who")
 	amount := req.FormValue("amount")
 	text := req.FormValue("text")
-	log.Println("Val: ", transtyp)
+	log.Println("Val: ", transtyp, getCurrentFuncName())
 	log.Println("Val: ", date)
 	log.Println("Val: ", who)
 	log.Println("Val: ", amount)
