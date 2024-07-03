@@ -80,6 +80,8 @@ func AmountStr2DBStr(summa string) string {
 
 // Konvertera en byte-array till sträng
 // Arrayen antas vara Windows1252
+// Se https://en.wikipedia.org/wiki/Windows-1252
+// https://web.archive.org/web/20240703024933/https://devblogs.microsoft.com/oldnewthing/20240702-00/?p=109951
 func toUtf8(inBuf []byte) string {
 	buf := inBuf
 	if dbtype == 1 {
