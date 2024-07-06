@@ -7,7 +7,7 @@ require (
 	github.com/extrame/ole2 v0.0.0-20160812065207-d69429661ad7 // indirect
 	github.com/extrame/xls v0.0.1
 	github.com/mattn/go-sqlite3 v1.14.14
-	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
+	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/shopspring/decimal v1.3.1
 	github.com/xuri/excelize/v2 v2.6.0
 	golang.org/x/text v0.3.8

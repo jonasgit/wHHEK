@@ -17,6 +17,8 @@ Dump existing (empty/new) database to txt and back (tom.mdb -> dumptom.sql -> je
 \tmp\Jet.exe dump -f tom.mdb --all >dumptom.sql
 \tmp\Jet.exe exec -f jette.mdb -new --db-format jet20 <dumptom.sql
 
+Tool to explore a mdb file: http://www.alexnolan.net/software/mdb_viewer_plus.htm
+
 Or https://sourceforge.net/projects/jetsqlconsole/
 More tools may be available via
 https://en.wikibooks.org/wiki/JET_Database/Manipulation_tools
