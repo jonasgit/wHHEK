@@ -377,7 +377,7 @@ func r_e_transaction(w http.ResponseWriter, req *http.Request) {
 	case "editform":
 		editformTransaction(w, lopnr, db)
 	case "update":
-		updateTransaction(w, lopnr, req, db)
+		updateTransactionHTML(w, lopnr, req, db)
 	default:
 		log.Println("Okänd form action: ", formaction, getCurrentFuncName())
 	}
@@ -762,7 +762,7 @@ type Trans6Data struct {
 	Lopnr int
 }
 
-func updateTransaction(w http.ResponseWriter, lopnr int, req *http.Request, db *sql.DB) {
+func updateTransactionHTML(w http.ResponseWriter, lopnr int, req *http.Request, db *sql.DB) {
 	//fmt.Println("updateTransaktion lopnr: ", lopnr)
 
 	var fromAcc = ""
@@ -805,9 +805,27 @@ func updateTransaction(w http.ResponseWriter, lopnr int, req *http.Request, db *
 		comment = req.FormValue("comment")
 	}
 
+	err := updateTransactionSQL(lopnr, db, fromAcc, toAcc, tType, date, what, who, amount, fixed, comment)
+	
+	t := template.New("Transaktion6")
+	t, _ = t.Parse(htmltrans6)
+	data := Trans6Data{
+		Lopnr: lopnr,
+	}
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Println("While serving HTTP trans6: ", err)
+	}
+}
+
+func updateTransactionSQL(lopnr int, db *sql.DB, fromAcc string, toAcc string, tType string, date string, what string, who string, amount string, fixed bool, comment string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// empty string is not allowed in MDB
+	if len(comment) < 1 {
+		comment = " "
+	}
 	_, err := db.ExecContext(ctx,
 		`UPDATE transaktioner SET FrånKonto = ?, TillKonto = ?, Typ = ?, Datum = ?, Vad = ?, Vem = ?, Belopp = ?, Fastöverföring = ?, "Text" = ? WHERE (Löpnr=?)`,
 		fromAcc,
@@ -824,16 +842,7 @@ func updateTransaction(w http.ResponseWriter, lopnr int, req *http.Request, db *
 	if err != nil {
 		log.Fatal(err)
 	}
-	
-	t := template.New("Transaktion6")
-	t, _ = t.Parse(htmltrans6)
-	data := Trans6Data{
-		Lopnr: lopnr,
-	}
-	err = t.Execute(w, data)
-	if err != nil {
-		log.Println("While serving HTTP trans6: ", err)
-	}
+	return err
 }
 
 func antalTransaktioner(db *sql.DB) int {
