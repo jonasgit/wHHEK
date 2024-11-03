@@ -504,16 +504,26 @@ func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.D
 	log.Println("registreraFastTransaktionHTML slut")
 }
 
+//go:embed html/fasta4.html
+var htmlfasta4 string
+
+type Fasta4Data struct {
+	CurrDBName string
+	CurrDate   string
+}
+
 func fixedtransactionHTML(w http.ResponseWriter, req *http.Request) {
 	log.Println("fixedtransactionHTML start")
-	_, _ = fmt.Fprintf(w, "<html>\n")
-	_, _ = fmt.Fprintf(w, "<head>\n")
-	_, _ = fmt.Fprintf(w, "<style>\n")
-	_, _ = fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
-	_, _ = fmt.Fprintf(w, "</style>\n")
-	_, _ = fmt.Fprintf(w, "</head>\n")
-	_, _ = fmt.Fprintf(w, "<body>\n")
-	_, _ = fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
+	currentTime := time.Now()
+	currDate := currentTime.Format("2006-01-02")
+
+	t := template.New("Fasta4")
+	t, _ = t.Parse(htmlfasta4)
+	data := Fasta4Data{
+		CurrDBName: currentDatabase,
+		CurrDate:   currDate,
+	}
+	_ = t.Execute(w, data)
 
 	addfixedtransaction(w, req, db)
 
