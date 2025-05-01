@@ -1,0 +1,44 @@
+<!-- //-*- coding: utf-8 -*- -->
+<p>Redigera fast utgift</p>
+
+<form hx-post="/r/e/fastutg" hx-target="#edit_trans-div" hx-swap="innerHTML">
+  <label for="fromAcc">Från konto:</label>
+  <select name="fromAcc" id="fromAcc">
+    {{range .KontonamnLista}}
+    <option {{ if eq . $.Transaktion.FranKonto }}selected{{ end }} value="{{.}}">{{.}}</option>
+    {{end}}
+    autofocus
+  </select>
+  <label for="toAcc">Till plats:</label>
+  <select name="toAcc" id="toAcc">
+    {{range .PlatserLista}}
+    <option {{ if eq . $.Transaktion.TillKonto }}selected{{ end }} value="{{.}}">{{.}}</option>
+    {{end}}
+  </select>
+  <label for="date">Datum:</label>
+  <input type="date" id="date" name="date" value="{{.Transaktion.Datum}}" title="Datum">
+  <label for="hurofta">Hur ofta:</label>
+  <input type="text" id="hurofta" name="hurofta" value="{{.Transaktion.HurOfta}}" >
+  <label for="tilldatum">Till datum:</label>
+  <input type="text" id="tilldatum" name="tilldatum" value="{{.Transaktion.TillDatum}}" >
+  <label for="what">Vad:</label>
+  <select name="what" id="what">
+    {{range .VadUtgiftLista}}
+    <option {{ if eq . $.Transaktion.Vad }}selected{{ end }} value="{{.}}">{{.}}</option>
+    {{end}}
+  </select>
+  <label for="who">Vem:</label>
+  <select name="who" id="who">
+    {{range .PersonerLista}}
+    <option {{ if eq . $.Transaktion.Vem }}selected{{ end }} value="{{.}}">{{.}}</option>
+    {{end}}
+  </select>
+  <label for="amount">Summa:</label>
+  <input type="text" id="amount" name="amount" value="{{.Transaktion.Belopp}}" >
+  <label for="rakning">Räkning:</label>
+  <input type="text" id="rakning" name="rakning" value="{{.Transaktion.Rakning}}" >
+  <input type="hidden" id="lopnr" name="lopnr" value="{{.Transaktion.Löpnr}}">
+  <input type="hidden" id="action" name="action" value="update">
+  <input type="submit" value="Uppdatera">
+</form>
+<p>

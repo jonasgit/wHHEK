@@ -178,6 +178,7 @@ import (
 
 // Global variables
 const DEBUG_ON bool = true
+
 var db *sql.DB = nil
 var nopwDb *sql.DB = nil
 var dbtype uint8 = 0 // 0=none, 1=mdb/Access2.0, 2=sqlite3
@@ -416,7 +417,7 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 		if err2 != nil {
 			log.Fatal("printSummaryTable:", err)
 		}
-		
+
 		DaySaldo, TotSaldo := saldonKonto(db, acc, currDate)
 		konton = append(konton, sumType{acc, false, Dec2Str(DbSaldo), Dec2Str(DaySaldo), Dec2Str(TotSaldo)})
 	}
@@ -444,8 +445,8 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 			firstofperiod := today.AddDate(0, -3, 0)
 
 			trans := getTransactionsInDateRange(db, konto.Name, firstofperiod.Format("2006-01-02"), today.Format("2006-01-02"))
-			if (len(trans) == 0) {
-				konto.Hidden=true
+			if len(trans) == 0 {
+				konto.Hidden = true
 				doldaNamn = append(doldaNamn, konto.Name)
 			}
 		}
@@ -1236,6 +1237,7 @@ func main() {
 
 	http.HandleFunc("/hello", hello)
 	http.HandleFunc("/r/e/transaction", r_e_transaction)
+	//http.HandleFunc("/r/e/fastutg", r_e_fastutg)
 	http.HandleFunc("/r/", restapi)
 	http.HandleFunc("/htmx.js", htmx)
 	http.HandleFunc("/img/bars.svg", imgbars)
@@ -1249,6 +1251,7 @@ func main() {
 	http.HandleFunc("/hnewtrans", addtransaction)
 	http.HandleFunc("/fixedtrans", fixedtransactionHTML)
 	http.HandleFunc("/editfixedtrans", editfixedtransactionHTML)
+	http.HandleFunc("/editfastutg", editfastutgHTML)
 	//	http.HandleFunc("/addtrans", addtransaction)
 	http.HandleFunc("/monthly", monthly)
 	http.HandleFunc("/transactions", transactions)

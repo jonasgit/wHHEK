@@ -136,7 +136,6 @@ func showFastaTransaktioner(w http.ResponseWriter, db *sql.DB, showedit bool) {
 			res, err = db.Query("SELECT FrånKonto,TillKonto,Belopp,Datum,HurOfta,Vad,Vem,Löpnr,Kontrollnr,TillDatum,Rakning FROM Överföringar ")
 		} else {
 			res, err = db.Query("SELECT FrånKonto,TillKonto,Belopp,Datum,HurOfta,Vad,Vem,Löpnr,Kontrollnr,TillDatum,Rakning FROM Överföringar WHERE Datum <= ?", currDate)
-
 		}
 
 		if err != nil {
@@ -550,23 +549,6 @@ func antalFastaTransaktioner(db *sql.DB) int {
 	return antal
 }
 
-func skapaFastUtgift(db *sql.DB, vad string, konto string, vem string, plats string, summa decimal.Decimal, datum string, hurofta string) error {
-	if db == nil {
-		log.Fatal("skapaFastUtgift anropad med db=nil")
-	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	_, err := db.ExecContext(ctx,
-		`INSERT INTO Överföringar (FrånKonto,TillKonto,Belopp,Datum,HurOfta, Vad, Vem, Kontrollnr, TillDatum, Rakning) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, konto, plats, summa, datum, hurofta, vad, vem, 1, "---", false)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return err
-}
-
 func hämtaFastTransaktion(db *sql.DB, lopnr int) (result fixedtransaction) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -719,7 +701,7 @@ func editfixedtransaction(w http.ResponseWriter, req *http.Request, db *sql.DB) 
 		personerlista := getPersonNames()
 		vadinkomstlista := getTypeInNames()
 		vadutgiftlista := getTypeOutNames()
-		
+
 		t := template.New("EditFixed2")
 		t, _ = t.Parse(htmlfasta2)
 		data := Fasta2Data{

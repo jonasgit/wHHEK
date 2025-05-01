@@ -5,8 +5,8 @@ package main
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	_ "embed"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -31,10 +31,10 @@ type YBRData struct {
 	CurrentYear       string
 	CurrentDay        string
 	CurrentDayPercent string
-	Inkomster     []YBRkategoriType
-	SumIn         string
-	Utgifter      []YBRkategoriType
-	SumUt         string
+	Inkomster         []YBRkategoriType
+	SumIn             string
+	Utgifter          []YBRkategoriType
+	SumUt             string
 }
 
 func sumKatToday(kat string, selectYear int, intyp bool) decimal.Decimal {
@@ -95,8 +95,8 @@ func hanteraYBR(w http.ResponseWriter, req *http.Request) {
 	now := time.Now()
 	selectYear := now.Year()
 	yrday := now.YearDay()
-	yrdayp := int((float64(yrday) / 365.0)*100) // Bryr mig inte om skottår nu
-	
+	yrdayp := int((float64(yrday) / 365.0) * 100) // Bryr mig inte om skottår nu
+
 	showNulls := false
 
 	var inkomster []YBRkategoriType
@@ -115,7 +115,7 @@ func hanteraYBR(w http.ResponseWriter, req *http.Request) {
 		budgetsum := getKatYearSum(db, kat)
 		var budgetproc string
 		var prognos string
-		if decZero.Equals(budgetsum) {
+		if decZero.Equal(budgetsum) {
 			budgetproc = "∞"
 			prognos = "∞"
 		} else {
@@ -135,7 +135,7 @@ func hanteraYBR(w http.ResponseWriter, req *http.Request) {
 		budgetsum := getKatYearSum(db, kat)
 		var budgetproc string
 		var prognos string
-		if decZero.Equals(budgetsum) {
+		if decZero.Equal(budgetsum) {
 			budgetproc = "∞"
 			prognos = "∞"
 		} else {
@@ -153,11 +153,11 @@ func hanteraYBR(w http.ResponseWriter, req *http.Request) {
 	tmpl1 := template.New("wHHEK Årsstatus")
 	tmpl1, _ = tmpl1.Parse(htmlybr)
 	data := YBRData{
-		CurrentYear:   strconv.Itoa(selectYear),
-		CurrentDay:    strconv.Itoa(yrday),
+		CurrentYear:       strconv.Itoa(selectYear),
+		CurrentDay:        strconv.Itoa(yrday),
 		CurrentDayPercent: strconv.Itoa(yrdayp),
-		Inkomster:     inkomster,
-		Utgifter:      utgifter,
+		Inkomster:         inkomster,
+		Utgifter:          utgifter,
 	}
 	_ = tmpl1.Execute(w, data)
 }

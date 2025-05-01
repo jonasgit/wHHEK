@@ -10,12 +10,12 @@ import (
 // JetDBSupport Global variables
 var JetDBSupport = false
 
-func openJetDB(filename string, ro bool) *sql.DB {
+func openJetDB(_ string, _ bool) *sql.DB {
 	// No support for JetDB
 	return nil
 }
 
-var TOMDB []byte  // ONLY REQUIRED FOR Go UNIT TEST
+var TOMDB []byte // ONLY REQUIRED FOR Go UNIT TEST
 
 // se jetdb.go
 func detectdbdec() bool {

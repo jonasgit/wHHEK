@@ -66,22 +66,16 @@ func readXlsxFile(filen multipart.File) (res [][]string) {
 		log.Println(err, getCurrentFuncName())
 		return
 	}
-	for _, row := range rows {
-		var record []string
-		for _, colCell := range row {
-			record = append(record, colCell)
-		}
-		res = append(res, record)
-	}
+	res = append(res, rows...)
 	return res
 }
 
 func readCsvFile(f multipart.File, filtyp string) [][]string {
 	var res [][]string
 	var r io.Reader
-	
+
 	// Select char encoding, UTF-8 or ISO8859
- 	if filtyp == "okq8csv" {
+	if filtyp == "okq8csv" {
 		r = f
 	} else if filtyp == "lunarcsv" {
 		r = f
@@ -192,35 +186,35 @@ func amountEquals(dbrad transaction, amount decimal.Decimal, kontonamn string, f
 	//}
 	if dbrad.tType == "Inköp" {
 		if filtyp == "eurocardxls" {
-			return dbrad.amount.Equals(amount)
+			return dbrad.amount.Equal(amount)
 		} else if filtyp == "morrowcsv" {
-			return dbrad.amount.Equals(amount)
+			return dbrad.amount.Equal(amount)
 		} else {
-			return dbrad.amount.Equals(amount.Neg())
+			return dbrad.amount.Equal(amount.Neg())
 		}
 	}
 	if dbrad.tType == "Fast Utgift" {
-		return dbrad.amount.Equals(amount.Neg())
+		return dbrad.amount.Equal(amount.Neg())
 	}
 	if dbrad.tType == "Insättning" {
-		return dbrad.amount.Equals(amount)
+		return dbrad.amount.Equal(amount)
 	}
 	if (dbrad.tType == "Överföring") && (dbrad.fromAcc == kontonamn) {
 		if filtyp == "eurocardxls" {
-			return dbrad.amount.Equals(amount)
+			return dbrad.amount.Equal(amount)
 		} else if filtyp == "morrowcsv" {
-			return dbrad.amount.Equals(amount)
+			return dbrad.amount.Equal(amount)
 		} else {
-			return dbrad.amount.Equals(amount.Neg())
+			return dbrad.amount.Equal(amount.Neg())
 		}
 	}
 	if (dbrad.tType == "Överföring") && (dbrad.toAcc == kontonamn) {
-		return dbrad.amount.Equals(amount)
+		return dbrad.amount.Equal(amount)
 	}
 	if DEBUG_ON {
 		log.Println("jämför", amount, dbrad.amount, getCurrentFuncName())
 	}
-	return dbrad.amount.Equals(amount)
+	return dbrad.amount.Equal(amount)
 }
 
 func findAmount(rad []string, filtyp string) string {
@@ -245,7 +239,6 @@ func findAmount(rad []string, filtyp string) string {
 		log.Println("Okänd filtyp:", filtyp, getCurrentFuncName())
 		return ""
 	}
-	return ""
 }
 
 // parse from string "29 feb 2006" to type time.Time
@@ -255,12 +248,12 @@ func parsedateSwe(datum string) time.Time {
 	day, err := strconv.Atoi(strs[0])
 	if err != nil {
 		log.Println("Fatal day", err, getCurrentFuncName())
-		return time.Unix(0,0)
+		return time.Unix(0, 0)
 	}
 	year, err := strconv.Atoi(strs[2])
 	if err != nil {
 		log.Println("Fatal year", err, getCurrentFuncName())
-		return time.Unix(0,0)
+		return time.Unix(0, 0)
 	}
 	var month time.Month = 0
 	switch strs[1] {
@@ -290,7 +283,7 @@ func parsedateSwe(datum string) time.Time {
 		month = 12
 	default:
 		log.Println("Okänd månad:", strs[1], getCurrentFuncName())
-		return time.Unix(0,0)
+		return time.Unix(0, 0)
 	}
 
 	location := time.FixedZone("CET", 0)
@@ -334,7 +327,6 @@ func findDateCol(rad []string, filtyp string) string {
 		log.Println("Okänd filtyp:", filtyp, getCurrentFuncName())
 		return ""
 	}
-	return ""
 }
 
 func bankheadlines(filtyp string) int {
@@ -381,11 +373,12 @@ func matchaUtdrag(records [][]string, dbtrans []transaction, kontonamn string, f
 				log.Println("matcha error:", err, amountstr, getCurrentFuncName())
 				return
 			}
-			if DEBUG_ON {
-				//log.Println("jämför amount decimal ", radAmount, getCurrentFuncName())
-			}
 			datecol := findDateCol(rad, filtyp)
 			raddate, err := time.Parse("2006-01-02", datecol)
+			if err != nil {
+				log.Println("date parse error:", err, datecol, getCurrentFuncName())
+				return
+			}
 			if DEBUG_ON {
 				//log.Println("jämför datum string ", datecol, " time.Time ", raddate)
 			}
@@ -435,6 +428,10 @@ func matchaUtdrag(records [][]string, dbtrans []transaction, kontonamn string, f
 			}
 			datecol := findDateCol(rad, filtyp)
 			raddate, err := time.Parse("2006-01-02", datecol)
+			if err != nil {
+				log.Println("date parse error:", err, datecol, getCurrentFuncName())
+				return
+			}
 
 			for _, dbrad := range dbtrans {
 				if amountEquals(dbrad, radAmount, kontonamn, filtyp) {
@@ -464,21 +461,22 @@ func matchaUtdrag(records [][]string, dbtrans []transaction, kontonamn string, f
 
 //go:embed html/acccomp2.html
 var htmlacccomp2 string
+
 type ItemData struct {
-	Data string
-	Matches bool
+	Data         string
+	Matches      bool
 	FuzzyMatches bool
 }
 type ItemDataArr []ItemData
 
 type Acccomp2Data struct {
-	DBName string
-	StartDate string
-	EndDate string
+	DBName     string
+	StartDate  string
+	EndDate    string
 	BankHeader []string
-	BankRader []ItemDataArr
-	DBHeader []string
-	DBRader []ItemDataArr
+	BankRader  []ItemDataArr
+	DBHeader   []string
+	DBRader    []ItemDataArr
 }
 
 func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filtyp string, filen multipart.File) {
@@ -515,7 +513,7 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 	var firstdate time.Time
 	var lastdate time.Time
 	var err error
-	
+
 	firstdate, err = time.Parse("2006-01-02", firstdatestr)
 	if err != nil {
 		log.Println("first date", err, getCurrentFuncName())
@@ -526,7 +524,7 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 		log.Println("last date", err, getCurrentFuncName())
 		return
 	}
-	
+
 	bankfirstdate := firstdate
 	banklastdate := lastdate
 	// expand date range for use in database
@@ -541,12 +539,10 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 
 	var bankheader []string
 	var bankrader []ItemDataArr
-	
+
 	for radnr, rad := range records {
 		if radnr < headlines {
-			for _, data := range rad {
-				bankheader = append(bankheader, data)
-			}
+			bankheader = append(bankheader, rad...)
 		} else {
 			var bankrad []ItemData
 
@@ -628,25 +624,26 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 	t := template.New("Acccomp2")
 	t, _ = t.Parse(htmlacccomp2)
 	data := Acccomp2Data{
-		DBName: currentDatabase,
-		StartDate: bankfirstdate.Format("2006-01-02"),
-		EndDate: banklastdate.Format("2006-01-02"),
+		DBName:     currentDatabase,
+		StartDate:  bankfirstdate.Format("2006-01-02"),
+		EndDate:    banklastdate.Format("2006-01-02"),
 		BankHeader: bankheader,
-		BankRader: bankrader,
-		DBHeader: dbheader,
-		DBRader: dbrader,
+		BankRader:  bankrader,
+		DBHeader:   dbheader,
+		DBRader:    dbrader,
 	}
 	err = t.Execute(w, data)
 	if err != nil {
 		log.Println("While serving HTTP acccomp2: ", err, getCurrentFuncName())
 	}
-	
+
 }
 
 //go:embed html/acccomp1.html
 var htmlacccomp1 string
+
 type OptionData struct {
-	Label string
+	Label       string
 	DisplayName string
 }
 type Acccomp1Data struct {
@@ -701,7 +698,7 @@ func compareaccount(w http.ResponseWriter, req *http.Request) {
 
 		filtyp = OptionData{Label: "morrowcsv", DisplayName: "MorrowBank CSV"}
 		filtyper = append(filtyper, filtyp)
-		
+
 		filtyp = OptionData{Label: "swedbcsv", DisplayName: "Swedbank/Sparbankerna CSV"}
 		filtyper = append(filtyper, filtyp)
 		filtyp = OptionData{Label: "resursxlsx", DisplayName: "Resursbank/Fordkortet Xlsx"}
@@ -714,7 +711,7 @@ func compareaccount(w http.ResponseWriter, req *http.Request) {
 		filtyper = append(filtyper, filtyp)
 		filtyp = OptionData{Label: "lunarcsv", DisplayName: "Lunar CSV"}
 		filtyper = append(filtyper, filtyp)
-		
+
 		t := template.New("Acccomp1")
 		t, _ = t.Parse(htmlacccomp1)
 		data := Acccomp1Data{
