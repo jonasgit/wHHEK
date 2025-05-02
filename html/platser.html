@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Platser</title>
+    <style>
+        table, th, td { border: 1px solid black }
+    </style>
+</head>
+<body>
+    <h1>{{.DatabaseName}}</h1>
+    <h2>Platser</h2>
+
+    {{if .Message}}
+    <p>{{.Message}}</p>
+    {{end}}
+
+    {{if .ShowEditForm}}
+    <h3>Redigera plats</h3>
+    <form method="POST" action="/platser">
+        <label for="namn">Namn:</label>
+        <input type="text" id="namn" name="namn" value="{{.EditPlats.Namn}}">
+        <label for="gironum">Gironummer:</label>
+        <input type="text" id="gironum" name="gironum" value="{{.EditPlats.Gironummer}}">
+        <label for="type">Typ:</label>
+        <input type="text" id="type" name="type" value="{{.EditPlats.Typ}}">
+        <label for="refacc">RefKonto:</label>
+        <select id="refacc" name="refacc">
+            {{range .Kontonamn}}
+            <option value="{{.}}" {{if eq . $.EditPlats.RefKonto}}selected{{end}}>{{.}}</option>
+            {{end}}
+        </select>
+        <input type="hidden" id="lopnr" name="lopnr" value="{{.EditPlats.Lopnr}}">
+        <input type="hidden" id="action" name="action" value="update">
+        <input type="submit" value="Uppdatera">
+    </form>
+    {{end}}
+
+    {{if .ShowAddForm}}
+    <h3>Lägg till plats</h3>
+    <form method="POST" action="/platser">
+        <label for="namn">Namn:</label>
+        <input type="text" id="namn" name="namn" value="">
+        <label for="gironum">Gironummer:</label>
+        <input type="text" id="gironum" name="gironum" value="">
+        <label for="kontokort">Kontokortsföretag:</label>
+        <input type="checkbox" id="kontokort" name="kontokort">
+        <label for="refacc">RefKonto:</label>
+        <select id="refacc" name="refacc">
+            {{range .Kontonamn}}
+            <option value="{{.}}">{{.}}</option>
+            {{end}}
+        </select>
+        <input type="hidden" id="action" name="action" value="add">
+        <input type="submit" value="Ny plats">
+    </form>
+    {{end}}
+
+    <table style="width:100%">
+        <tr>
+            <th>Namn</th>
+            <th>Gironummer</th>
+            <th>Typ</th>
+            <th>RefKonto</th>
+            <th>Redigera</th>
+            <th>Radera</th>
+        </tr>
+        {{range .Platser}}
+        <tr>
+            <td>{{.Namn}}</td>
+            <td>{{.Gironummer}}</td>
+            <td>{{.Typ}}</td>
+            <td>{{.RefKonto}}</td>
+            <td>
+                <form method="POST" action="/platser">
+                    <input type="hidden" id="lopnr" name="lopnr" value="{{.Lopnr}}">
+                    <input type="hidden" id="action" name="action" value="editform">
+                    <input type="submit" value="Redigera">
+                </form>
+            </td>
+            <td>
+                <form method="POST" action="/platser">
+                    <input type="hidden" id="lopnr" name="lopnr" value="{{.Lopnr}}">
+                    <input type="hidden" id="action" name="action" value="radera">
+                    <input type="checkbox" id="OK" name="OK" required>
+                    <label for="OK">OK</label>
+                    <input type="submit" value="Radera">
+                </form>
+            </td>
+        </tr>
+        {{end}}
+    </table>
+
+    <form method="POST" action="/platser">
+        <input type="hidden" id="action" name="action" value="addform">
+        <input type="submit" value="Ny plats">
+    </form>
+
+
+    <p><a href="summary">Översikt</a></p>
+</body>
+</html> 
