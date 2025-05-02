@@ -45,7 +45,7 @@ func SkapaTomDB(filename string) {
 		if err != nil {
 			log.Println("Failed to remove file. ", err)
 		} else {
-			log.Println("SkapaTomDB file removed. OK.")
+			//log.Println("SkapaTomDB file removed. OK.")
 		}
 	} else {
 		log.Println("SkapaTomDB file did not exist. OK.")
@@ -57,7 +57,7 @@ func SkapaTomDB(filename string) {
 	if db == nil {
 		log.Println("Failed to create database. ")
 	} else {
-		log.Println("SkapTomDB database created. OK.")
+		//log.Println("SkapTomDB database created. OK.")
 	}
 
 	InitiateDB(db)
@@ -68,7 +68,7 @@ func InitiateDB(db *sql.DB) {
 		log.Println("InitiateDB: No DB.")
 		return
 	}
-	log.Println("InitiateDB: Started.")
+	//log.Println("InitiateDB: Started.")
 
 	sqlStmt := `
   create table Personer (Löpnr integer not null primary key AUTOINCREMENT, Namn text, Född INTEGER, Kön text);
@@ -227,7 +227,7 @@ func InitiateDB(db *sql.DB) {
 
 	/* Data for table Överföringar */
 
-	log.Println("InitiateDB: Done.")
+	//log.Println("InitiateDB: Done.")
 }
 
 func InsertRow(sqlStmt string) {

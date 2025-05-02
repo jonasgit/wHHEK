@@ -316,7 +316,7 @@ func hanteraBudget(w http.ResponseWriter, req *http.Request) {
 	formaction := req.FormValue("action")
 	var lopnr = -1
 	if len(req.FormValue("lopnr")) > 0 {
-		lopnr, err = strconv.Atoi(req.FormValue("lopnr"))
+		lopnr, _ = strconv.Atoi(req.FormValue("lopnr"))
 	}
 
 	switch formaction {
@@ -369,7 +369,7 @@ func getAllBudgetposter(db *sql.DB) [][2]string {
 	for res.Next() {
 		var record [2]string
 
-		err = res.Scan(&Typ, &Inkomst)
+		_ = res.Scan(&Typ, &Inkomst)
 
 		record[0] = toUtf8(Typ)
 		record[1] = toUtf8(Inkomst)

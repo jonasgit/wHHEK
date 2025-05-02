@@ -244,7 +244,7 @@ func r_e_fastutg(w http.ResponseWriter, req *http.Request, db *sql.DB) {
 	formaction := req.FormValue("action")
 	var lopnr = -1
 	if len(req.FormValue("lopnr")) > 0 {
-		lopnr, err = strconv.Atoi(req.FormValue("lopnr"))
+		lopnr, _ = strconv.Atoi(req.FormValue("lopnr"))
 	}
 
 	switch formaction {

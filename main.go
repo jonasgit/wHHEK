@@ -161,7 +161,6 @@ import (
 	"flag"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"math"
 	"net"
@@ -211,7 +210,7 @@ func root(w http.ResponseWriter, req *http.Request) {
 	tmpl := template.New("wHHEK root")
 	tmpl, _ = tmpl.Parse(htmlroot)
 
-	files, err := ioutil.ReadDir(".")
+	files, err := os.ReadDir(".")
 	if err != nil {
 		log.Fatal(err)
 	}

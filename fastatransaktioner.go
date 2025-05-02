@@ -158,7 +158,7 @@ func showFastaTransaktioner(w http.ResponseWriter, db *sql.DB, showedit bool) {
 		var transaktion transType
 
 		for res.Next() {
-			err = res.Scan(&FrånKonto, &TillKonto, &Belopp, &Datum, &HurOfta, &Vad, &Vem, &Löpnr, &Kontrollnr, &TillDatum, &Rakning)
+			_ = res.Scan(&FrånKonto, &TillKonto, &Belopp, &Datum, &HurOfta, &Vad, &Vem, &Löpnr, &Kontrollnr, &TillDatum, &Rakning)
 
 			transaktion.Löpnr = toUtf8(Löpnr)
 			transaktion.FranKonto = toUtf8(FrånKonto)
@@ -575,22 +575,22 @@ func hämtaFastTransaktion(db *sql.DB, lopnr int) (result fixedtransaction) {
 
 	for res.Next() {
 		var record fixedtransaction
-		err = res.Scan(&FrånKonto, &TillKonto, &Belopp, &Datum, &HurOfta, &Vad, &Vem, &Löpnr, &Kontrollnr, &TillDatum, &Rakning)
+		_ = res.Scan(&FrånKonto, &TillKonto, &Belopp, &Datum, &HurOfta, &Vad, &Vem, &Löpnr, &Kontrollnr, &TillDatum, &Rakning)
 
-		record.lopnr, err = strconv.Atoi(toUtf8(Löpnr))
+		record.lopnr, _ = strconv.Atoi(toUtf8(Löpnr))
 		record.vernum = Kontrollnr
 		record.fromAcc = toUtf8(FrånKonto)
 		record.toAcc = toUtf8(TillKonto)
 		record.what = toUtf8(Vad)
-		record.date, err = time.Parse("2006-01-02", toUtf8(Datum))
+		record.date, _ = time.Parse("2006-01-02", toUtf8(Datum))
 		record.who = toUtf8(Vem)
-		record.amount, err = decimal.NewFromString(toUtf8(Belopp))
+		record.amount, _ = decimal.NewFromString(toUtf8(Belopp))
 		record.HurOfta = toUtf8(HurOfta)
-		record.rakning, err = strconv.ParseBool(toUtf8(Rakning))
+		record.rakning, _ = strconv.ParseBool(toUtf8(Rakning))
 		if toUtf8(TillDatum) == "---" {
 			//record.todate = nil
 		} else {
-			record.todate, err = time.Parse("2006-01-02", toUtf8(TillDatum))
+			record.todate, _ = time.Parse("2006-01-02", toUtf8(TillDatum))
 		}
 		result = record
 	}

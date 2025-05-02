@@ -1,5 +1,5 @@
 //-*- coding: utf-8 -*-
-//go:build (windows && 386)
+//go:build windows && 386
 
 package main
 
@@ -18,10 +18,9 @@ package main
 import (
 	"database/sql"
 	_ "embed"
-	"io/ioutil"
 	"log"
 	"os"
-	
+
 	_ "github.com/alexbrainman/odbc" // BSD-3-Clause License
 )
 
@@ -68,55 +67,55 @@ var TOMDB []byte
 // retur False = använd decimalpunkt
 func detectdbdec() bool {
 	//log.Println("START detectdbdec")
-	
+
 	// Create and write file
 	f, err := os.CreateTemp("", "db*.mdb")
 	if err != nil {
-		//log.Println("Failed to create file. ", err)
+		log.Println("Failed to create file. ", err)
 	} else {
 		//log.Println("OpenMDB testfile created. OK.")
 	}
 	filename := f.Name()
 	//log.Println("Got filename: ", filename)
-	f.Close();
+	f.Close()
 	os.Remove(filename)
-	err = ioutil.WriteFile(filename, TOMDB, 0644)
+	err = os.WriteFile(filename, TOMDB, 0644)
 	if err != nil {
-		//log.Println("Failed to create file. ", err)
+		log.Println("Failed to create file. ", err)
 	} else {
 		//log.Println("OpenMDB testfile created. OK.")
 	}
-	f.Close();
-	
+	f.Close()
+
 	// Check open succeeds
 	db = openJetDB(filename, false) // Assume filename is available
 	if db != nil {
 		//log.Println("OpenMDB succeeded.")
 	} else {
-		//log.Println("OpenMDB failed to open file.")
+		log.Println("OpenMDB failed to open file.")
 		return false
 	}
 
 	// Lägg till transaktion och kolla resultat
 
 	/*	result := CheckTransaction(db, "1")
-	result = CheckTransaction(db, "1")
-	result = CheckTransaction(db, "1,23")
-	result = CheckTransaction(db, "1.23")
-	result = CheckTransaction(db, "1,0")
-	result = CheckTransaction(db, "1.0")
-	result = CheckTransaction(db, "1001,23")
-	result = CheckTransaction(db, "1001.23")
-	result = CheckTransaction(db, "1 001,23")
-	result = CheckTransaction(db, "1 001.23")
-	result = CheckTransaction(db, "1.001,23")
-	result = CheckTransaction(db, "1,001.23")
-	result = CheckTransaction(db, "1.001.23")
-	result = CheckTransaction(db, "1,001,23") */
-	result :=  CheckTransaction(db, "1,23")
+		result = CheckTransaction(db, "1")
+		result = CheckTransaction(db, "1,23")
+		result = CheckTransaction(db, "1.23")
+		result = CheckTransaction(db, "1,0")
+		result = CheckTransaction(db, "1.0")
+		result = CheckTransaction(db, "1001,23")
+		result = CheckTransaction(db, "1001.23")
+		result = CheckTransaction(db, "1 001,23")
+		result = CheckTransaction(db, "1 001.23")
+		result = CheckTransaction(db, "1.001,23")
+		result = CheckTransaction(db, "1,001.23")
+		result = CheckTransaction(db, "1.001.23")
+		result = CheckTransaction(db, "1,001,23") */
+	result := CheckTransaction(db, "1,23")
 
 	closeDB()
-	
+
 	// Radera testDB
 	os.Remove(filename)
 
@@ -138,7 +137,7 @@ func CheckTransaction(db *sql.DB, value string) bool {
 
 	_, err := db.Exec(sqlStatement, "fromacc", "toacc", "transtyp", "2022-12-01", "what", "who", value, nil, false, "text")
 	if err != nil {
-		//log.Println("SQL err", err)
+		log.Println("SQL err", err)
 		return false
 	}
 	//log.Println("CheckTransaction inserted")
@@ -148,13 +147,13 @@ func CheckTransaction(db *sql.DB, value string) bool {
 	var val []byte
 	err = db.QueryRow(`SELECT TOP 1 Belopp FROM Transaktioner ORDER BY Löpnr DESC`).Scan(&val)
 	if err != nil {
-		//log.Println("SQL err", err)
+		log.Println("SQL err", err)
 		return false
 	}
 	dbval := SanitizeAmountb(val)
 	//return bool if eq
 	//log.Println("END CheckTransaction")
 	//log.Printf("CheckTransaction CMP '%s' '%s'", dbval, SanitizeAmount(value))
-	
+
 	return dbval == SanitizeAmount(value)
 }
