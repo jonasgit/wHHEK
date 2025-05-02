@@ -5,17 +5,34 @@ package main
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 )
 
+//go:embed html/platser.html
+var platserTemplate embed.FS
+
 type Plats struct {
-	Namn       string // size
-	Gironummer string // size
-	Typ        bool   // Oanvänt?
-	RefKonto   string // size, != 0 betyder kontokortsföretag
+	Lopnr      int
+	Namn       string
+	Gironummer string
+	Typ        bool
+	RefKonto   string
+}
+
+type PlatserTemplateData struct {
+	DatabaseName string
+	Message      string
+	Platser      []Plats
+	Kontonamn    []string
+	ShowEditForm bool
+	ShowAddForm  bool
+	EditPlats    Plats
 }
 
 func antalPlatser(db *sql.DB) int {
@@ -37,10 +54,10 @@ func hämtaPlats(db *sql.DB, lopnr int) Plats {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	var Namn []byte       // size 40
-	var Gironummer []byte // size 20
-	var Typ []byte        // size 2
-	var RefKonto []byte   // size 40
+	var Namn []byte
+	var Gironummer []byte
+	var Typ []byte
+	var RefKonto []byte
 
 	err := db.QueryRowContext(ctx,
 		`SELECT Namn,Gironummer,Typ,RefKonto FROM Platser WHERE (Löpnr=?)`, lopnr).Scan(&Namn, &Gironummer, &Typ, &RefKonto)
@@ -49,146 +66,55 @@ func hämtaPlats(db *sql.DB, lopnr int) Plats {
 	}
 
 	var retplats Plats
-
+	retplats.Lopnr = lopnr
 	retplats.Namn = toUtf8(Namn)
 	retplats.Gironummer = toUtf8(Gironummer)
-	if toUtf8(Typ) == "true" {
-		retplats.Typ = true
-	} else {
-		retplats.Typ = false
-	}
+	retplats.Typ = toUtf8(Typ) == "true"
 	retplats.RefKonto = toUtf8(RefKonto)
 
 	return retplats
 }
 
-func printPlatser(w http.ResponseWriter, db *sql.DB) {
-	res, err := db.Query("SELECT Namn,Gironummer,Typ,RefKonto,Löpnr FROM Platser")
+func getPlatser(db *sql.DB) []Plats {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
+	rows, err := db.QueryContext(ctx, "SELECT Löpnr, Namn, Gironummer, Typ, RefKonto FROM Platser")
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer rows.Close()
 
-	var Namn []byte       // size 40
-	var Gironummer []byte // size 20
-	var Typ []byte        // size 2
-	var RefKonto []byte   // size 40
-	var Löpnr []byte      // autoinc Primary Key, index
-
-	_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Namn</th><th>Gironummer</th><th>Typ</th><th>RefKonto</th><th>Redigera</th><th>Radera</th>\n")
-	for res.Next() {
-		_ = res.Scan(&Namn, &Gironummer, &Typ, &RefKonto, &Löpnr)
-
-		_, _ = fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td>", toUtf8(Namn), toUtf8(Gironummer), toUtf8(Typ), toUtf8(RefKonto))
-		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/platser\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%s\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"editform\"><input type=\"submit\" value=\"Redigera\"></form></td>\n", Löpnr)
-		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/platser\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%s\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"radera\"><input type=\"checkbox\" id=\"OK\" name=\"OK\" required><label for=\"OK\">OK</label><input type=\"submit\" value=\"Radera\"></form></td></tr>\n", Löpnr)
+	var platser []Plats
+	for rows.Next() {
+		var p Plats
+		var Namn []byte
+		var Gironummer []byte
+		var Typ []byte
+		var RefKonto []byte
+		err := rows.Scan(&p.Lopnr, &Namn, &Gironummer, &Typ, &RefKonto)
+		if err != nil {
+			log.Fatal(err)
+		}
+		p.Namn = toUtf8(Namn)
+		p.Gironummer = toUtf8(Gironummer)
+		p.Typ = toUtf8(Typ) == "true"
+		p.RefKonto = toUtf8(RefKonto)
+		platser = append(platser, p)
 	}
-	res.Close()
-	_, _ = fmt.Fprintf(w, "</table>\n")
-
-	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/platser\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"addform\"><input type=\"submit\" value=\"Ny plats\"></form>\n")
+	return platser
 }
 
-func printPlatserFooter(w http.ResponseWriter) {
-	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
-	_, _ = fmt.Fprintf(w, "</body>\n")
-	_, _ = fmt.Fprintf(w, "</html>\n")
-}
-
-func raderaPlats(w http.ResponseWriter, lopnr int, db *sql.DB) {
-	fmt.Println("raderaPlats lopnr: ", lopnr)
-
+func raderaPlats(db *sql.DB, lopnr int) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	_, err := db.ExecContext(ctx,
 		`DELETE FROM Platser WHERE (Löpnr=?)`, lopnr)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, _ = fmt.Fprintf(w, "Plats med löpnr %d raderad.<br>", lopnr)
-}
-
-func editformPlats(w http.ResponseWriter, lopnr int, db *sql.DB) {
-	fmt.Println("editformPlats lopnr: ", lopnr)
-
-	kontonamn := getAccNames()
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	var Namn []byte       // size 40
-	var Gironummer []byte // size 20
-	var Typ []byte        // size 2
-	var RefKonto []byte   // size 40
-	err := db.QueryRowContext(ctx,
-		`SELECT Namn,Gironummer,Typ,RefKonto FROM Platser WHERE (Löpnr=?)`, lopnr).Scan(&Namn, &Gironummer, &Typ, &RefKonto)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, _ = fmt.Fprintf(w, "Redigera plats<br>")
-	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/platser\">")
-
-	_, _ = fmt.Fprintf(w, "<label for=\"namn\">Namn:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"namn\" name=\"namn\" value=\"%s\">", toUtf8(Namn))
-	_, _ = fmt.Fprintf(w, "<label for=\"gironum\">Gironummer:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"gironum\" name=\"gironum\" value=\"%s\">", toUtf8(Gironummer))
-	_, _ = fmt.Fprintf(w, "<label for=\"type\">Typ:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"type\" name=\"type\" value=\"%s\">", toUtf8(Typ))
-	_, _ = fmt.Fprintf(w, "<label for=\"refacc\">RefKonto:</label>")
-	_, _ = fmt.Fprintf(w, "<select id=\"refacc\" name=\"refacc\">")
-	for _, s := range kontonamn {
-		var selected = ""
-		if s == toUtf8(RefKonto) {
-			selected = "selected"
-		}
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\" %s>%s</option>", s, selected, s)
-	}
-
-	_, _ = fmt.Fprintf(w, "</select>\n")
-
-	_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\">", lopnr)
-	_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"action\" name=\"action\" value=\"update\">")
-	_, _ = fmt.Fprintf(w, "<input type=\"submit\" value=\"Uppdatera\">")
-	_, _ = fmt.Fprintf(w, "</form>\n")
-	_, _ = fmt.Fprintf(w, "<p>\n")
-}
-
-func addformPlats(w http.ResponseWriter) {
-	fmt.Println("addformPlats ")
-
-	kontonamn := getAccNames()
-
-	_, _ = fmt.Fprintf(w, "Lägg till plats<br>")
-	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/platser\">")
-
-	_, _ = fmt.Fprintf(w, "<label for=\"namn\">Namn:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"namn\" name=\"namn\" value=\"%s\">", "")
-	_, _ = fmt.Fprintf(w, "<label for=\"gironum\">Gironummer:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"gironum\" name=\"gironum\" value=\"%s\">", "")
-	_, _ = fmt.Fprintf(w, "<label for=\"kontokort\">Kontokortsföretag:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"checkbox\" id=\"kontokort\" name=\"kontokort\">")
-	_, _ = fmt.Fprintf(w, "<label for=\"refacc\">RefKonto:</label>")
-	_, _ = fmt.Fprintf(w, "<select id=\"refacc\" name=\"refacc\">")
-	for _, s := range kontonamn {
-		var selected = ""
-		_, _ = fmt.Fprintf(w, "    <option value=\"%s\" %s>%s</option>", s, selected, s)
-	}
-
-	_, _ = fmt.Fprintf(w, "</select>\n")
-
-	_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"action\" name=\"action\" value=\"add\">")
-	_, _ = fmt.Fprintf(w, "<input type=\"submit\" value=\"Ny plats\">")
-	_, _ = fmt.Fprintf(w, "</form>\n")
-	_, _ = fmt.Fprintf(w, "<p>\n")
+	return err
 }
 
 func skapaPlats(db *sql.DB, namn string, gironum string, acctype bool, refacc string) error {
-	if db == nil {
-		log.Fatal("skapaPlats anropad med db=nil")
-	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -202,52 +128,50 @@ func skapaPlats(db *sql.DB, namn string, gironum string, acctype bool, refacc st
 
 	_, err := db.ExecContext(ctx,
 		`INSERT INTO Platser (Namn,Gironummer,Typ,RefKonto) VALUES (?, ?, ?, ?)`, namn, gironum, "", refacc)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	return err
 }
 
-func addPlats(w http.ResponseWriter, namn string, gironum string, acctype bool, refacc string, db *sql.DB) {
-	fmt.Println("addPlats namn: ", namn)
-
-	_ = skapaPlats(db, namn, gironum, acctype, refacc)
-
-	_, _ = fmt.Fprintf(w, "Plats %s tillagd.<br>", namn)
-}
-
-func updatePlats(w http.ResponseWriter, lopnr int, namn string, gironum string, acctype string, refacc string, db *sql.DB) {
-	fmt.Println("updatePlats lopnr: ", lopnr)
-
+func updatePlats(db *sql.DB, lopnr int, namn string, gironum string, acctype string, refacc string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	_, err := db.ExecContext(ctx,
 		`UPDATE Platser SET Namn = ?, Gironummer = ?, Typ = ?, RefKonto = ? WHERE (Löpnr=?)`, namn, gironum, acctype, refacc, lopnr)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, _ = fmt.Fprintf(w, "Plats %s uppdaterad.<br>", namn)
+	return err
 }
 
 func hanteraplatser(w http.ResponseWriter, req *http.Request) {
-	_, _ = fmt.Fprintf(w, "<html>\n")
-	_, _ = fmt.Fprintf(w, "<head>\n")
-	_, _ = fmt.Fprintf(w, "<style>\n")
-	_, _ = fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
-	_, _ = fmt.Fprintf(w, "</style>\n")
-	_, _ = fmt.Fprintf(w, "</head>\n")
-	_, _ = fmt.Fprintf(w, "<body>\n")
+	var tmpl *template.Template
+	var err error
 
-	_, _ = fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
-	_, _ = fmt.Fprintf(w, "<h2>Platser</h2>\n")
+	// First try to load from file system (for development)
+	if _, err := os.Stat("templates/platser.html"); err == nil {
+		tmpl, _ = template.ParseFiles("templates/platser.html")
+	} else {
+		// Fall back to embedded template
+		tmplContent, err := platserTemplate.ReadFile("templates/platser.html")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		tmpl, _ = template.New("platser").Parse(string(tmplContent))
+	}
 
-	err := req.ParseForm()
 	if err != nil {
-		log.Fatal(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data := PlatserTemplateData{
+		DatabaseName: currentDatabase,
+		Platser:      getPlatser(db),
+		Kontonamn:    getAccNames(),
+	}
+
+	err = req.ParseForm()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	formaction := req.FormValue("action")
@@ -258,53 +182,46 @@ func hanteraplatser(w http.ResponseWriter, req *http.Request) {
 
 	switch formaction {
 	case "radera":
-		raderaPlats(w, lopnr, db)
+		if err := raderaPlats(db, lopnr); err != nil {
+			data.Message = fmt.Sprintf("Fel vid radering av plats: %v", err)
+		} else {
+			data.Message = fmt.Sprintf("Plats med löpnr %d raderad.", lopnr)
+		}
+		data.Platser = getPlatser(db)
 	case "addform":
-		addformPlats(w)
+		data.ShowAddForm = true
 	case "add":
-		var namn = ""
-		if len(req.FormValue("namn")) > 0 {
-			namn = req.FormValue("namn")
+		namn := req.FormValue("namn")
+		gironum := req.FormValue("gironum")
+		acctype := req.FormValue("kontokort") == "on"
+		refacc := req.FormValue("refacc")
+
+		if err := skapaPlats(db, namn, gironum, acctype, refacc); err != nil {
+			data.Message = fmt.Sprintf("Fel vid tillägg av plats: %v", err)
+		} else {
+			data.Message = fmt.Sprintf("Plats %s tillagd.", namn)
 		}
-		var gironum = ""
-		if len(req.FormValue("gironum")) > 0 {
-			gironum = req.FormValue("gironum")
-		}
-		var acctype = false
-		fmt.Println("FormValue type: ", req.FormValue("kontokort"))
-		if req.FormValue("kontokort") == "on" {
-			acctype = true
-		}
-		var refacc = ""
-		if len(req.FormValue("refacc")) > 0 {
-			refacc = req.FormValue("refacc")
-		}
-		addPlats(w, namn, gironum, acctype, refacc, db)
+		data.Platser = getPlatser(db)
 	case "editform":
-		editformPlats(w, lopnr, db)
+		data.ShowEditForm = true
+		data.EditPlats = hämtaPlats(db, lopnr)
 	case "update":
-		var namn = ""
-		if len(req.FormValue("namn")) > 0 {
-			namn = req.FormValue("namn")
+		namn := req.FormValue("namn")
+		gironum := req.FormValue("gironum")
+		acctype := req.FormValue("type")
+		refacc := req.FormValue("refacc")
+
+		if err := updatePlats(db, lopnr, namn, gironum, acctype, refacc); err != nil {
+			data.Message = fmt.Sprintf("Fel vid uppdatering av plats: %v", err)
+		} else {
+			data.Message = fmt.Sprintf("Plats %s uppdaterad.", namn)
 		}
-		var gironum = ""
-		if len(req.FormValue("gironum")) > 0 {
-			gironum = req.FormValue("gironum")
-		}
-		var acctype = ""
-		if len(req.FormValue("type")) > 0 {
-			acctype = req.FormValue("type")
-		}
-		var refacc = ""
-		if len(req.FormValue("refacc")) > 0 {
-			refacc = req.FormValue("refacc")
-		}
-		updatePlats(w, lopnr, namn, gironum, acctype, refacc, db)
-	default:
-		fmt.Println("Okänd action: ", formaction)
+		data.Platser = getPlatser(db)
 	}
-	printPlatser(w, db)
-	printPlatserFooter(w)
+
+	if err := tmpl.Execute(w, data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 // Hämtar alla platser, både från tabellen Platser och från tabellen Transaktioner
@@ -317,7 +234,7 @@ func getPlaceNames() []string {
 		log.Fatal(err)
 	}
 
-	var Namn []byte // size 40, index
+	var Namn []byte
 	for res.Next() {
 		_ = res.Scan(&Namn)
 		names = append(names, toUtf8(Namn))
