@@ -1,0 +1,69 @@
+{{define "budget_table"}}
+<table style="width:100%">
+    <tr>
+        <th>Löpnr</th>
+        <th>Typ</th>
+        <th>Inkomst</th>
+        <th>HurOfta</th>
+        <th>StartMånad</th>
+        <th>Jan</th>
+        <th>Feb</th>
+        <th>Mar</th>
+        <th>Apr</th>
+        <th>Maj</th>
+        <th>Jun</th>
+        <th>Jul</th>
+        <th>Aug</th>
+        <th>Sep</th>
+        <th>Okt</th>
+        <th>Nov</th>
+        <th>Dec</th>
+        <th>Kontrollnr</th>
+        <th>Redigera</th>
+        <th>Radera</th>
+    </tr>
+    {{range .BudgetItems}}
+    <tr>
+        <td>{{.Lopnr}}</td>
+        <td>{{.Typ}}</td>
+        <td>{{.Inkomst}}</td>
+        <td>{{.HurOfta}}</td>
+        <td>{{.StartManad}}</td>
+        <td>{{.Jan}}</td>
+        <td>{{.Feb}}</td>
+        <td>{{.Mar}}</td>
+        <td>{{.Apr}}</td>
+        <td>{{.Maj}}</td>
+        <td>{{.Jun}}</td>
+        <td>{{.Jul}}</td>
+        <td>{{.Aug}}</td>
+        <td>{{.Sep}}</td>
+        <td>{{.Okt}}</td>
+        <td>{{.Nov}}</td>
+        <td>{{.Dec}}</td>
+        <td>{{.Kontrollnr}}</td>
+        <td>
+            <form method="POST" action="/budget">
+                <input type="hidden" id="lopnr" name="lopnr" value="{{.Lopnr}}">
+                <input type="hidden" id="action" name="action" value="editform">
+                <input type="submit" value="Redigera">
+            </form>
+        </td>
+        <td>
+            <form method="POST" action="/budget">
+                <input type="hidden" id="lopnr" name="lopnr" value="{{.Lopnr}}">
+                <input type="hidden" id="action" name="action" value="radera">
+                <input type="checkbox" id="OK" name="OK" required>
+                <label for="OK">OK</label>
+                <input type="submit" value="Radera">
+            </form>
+        </td>
+    </tr>
+    {{end}}
+</table>
+
+<form method="POST" action="/budget">
+    <input type="hidden" id="action" name="action" value="addform">
+    <input type="submit" value="Ny budgetpost">
+</form>
+{{end}} 

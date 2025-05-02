@@ -5,7 +5,9 @@ package main
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -14,6 +16,34 @@ import (
 	"github.com/shopspring/decimal" // MIT License
 )
 
+//go:embed html/budget_table.html
+var budgetTableTemplate embed.FS
+
+type BudgetItem struct {
+	Lopnr      int
+	Typ        string
+	Inkomst    string
+	HurOfta    string
+	StartManad string
+	Jan        string
+	Feb        string
+	Mar        string
+	Apr        string
+	Maj        string
+	Jun        string
+	Jul        string
+	Aug        string
+	Sep        string
+	Okt        string
+	Nov        string
+	Dec        string
+	Kontrollnr string
+}
+
+type BudgetData struct {
+	BudgetItems []BudgetItem
+}
+
 func printBudget(w http.ResponseWriter, db *sql.DB) {
 	res, err := db.Query("SELECT Löpnr,Typ,Inkomst,HurOfta,StartMånad,Jan,Feb,Mar,Apr,Maj,Jun,Jul,Aug,Sep,Okt,Nov,Dec,Kontrollnr FROM Budget ORDER BY Inkomst ASC, Typ ASC")
 
@@ -21,78 +51,75 @@ func printBudget(w http.ResponseWriter, db *sql.DB) {
 		log.Fatal(err)
 	}
 
-	var Typ []byte        // size 40
-	var Inkomst []byte    // size 1
-	var HurOfta int16     // SmallInt
-	var StartMånad []byte // size 10
-	var Jan []byte        // BCD / Decimal Precision 19
-	var Feb []byte        // BCD / Decimal Precision 19
-	var Mar []byte        // BCD / Decimal Precision 19
-	var Apr []byte        // BCD / Decimal Precision 19
-	var Maj []byte        // BCD / Decimal Precision 19
-	var Jun []byte        // BCD / Decimal Precision 19
-	var Jul []byte        // BCD / Decimal Precision 19
-	var Aug []byte        // BCD / Decimal Precision 19
-	var Sep []byte        // BCD / Decimal Precision 19
-	var Okt []byte        // BCD / Decimal Precision 19
-	var Nov []byte        // BCD / Decimal Precision 19
-	var Dec []byte        // BCD / Decimal Precision 19
-	var Kontrollnr []byte //int32 // Integer
-	var Löpnr int         // autoinc Primary Key, index
+	var budgetData BudgetData
+	var budgetItems []BudgetItem
 
-	_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr>")
-	_, _ = fmt.Fprintf(w, "<th>Löpnr</th>")
-	_, _ = fmt.Fprintf(w, "<th>Typ</th>")
-	_, _ = fmt.Fprintf(w, "<th>Inkomst</th>")
-	_, _ = fmt.Fprintf(w, "<th>HurOfta</th>")
-	_, _ = fmt.Fprintf(w, "<th>StartMånad</th>")
-	_, _ = fmt.Fprintf(w, "<th>Jan</th>")
-	_, _ = fmt.Fprintf(w, "<th>Feb</th>")
-	_, _ = fmt.Fprintf(w, "<th>Mar</th>")
-	_, _ = fmt.Fprintf(w, "<th>Apr</th>")
-	_, _ = fmt.Fprintf(w, "<th>Maj</th>")
-	_, _ = fmt.Fprintf(w, "<th>Jun</th>")
-	_, _ = fmt.Fprintf(w, "<th>Jul</th>")
-	_, _ = fmt.Fprintf(w, "<th>Aug</th>")
-	_, _ = fmt.Fprintf(w, "<th>Sep</th>")
-	_, _ = fmt.Fprintf(w, "<th>Okt</th>")
-	_, _ = fmt.Fprintf(w, "<th>Nov</th>")
-	_, _ = fmt.Fprintf(w, "<th>Dec</th>")
-	_, _ = fmt.Fprintf(w, "<th>Kontrollnr</th>")
-	_, _ = fmt.Fprintf(w, "<th>Redigera</th><th>Radera</th>\n")
 	for res.Next() {
-		err = res.Scan(&Löpnr, &Typ, &Inkomst, &HurOfta, &StartMånad, &Jan, &Feb, &Mar, &Apr, &Maj, &Jun, &Jul, &Aug, &Sep, &Okt, &Nov, &Dec, &Kontrollnr)
+		var item BudgetItem
+		var Typ []byte
+		var Inkomst []byte
+		var HurOfta int16
+		var StartMånad []byte
+		var Jan []byte
+		var Feb []byte
+		var Mar []byte
+		var Apr []byte
+		var Maj []byte
+		var Jun []byte
+		var Jul []byte
+		var Aug []byte
+		var Sep []byte
+		var Okt []byte
+		var Nov []byte
+		var Dec []byte
+		var Kontrollnr []byte
 
-		_, _ = fmt.Fprintf(w, "<tr>")
-		_, _ = fmt.Fprintf(w, "<td>%d</td>", Löpnr)
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Typ))
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Inkomst))
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", strconv.Itoa(int(HurOfta)))
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(StartMånad))
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Jan))
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Feb))
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Mar))
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Apr))
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Maj))
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Jun))
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Jul))
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Aug))
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Sep))
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Okt))
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Nov))
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Dec))
-		if Kontrollnr != nil {
-			_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Kontrollnr))
-		} else {
-			_, _ = fmt.Fprintf(w, "<td>%s</td>", "null")
+		err = res.Scan(&item.Lopnr, &Typ, &Inkomst, &HurOfta, &StartMånad, &Jan, &Feb, &Mar, &Apr, &Maj, &Jun, &Jul, &Aug, &Sep, &Okt, &Nov, &Dec, &Kontrollnr)
+		if err != nil {
+			log.Fatal(err)
 		}
 
-		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/budget\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"editform\"><input type=\"submit\" value=\"Redigera\"></form></td>\n", Löpnr)
-		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/budget\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"radera\"><input type=\"checkbox\" id=\"OK\" name=\"OK\" required><label for=\"OK\">OK</label><input type=\"submit\" value=\"Radera\"></form></td></tr>\n", Löpnr)
-	}
-	_, _ = fmt.Fprintf(w, "</table>\n")
+		item.Typ = toUtf8(Typ)
+		item.Inkomst = toUtf8(Inkomst)
+		item.HurOfta = strconv.Itoa(int(HurOfta))
+		item.StartManad = toUtf8(StartMånad)
+		item.Jan = toUtf8(Jan)
+		item.Feb = toUtf8(Feb)
+		item.Mar = toUtf8(Mar)
+		item.Apr = toUtf8(Apr)
+		item.Maj = toUtf8(Maj)
+		item.Jun = toUtf8(Jun)
+		item.Jul = toUtf8(Jul)
+		item.Aug = toUtf8(Aug)
+		item.Sep = toUtf8(Sep)
+		item.Okt = toUtf8(Okt)
+		item.Nov = toUtf8(Nov)
+		item.Dec = toUtf8(Dec)
+		if Kontrollnr != nil {
+			item.Kontrollnr = toUtf8(Kontrollnr)
+		} else {
+			item.Kontrollnr = "null"
+		}
 
-	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/budget\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"addform\"><input type=\"submit\" value=\"Ny budgetpost\"></form>\n")
+		budgetItems = append(budgetItems, item)
+	}
+
+	budgetData.BudgetItems = budgetItems
+
+	tmplContent, err := budgetTableTemplate.ReadFile("html/budget_table.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tmpl, err := template.New("budget_table").Parse(string(tmplContent))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = tmpl.ExecuteTemplate(w, "budget_table", budgetData)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	res.Close()
 }
@@ -135,7 +162,7 @@ func editformBudget(w http.ResponseWriter, lopnr int, db *sql.DB) {
 
 	err := db.QueryRowContext(ctx,
 		`SELECT Löpnr,Typ,Inkomst,HurOfta,StartMånad,Jan,Feb,Mar,Apr,Maj,Jun,Jul,Aug,Sep,Okt,Nov,Dec,Kontrollnr FROM Budget WHERE (Löpnr=?)`, lopnr).Scan(&Löpnr, &Typ, &Inkomst, &HurOfta, &StartMånad, &Jan, &Feb, &Mar, &Apr, &Maj, &Jun, &Jul, &Aug, &Sep, &Okt, &Nov, &Dec, &Kontrollnr)
-	
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -353,7 +380,7 @@ func getAllBudgetposter(db *sql.DB) [][2]string {
 }
 
 func addDecStr(v1 decimal.Decimal, v2 string) decimal.Decimal {
-	
+
 	tot, err := decimal.NewFromString(v2)
 	if err != nil {
 		log.Println("addDecStr strasig decimal sträng: ", v2)
@@ -365,31 +392,31 @@ func addDecStr(v1 decimal.Decimal, v2 string) decimal.Decimal {
 // Returnera årssumman för en specifik kategori
 func getKatYearSum(db *sql.DB, kategori string) decimal.Decimal {
 	var ret decimal.Decimal
-	
+
 	if db == nil {
 		log.Println("getKatYearSum db=nil")
 		return ret
 	}
 
-	var Jan []byte        // BCD / Decimal Precision 19
-	var Feb []byte        // BCD / Decimal Precision 19
-	var Mar []byte        // BCD / Decimal Precision 19
-	var Apr []byte        // BCD / Decimal Precision 19
-	var Maj []byte        // BCD / Decimal Precision 19
-	var Jun []byte        // BCD / Decimal Precision 19
-	var Jul []byte        // BCD / Decimal Precision 19
-	var Aug []byte        // BCD / Decimal Precision 19
-	var Sep []byte        // BCD / Decimal Precision 19
-	var Okt []byte        // BCD / Decimal Precision 19
-	var Nov []byte        // BCD / Decimal Precision 19
-	var Dec []byte        // BCD / Decimal Precision 19
+	var Jan []byte // BCD / Decimal Precision 19
+	var Feb []byte // BCD / Decimal Precision 19
+	var Mar []byte // BCD / Decimal Precision 19
+	var Apr []byte // BCD / Decimal Precision 19
+	var Maj []byte // BCD / Decimal Precision 19
+	var Jun []byte // BCD / Decimal Precision 19
+	var Jul []byte // BCD / Decimal Precision 19
+	var Aug []byte // BCD / Decimal Precision 19
+	var Sep []byte // BCD / Decimal Precision 19
+	var Okt []byte // BCD / Decimal Precision 19
+	var Nov []byte // BCD / Decimal Precision 19
+	var Dec []byte // BCD / Decimal Precision 19
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	err := db.QueryRowContext(ctx,
 		`SELECT Jan,Feb,Mar,Apr,Maj,Jun,Jul,Aug,Sep,Okt,Nov,Dec FROM Budget WHERE (Typ=?)`, kategori).Scan(&Jan, &Feb, &Mar, &Apr, &Maj, &Jun, &Jul, &Aug, &Sep, &Okt, &Nov, &Dec)
-	
+
 	if err != nil {
 		log.Fatal(err)
 	}
