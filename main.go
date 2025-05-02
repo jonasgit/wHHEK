@@ -592,9 +592,6 @@ func closeDB() {
 	}
 }
 
-//go:embed html/main7.html
-var htmlmain7 string
-
 func closedb(w http.ResponseWriter, req *http.Request) {
 	closeDB()
 
@@ -767,12 +764,12 @@ func printMonthly(w http.ResponseWriter, db *sql.DB, accName string, accYear int
 	var dayFound [32]bool
 	var rawStart []byte // size 16
 
-	err = db.QueryRowContext(ctx,
+	_ = db.QueryRowContext(ctx,
 		`select startsaldo
   from konton
   where benämning = ?`, accName).Scan(&rawStart)
 	res2 := toUtf8(rawStart)
-	startSaldo, err := decimal.NewFromString(res2)
+	startSaldo, _ := decimal.NewFromString(res2)
 	currSaldo := startSaldo
 
 	res, err = db.QueryContext(ctx,
@@ -799,7 +796,7 @@ order by datum,löpnr`, endDate, accName, accName)
 	var comment []byte // size 60
 
 	for res.Next() {
-		err = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
+		_ = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
 		decAmount, _ := decimal.NewFromString(toUtf8(amount))
 		if !dayFound[01] && toUtf8(date) >= startDate {
 			daySaldo[01] = currSaldo
@@ -1003,16 +1000,16 @@ func monthly(w http.ResponseWriter, req *http.Request) {
 
 	if len(req.FormValue("accYear")) > 3 {
 		// data from form
-		accYear, err = strconv.Atoi(req.FormValue("accYear"))
-		accMonth, err = strconv.Atoi(req.FormValue("accMonth"))
+		accYear, _ = strconv.Atoi(req.FormValue("accYear"))
+		accMonth, _ = strconv.Atoi(req.FormValue("accMonth"))
 		accName = req.FormValue("accName")
 	} else {
 		// default data
 		var date []byte // size 10
 		// find date of last transaction
-		err = db.QueryRow("SELECT MAX(Datum) FROM Transaktioner").Scan(&date)
-		accYear, err = strconv.Atoi(toUtf8(date)[0:4])
-		accMonth, err = strconv.Atoi(toUtf8(date)[5:7])
+		_ = db.QueryRow("SELECT MAX(Datum) FROM Transaktioner").Scan(&date)
+		accYear, _ = strconv.Atoi(toUtf8(date)[0:4])
+		accMonth, _ = strconv.Atoi(toUtf8(date)[5:7])
 
 		// adjust date to today if last is later
 		now := time.Now()
@@ -1025,16 +1022,16 @@ func monthly(w http.ResponseWriter, req *http.Request) {
 		}
 
 		var namn []byte // size 10
-		err = db.QueryRow("SELECT TOP 1 Benämning FROM Konton").Scan(&namn)
+		_ = db.QueryRow("SELECT TOP 1 Benämning FROM Konton").Scan(&namn)
 		accName = toUtf8(namn)
 	}
 
 	if db != nil {
 		var date []byte // size 10
-		err := db.QueryRow("SELECT MIN(Datum) FROM Transaktioner").Scan(&date)
-		firstYear, err := strconv.Atoi(toUtf8(date)[0:4])
-		err = db.QueryRow("SELECT MAX(Datum) FROM Transaktioner").Scan(&date)
-		lastYear, err := strconv.Atoi(toUtf8(date)[0:4])
+		_ = db.QueryRow("SELECT MIN(Datum) FROM Transaktioner").Scan(&date)
+		firstYear, _ := strconv.Atoi(toUtf8(date)[0:4])
+		_ = db.QueryRow("SELECT MAX(Datum) FROM Transaktioner").Scan(&date)
+		lastYear, _ := strconv.Atoi(toUtf8(date)[0:4])
 
 		printMonthly(w, db, accName, accYear, accMonth)
 
@@ -1154,7 +1151,7 @@ func getTypeInNames() []string {
 
 	var Typ []byte // size 40, index
 	for res.Next() {
-		err = res.Scan(&Typ)
+		_ = res.Scan(&Typ)
 		names = append(names, toUtf8(Typ))
 	}
 	res.Close()
@@ -1172,7 +1169,7 @@ func getTypeOutNames() []string {
 
 	var Typ []byte // size 40, index
 	for res.Next() {
-		err = res.Scan(&Typ)
+		_ = res.Scan(&Typ)
 		names = append(names, toUtf8(Typ))
 	}
 	res.Close()

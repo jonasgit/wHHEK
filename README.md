@@ -5,9 +5,10 @@ Personal finance package. Aimed at Swedish users.
 
 I mitten av 90-talet fanns ett program som hette Hogia Hemekonomi. Det sparar data i en mdb-fil. Det är ett program för att hålla lite ordning på sin ekonomi, glorifierad kassabok och budget ungefär.
 
-Hogia Hemekonomi är ett 16-bitars windowsprogram som visserligen fungerar i Windows 10 om man kör 32-bitars varianten och slår på 16-bitars funktionen. Men det lär inte hålla i evighet (hösten 2025 är prognosen). Så detta programmet är tänkt att blir en ersättare.
+Hogia Hemekonomi är ett 16-bitars windowsprogram som visserligen fungerar i Windows 10 om man kör 32-bitars varianten och slår på 16-bitars funktionen. Men det lär inte hålla i evighet (hösten 2025 är prognosen). I Windows 11 krävs https://github.com/otya128/winevdm
+Så detta programmet är tänkt att vara en ersättare.
 
-Detta programmet fungerar med både med mdb-filer och sqlite3. Det finns en konverterare till sqlite3 på https://github.com/jonasgit/hhek2sqlite
+Detta programmet fungerar med både med mdb-filer och sqlite3-filer. Det finns en konverterare till sqlite3 på https://github.com/jonasgit/hhek2sqlite
 
 Gränssnittet är webbaserat, dvs programmet körs i bakgrunden och användare interagerar via webläsaren. Allt körs lokalt på egna maskinen.
 
@@ -29,4 +30,4 @@ Windows-versionen av det här går att köra i Linux också med hjälp av Wine. 
 **Installation:** Bygg enligt kommentarer i filen make.bat. Eller se om det finns en färdig
 exe-fil under Releases/version/Assets/.
 
-**Kör:** Starta programmet i katalogen som har en mdb-fil. Eller där du vill skapa en ny databas.
+**Kör:** Starta programmet i katalogen som har en mdb-fil. Eller där du vill skapa en ny databas. Standard webläsare öppnas automatiskt med startsidan för programmet.

@@ -31,7 +31,7 @@ func printPersoner(w http.ResponseWriter, db *sql.DB) {
 
 	_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Namn</th><th>Födelsedag</th><th>Kön</th><th>Redigera</th><th>Radera</th>\n")
 	for res.Next() {
-		err = res.Scan(&namn, &birth, &sex, &nummer)
+		_ = res.Scan(&namn, &birth, &sex, &nummer)
 
 		_, _ = fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td><td>%s</td>", toUtf8(namn), birth, sex)
 		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/personer\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"editform\"><input type=\"submit\" value=\"Redigera\"></form></td>\n", nummer)
@@ -187,7 +187,7 @@ func hanterapersoner(w http.ResponseWriter, req *http.Request) {
 	formaction := req.FormValue("action")
 	var lopnr = -1
 	if len(req.FormValue("lopnr")) > 0 {
-		lopnr, err = strconv.Atoi(req.FormValue("lopnr"))
+		lopnr, _ = strconv.Atoi(req.FormValue("lopnr"))
 	}
 
 	switch formaction {
@@ -243,7 +243,7 @@ func getPersonNames() []string {
 
 	var Namn []byte // size 50, index
 	for res.Next() {
-		err = res.Scan(&Namn)
+		_ = res.Scan(&Namn)
 		names = append(names, toUtf8(Namn))
 	}
 	res.Close()
@@ -282,7 +282,7 @@ func hämtaPerson(lopnr int) person {
 	var retperson person
 
 	retperson.namn = toUtf8(namn)
-	retperson.birth, err = strconv.Atoi(birth)
+	retperson.birth, _ = strconv.Atoi(birth)
 	retperson.sex = sex
 
 	return retperson

@@ -77,7 +77,7 @@ func printPlatser(w http.ResponseWriter, db *sql.DB) {
 
 	_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Namn</th><th>Gironummer</th><th>Typ</th><th>RefKonto</th><th>Redigera</th><th>Radera</th>\n")
 	for res.Next() {
-		err = res.Scan(&Namn, &Gironummer, &Typ, &RefKonto, &Löpnr)
+		_ = res.Scan(&Namn, &Gironummer, &Typ, &RefKonto, &Löpnr)
 
 		_, _ = fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td>", toUtf8(Namn), toUtf8(Gironummer), toUtf8(Typ), toUtf8(RefKonto))
 		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/platser\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%s\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"editform\"><input type=\"submit\" value=\"Redigera\"></form></td>\n", Löpnr)
@@ -253,7 +253,7 @@ func hanteraplatser(w http.ResponseWriter, req *http.Request) {
 	formaction := req.FormValue("action")
 	var lopnr = -1
 	if len(req.FormValue("lopnr")) > 0 {
-		lopnr, err = strconv.Atoi(req.FormValue("lopnr"))
+		lopnr, _ = strconv.Atoi(req.FormValue("lopnr"))
 	}
 
 	switch formaction {
@@ -319,7 +319,7 @@ func getPlaceNames() []string {
 
 	var Namn []byte // size 40, index
 	for res.Next() {
-		err = res.Scan(&Namn)
+		_ = res.Scan(&Namn)
 		names = append(names, toUtf8(Namn))
 	}
 	res.Close()

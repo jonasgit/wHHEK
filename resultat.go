@@ -46,7 +46,7 @@ func hanteraYResult(w http.ResponseWriter, req *http.Request) {
 	formYear := 0
 	selectYear := time.Now().Year()
 	if len(req.FormValue("formYear")) > 3 {
-		formYear, err = strconv.Atoi(req.FormValue("formYear"))
+		formYear, _ = strconv.Atoi(req.FormValue("formYear"))
 		if formYear > 1900 && formYear < 2200 {
 			selectYear = formYear
 		}
@@ -102,10 +102,10 @@ func hanteraYResult(w http.ResponseWriter, req *http.Request) {
 	}
 
 	var date []byte // size 10
-	err = db.QueryRow("SELECT MIN(Datum) FROM Transaktioner").Scan(&date)
-	firstYear, err := strconv.Atoi(toUtf8(date)[0:4])
-	err = db.QueryRow("SELECT MAX(Datum) FROM Transaktioner").Scan(&date)
-	lastYear, err := strconv.Atoi(toUtf8(date)[0:4])
+	_ = db.QueryRow("SELECT MIN(Datum) FROM Transaktioner").Scan(&date)
+	firstYear, _ := strconv.Atoi(toUtf8(date)[0:4])
+	_ = db.QueryRow("SELECT MAX(Datum) FROM Transaktioner").Scan(&date)
+	lastYear, _ := strconv.Atoi(toUtf8(date)[0:4])
 
 	var years []string
 	for i := firstYear; i <= lastYear; i++ {
@@ -163,7 +163,7 @@ func sumKatYear(kat string, selectYear int, intyp bool) decimal.Decimal {
 	var amount []byte // BCD / Decimal Precision 19
 
 	for res.Next() {
-		err = res.Scan(&amount)
+		_ = res.Scan(&amount)
 
 		decamount, err := decimal.NewFromString(toUtf8(amount))
 		if err != nil {
@@ -198,7 +198,7 @@ func sumPlaceYear(kat string, selectYear int) decimal.Decimal {
 	var amount []byte // BCD / Decimal Precision 19
 
 	for res.Next() {
-		err = res.Scan(&amount)
+		_ = res.Scan(&amount)
 
 		decamount, err := decimal.NewFromString(toUtf8(amount))
 		if err != nil {

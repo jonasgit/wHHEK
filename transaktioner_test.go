@@ -1,4 +1,4 @@
-//-*- coding: utf-8 -*-
+// -*- coding: utf-8 -*-
 package main
 
 import (
@@ -84,7 +84,7 @@ func TestTransaktionDB1(t *testing.T) {
 		t.Log("Antal transaktioner ok (1).")
 	}
 
-	saldoExpected, err = decimal.NewFromString("0.1")
+	saldoExpected, _ = decimal.NewFromString("0.1")
 	konto = hämtaKonto(db, 1)
 
 	if !konto.Saldo.Equal(saldoExpected) {
@@ -139,7 +139,7 @@ func TestTransaktionDB2(t *testing.T) {
 		t.Log("Antal transaktioner ok (9).")
 	}
 
-	saldoExpected, err := decimal.NewFromString("0.9")
+	saldoExpected, _ := decimal.NewFromString("0.9")
 	konto := hämtaKonto(db, 1)
 
 	if !konto.Saldo.Equal(saldoExpected) {
@@ -173,7 +173,7 @@ func TestTransaktionDB2(t *testing.T) {
 		t.Log("Antal transaktioner ok (11).")
 	}
 
-	saldoExpected, err = decimal.NewFromString("1.1")
+	saldoExpected, _ = decimal.NewFromString("1.1")
 	konto = hämtaKonto(db, 1)
 
 	if !konto.Saldo.Equal(saldoExpected) {
@@ -242,7 +242,7 @@ func TestTransaktionDB3(t *testing.T) {
 		t.Log("Antal transaktioner ok (1).")
 	}
 
-	saldoExpected, err = decimal.NewFromString("1.2")
+	saldoExpected, _ = decimal.NewFromString("1.2")
 	konto = hämtaKonto(db, 1)
 
 	if !konto.Saldo.Equal(saldoExpected) {
@@ -265,7 +265,7 @@ func TestTransaktionDB3(t *testing.T) {
 	addTransaktionInköp("Plånboken", plats, "2021-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås", false)
 	konto = hämtaKonto(db, 1)
 
-	saldoExpected, err = decimal.NewFromString("1.1")
+	saldoExpected, _ = decimal.NewFromString("1.1")
 	if !konto.Saldo.Equal(saldoExpected) {
 		t.Error("Konto saldo '" + saldoExpected.String() + "' != '" + konto.Saldo.String() + "'.")
 	} else {
@@ -283,7 +283,7 @@ func TestTransaktionDB3(t *testing.T) {
 	addTransaktionInköp("Plånboken", plats, "2021-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås", false)
 	konto = hämtaKonto(db, 1)
 
-	saldoExpected, err = decimal.NewFromString("0.9")
+	saldoExpected, _ = decimal.NewFromString("0.9")
 	if !konto.Saldo.Equal(saldoExpected) {
 		t.Error("Konto saldo '" + saldoExpected.String() + "' != '" + konto.Saldo.String() + "'.")
 	} else {
@@ -342,7 +342,7 @@ func TestTransaktionDB4(t *testing.T) {
 		t.Log("Antal transaktioner ok (1).")
 	}
 
-	saldoExpected, err = decimal.NewFromString("1.2")
+	saldoExpected, _ = decimal.NewFromString("1.2")
 	konto = hämtaKonto(db, 1)
 
 	if !konto.Saldo.Equal(saldoExpected) {
@@ -365,14 +365,14 @@ func TestTransaktionDB4(t *testing.T) {
 	addTransaktionInköp("Plånboken", plats, "2099-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås", false)
 	konto = hämtaKonto(db, 1)
 
-	saldoExpected, err = decimal.NewFromString("1.1")
+	saldoExpected, _ = decimal.NewFromString("1.1")
 	if !konto.Saldo.Equal(saldoExpected) {
 		t.Error("Konto saldo '" + saldoExpected.String() + "' != '" + konto.Saldo.String() + "'.")
 	} else {
 		t.Log("Test saldo ok. 1.1")
 	}
 
-	saldoExpected, err = decimal.NewFromString("1.2")
+	saldoExpected, _ = decimal.NewFromString("1.2")
 	saldo = saldoKonto(db, "Plånboken", "2021-07-28")
 	if !saldo.Equal(saldoExpected) {
 		t.Error("Konto saldo efter '" + saldo.String() + "' != '" + saldoExpected.String() + "'.")
@@ -380,7 +380,7 @@ func TestTransaktionDB4(t *testing.T) {
 		t.Log("Test efter saldo ok. " + saldoExpected.String())
 	}
 
-	saldoExpected, err = decimal.NewFromString("1.1")
+	saldoExpected, _ = decimal.NewFromString("1.1")
 	saldo = saldoKonto(db, "Plånboken", "")
 	if !saldo.Equal(saldoExpected) {
 		t.Error("Konto saldo efter '" + saldo.String() + "' != '" + saldoExpected.String() + "'.")
@@ -432,7 +432,6 @@ func TestTransaktionDB5(t *testing.T) {
 		t.Log("Antal transaktioner ok (1).")
 	}
 
-	saldoExpected, err = decimal.NewFromString("1.2")
 	trans := hämtaTransaktion(1)
 
 	if trans.comment != comment {
@@ -566,7 +565,7 @@ func TestTransaktionDB7(t *testing.T) {
 		t.Log("Test Text ok.", "' '")
 	}
 
-	saldoExpected, err = decimal.NewFromString("0.2")
+	saldoExpected, _ = decimal.NewFromString("0.2")
 	saldo := saldoKonto(db, "Plånboken", "2021-07-28")
 	if !saldo.Equal(saldoExpected) {
 		t.Error("Konto saldo efter '" + saldo.String() + "' != '" + saldoExpected.String() + "'.")

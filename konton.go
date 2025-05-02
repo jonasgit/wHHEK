@@ -51,7 +51,7 @@ func printKonton(w http.ResponseWriter, db *sql.DB) {
 	_, _ = fmt.Fprintf(w, "<th>Årsskiftesmånad</th>")
 	_, _ = fmt.Fprintf(w, "<th>Redigera</th><th>Radera</th>\n")
 	for res.Next() {
-		err = res.Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &Löpnr, &SaldoArsskifte, &ArsskifteManad)
+		_ = res.Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &Löpnr, &SaldoArsskifte, &ArsskifteManad)
 
 		_, _ = fmt.Fprintf(w, "<tr>")
 		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(KontoNummer))
@@ -68,7 +68,7 @@ func printKonton(w http.ResponseWriter, db *sql.DB) {
 	_, _ = fmt.Fprintf(w, "</table>\n")
 
 	res.Close()
-	
+
 	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/konton\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"addform\"><input type=\"submit\" value=\"Nytt konto\"></form>\n")
 }
 
@@ -319,7 +319,7 @@ func hanterakonton(w http.ResponseWriter, req *http.Request) {
 	formaction := req.FormValue("action")
 	var lopnr = -1
 	if len(req.FormValue("lopnr")) > 0 {
-		lopnr, err = strconv.Atoi(req.FormValue("lopnr"))
+		lopnr, _ = strconv.Atoi(req.FormValue("lopnr"))
 	}
 
 	switch formaction {
@@ -375,7 +375,7 @@ func getAccNames() []string {
 
 	var Benämning []byte // size 40, index
 	for res.Next() {
-		err = res.Scan(&Benämning)
+		_ = res.Scan(&Benämning)
 		names = append(names, toUtf8(Benämning))
 	}
 	res.Close()
@@ -435,8 +435,8 @@ func hämtaKonto(db *sql.DB, lopnr int) konto {
 
 	retkonto.KontoNummer = toUtf8(KontoNummer)
 	retkonto.Benämning = toUtf8(Benämning)
-	retkonto.Saldo, err = decimal.NewFromString(toUtf8(Saldo))
-	retkonto.StartSaldo, err = decimal.NewFromString(toUtf8(StartSaldo))
+	retkonto.Saldo, _ = decimal.NewFromString(toUtf8(Saldo))
+	retkonto.StartSaldo, _ = decimal.NewFromString(toUtf8(StartSaldo))
 	retkonto.StartManad = toUtf8(StartManad)
 	retkonto.SaldoArsskifte = toUtf8(SaldoArsskifte)
 	retkonto.ArsskifteManad = toUtf8(ArsskifteManad)
@@ -457,13 +457,13 @@ func saldoKonto(db *sql.DB, accName string, endDate string) decimal.Decimal {
 	var res *sql.Rows
 
 	var rawStart []byte // size 16
-	
-	err = db.QueryRowContext(ctx,
+
+	_ = db.QueryRowContext(ctx,
 		`select startsaldo
   from konton
   where benämning = ?`, accName).Scan(&rawStart)
 	res2 := toUtf8(rawStart)
-	startSaldo, err := decimal.NewFromString(res2)
+	startSaldo, _ := decimal.NewFromString(res2)
 	currSaldo := startSaldo
 	//fmt.Println("saldoKonto: startsaldo ", currSaldo)
 
@@ -491,7 +491,7 @@ order by datum,löpnr`, endDate, accName, accName)
 	var comment []byte // size 60
 
 	for res.Next() {
-		err = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
+		_ = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
 		decAmount, _ := decimal.NewFromString(toUtf8(amount))
 		//fmt.Println("saldoKonto: decAmount ", decAmount)
 		//fmt.Println("saldoKonto: toAcc ", toUtf8(toAcc))
@@ -530,12 +530,12 @@ func saldonKonto(db *sql.DB, accName string, endDate string) (decimal.Decimal, d
 	var res *sql.Rows
 
 	var rawStart []byte // size 16
-	err = db.QueryRowContext(ctx,
+	_ = db.QueryRowContext(ctx,
 		`select startsaldo
   from konton
   where benämning = ?`, accName).Scan(&rawStart)
 	res2 := toUtf8(rawStart)
-	startSaldo, err := decimal.NewFromString(res2)
+	startSaldo, _ := decimal.NewFromString(res2)
 	currSaldo := startSaldo
 	totSaldo := currSaldo
 	//fmt.Println("saldoKonto: startsaldo ", currSaldo)
@@ -564,7 +564,7 @@ order by datum,löpnr`, accName, accName)
 	var comment []byte // size 60
 
 	for res.Next() {
-		err = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
+		_ = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
 		decAmount, _ := decimal.NewFromString(toUtf8(amount))
 		//fmt.Println("saldoKonto: decAmount ", decAmount)
 		//fmt.Println("saldoKonto: toAcc ", toUtf8(toAcc))

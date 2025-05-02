@@ -653,7 +653,7 @@ type Acccomp1Data struct {
 }
 
 func compareaccount(w http.ResponseWriter, req *http.Request) {
-	file, fileMetaData, err := req.FormFile("uploadfile")
+	file, fileMetaData, _ := req.FormFile("uploadfile")
 	if file != nil {
 		defer func(file multipart.File) {
 			_ = file.Close()
@@ -663,7 +663,7 @@ func compareaccount(w http.ResponseWriter, req *http.Request) {
 	var kontonamn = ""
 	var filtyp = ""
 
-	err = req.ParseMultipartForm(32 << 20) // buffer 32MB
+	err := req.ParseMultipartForm(32 << 20) // buffer 32MB
 	if err != nil {
 		log.Println("compareacc parseerr:", err, getCurrentFuncName())
 	} else {

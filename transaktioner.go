@@ -64,16 +64,16 @@ order by datum,löpnr`, endDate, startDate, kontonamn, kontonamn)
 
 	for res.Next() {
 		var record transaction
-		err = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
+		_ = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
 
 		record.lopnr = nummer
 		record.fromAcc = toUtf8(fromAcc)
 		record.toAcc = toUtf8(toAcc)
 		record.tType = toUtf8(tType)
 		record.what = toUtf8(what)
-		record.date, err = time.Parse("2006-01-02", toUtf8(date))
+		record.date, _ = time.Parse("2006-01-02", toUtf8(date))
 		record.who = toUtf8(who)
-		record.amount, err = decimal.NewFromString(toUtf8(amount))
+		record.amount, _ = decimal.NewFromString(toUtf8(amount))
 		record.comment = toUtf8(comment)
 		record.fixed = fixed
 
@@ -88,6 +88,7 @@ order by datum,löpnr`, endDate, startDate, kontonamn, kontonamn)
 
 //go:embed html/transakt4.html
 var htmltrans4 string
+
 type Trans4Data struct {
 	Transaktioner []TransactionType
 }
@@ -111,7 +112,7 @@ order by datum,löpnr
 `
 	queryargs = append(queryargs, endDate)
 	queryargs = append(queryargs, startDate)
-	
+
 	if len(limitcomment) > 0 {
 		querystring2 = querystring2 + ` and (Text like ?) `
 		queryargs = append(queryargs, limitcomment)
@@ -150,15 +151,15 @@ order by datum,löpnr
 	}
 
 	querystring = querystring1 + querystring2 + querystring3
-	b := make([]interface{},0,len(queryargs))
-	for _,i:= range queryargs {
-		b = append(b,i)
+	b := make([]interface{}, 0, len(queryargs))
+	for _, i := range queryargs {
+		b = append(b, i)
 	}
 	res, err = db.QueryContext(ctx, querystring, b...)
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	var fromAcc []byte // size 40
 	var toAcc []byte   // size 40
 	var tType []byte   // size 40
@@ -170,12 +171,12 @@ order by datum,löpnr
 	var saldo []byte   // BCD / Decimal Precision 19
 	var fixed bool     // Boolean
 	var comment []byte // size 60
-	
+
 	var transactions []TransactionType
 
 	for res.Next() {
-		err = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
-		
+		_ = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
+
 		var transaction TransactionType
 		transaction.Löpnr = strconv.Itoa(nummer)
 		transaction.AccName = toUtf8(fromAcc)
@@ -194,7 +195,7 @@ order by datum,löpnr
 		transactions = append(transactions, transaction)
 	}
 	res.Close()
-	
+
 	t := template.New("Transaktion4")
 	t, _ = t.Parse(htmltrans4)
 	data := Trans4Data{
@@ -212,15 +213,16 @@ func isobytetodate(rawdate []byte) (time.Time, error) {
 
 //go:embed html/transakt3.html
 var htmltrans3 string
+
 type Trans3Data struct {
-	DBFirstDay string
-	DBLastDay string
+	DBFirstDay   string
+	DBLastDay    string
 	FormStartDay string
-	FormLastDay string
-	FormComment string
-	Kontonamn []string
-	Platser []string
-	Vad     []string
+	FormLastDay  string
+	FormComment  string
+	Kontonamn    []string
+	Platser      []string
+	Vad          []string
 }
 
 func htransactions(w http.ResponseWriter, req *http.Request) {
@@ -280,13 +282,13 @@ func handletransactions(w http.ResponseWriter, req *http.Request) {
 		_, _ = fmt.Fprintf(w, "Transactions: No database open<p>\n")
 	} else {
 		var date []byte // size 10
-		err = db.QueryRow("SELECT MIN(Datum) FROM Transaktioner").Scan(&date)
+		_ = db.QueryRow("SELECT MIN(Datum) FROM Transaktioner").Scan(&date)
 		kontostartdatum, err := isobytetodate(date)
 		if err != nil {
 			log.Print(err)
 		}
 
-		err = db.QueryRow("SELECT MAX(Datum) FROM Transaktioner").Scan(&date)
+		_ = db.QueryRow("SELECT MAX(Datum) FROM Transaktioner").Scan(&date)
 		kontoslutdatum, err := isobytetodate(date)
 		if err != nil {
 			log.Print(err)
@@ -298,14 +300,14 @@ func handletransactions(w http.ResponseWriter, req *http.Request) {
 		t := template.New("Transaktion3")
 		t, _ = t.Parse(htmltrans3)
 		data := Trans3Data{
-			DBFirstDay: kontostartdatum.Format("2006-01-02"),
-			DBLastDay: kontoslutdatum.Format("2006-01-02"),
+			DBFirstDay:   kontostartdatum.Format("2006-01-02"),
+			DBLastDay:    kontoslutdatum.Format("2006-01-02"),
 			FormStartDay: startDate,
-			FormLastDay: endDate,
-			FormComment: req.FormValue("comment"),
-			Kontonamn: append([]string{""}, getAccNames()...),
-			Platser: append([]string{""}, getPlaceNames()...),
-			Vad: trtypes,
+			FormLastDay:  endDate,
+			FormComment:  req.FormValue("comment"),
+			Kontonamn:    append([]string{""}, getAccNames()...),
+			Platser:      append([]string{""}, getPlaceNames()...),
+			Vad:          trtypes,
 		}
 		err = t.Execute(w, data)
 		if err != nil {
@@ -316,9 +318,11 @@ func handletransactions(w http.ResponseWriter, req *http.Request) {
 
 //go:embed html/transakt1.html
 var htmltrans1 string
+
 type Trans1Data struct {
 	DBName string
 }
+
 //go:embed html/transakt2.html
 var htmltrans2 string
 
@@ -341,7 +345,7 @@ func transactions(w http.ResponseWriter, req *http.Request) {
 	formaction := req.FormValue("action")
 	var lopnr = -1
 	if len(req.FormValue("lopnr")) > 0 {
-		lopnr, err = strconv.Atoi(req.FormValue("lopnr"))
+		lopnr, _ = strconv.Atoi(req.FormValue("lopnr"))
 	}
 
 	switch formaction {
@@ -370,7 +374,7 @@ func r_e_transaction(w http.ResponseWriter, req *http.Request) {
 	formaction := req.FormValue("action")
 	var lopnr = -1
 	if len(req.FormValue("lopnr")) > 0 {
-		lopnr, err = strconv.Atoi(req.FormValue("lopnr"))
+		lopnr, _ = strconv.Atoi(req.FormValue("lopnr"))
 	}
 
 	switch formaction {
@@ -400,6 +404,7 @@ func raderaTransaction(w http.ResponseWriter, lopnr int, db *sql.DB) {
 
 //go:embed html/newtransaction1.html
 var newtrans1 string
+
 //go:embed html/newtransaction2.html
 var newtrans2 string
 
@@ -414,7 +419,6 @@ type NewTrans2Data struct {
 	VadUtgift  []string
 	Today      string
 }
-
 
 func newtransaction(w http.ResponseWriter, req *http.Request) {
 	// Common
@@ -433,7 +437,6 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 	}
 	_ = tmpl1.Execute(w, data)
 
-
 	// del 2
 	currentTime := time.Now()
 	currDate := currentTime.Format("2006-01-02")
@@ -441,12 +444,12 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 	tmpl2 := template.New("wHHEK newtrans2")
 	tmpl2, _ = tmpl2.Parse(newtrans2)
 	data2 := NewTrans2Data{
-		Kontonamn: kontonamn,
-		Platser: platser,
-		Personer: personer,
+		Kontonamn:  kontonamn,
+		Platser:    platser,
+		Personer:   personer,
 		VadInkomst: vadInkomst,
-		VadUtgift: vadUtgift,
-		Today: currDate,
+		VadUtgift:  vadUtgift,
+		Today:      currDate,
 	}
 	_ = tmpl2.Execute(w, data2)
 }
@@ -458,7 +461,7 @@ func addTransaktionSQL(transtyp string, fromacc string, toacc string, date strin
 	if len(text) < 1 {
 		text = " "
 	}
-	
+
 	sqlStatement := `
 	INSERT INTO Transaktioner (FrånKonto,TillKonto,Typ,Datum,Vad,Vem,Belopp,Saldo,[Fastöverföring],[Text])
 	VALUES (?,?,?,?,?,?,?,?,?,?)`
@@ -550,7 +553,7 @@ func addTransaktionÖverföring(fromacc string, toacc string, date string, who s
 
 func addtransaction(w http.ResponseWriter, req *http.Request) {
 	//log.Println("addtransaction: start")
-	
+
 	err := req.ParseForm()
 	if err != nil {
 		log.Fatal(err)
@@ -669,30 +672,35 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 
 //go:embed html/transakt5.html
 var htmltrans5 string
+
 //go:embed html/transakt5ink.html
 var htmltrans5ink string
+
 //go:embed html/transakt5ins.html
 var htmltrans5ins string
+
 //go:embed html/transakt5ovf.html
 var htmltrans5ovf string
+
 //go:embed html/transakt5ut.html
 var htmltrans5ut string
+
 type Trans5Data struct {
 	Kontonamn []string
-	Platser []string
-	Personer []string
-	Vadin []string
-	Vadut []string
-	FromAcc string
-	Dest string
-	Typ string
-	Datum string
-	Vad string
-	Vem string
-	Belopp string
-	Fixed string
-	Text string
-	Löpnr string
+	Platser   []string
+	Personer  []string
+	Vadin     []string
+	Vadut     []string
+	FromAcc   string
+	Dest      string
+	Typ       string
+	Datum     string
+	Vad       string
+	Vem       string
+	Belopp    string
+	Fixed     string
+	Text      string
+	Löpnr     string
 }
 
 func editformTransaction(w http.ResponseWriter, lopnr int, db *sql.DB) {
@@ -720,10 +728,12 @@ func editformTransaction(w http.ResponseWriter, lopnr int, db *sql.DB) {
 
 	t := template.New("Transaktion5")
 	switch toUtf8(tType) {
-	case "Fast Inkomst": fallthrough
+	case "Fast Inkomst":
+		fallthrough
 	case "Insättning":
 		t, _ = t.Parse(htmltrans5ins)
-	case "Fast Utgift": fallthrough
+	case "Fast Utgift":
+		fallthrough
 	case "Inköp":
 		t, _ = t.Parse(htmltrans5ink)
 	case "Uttag":
@@ -735,20 +745,20 @@ func editformTransaction(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	}
 	data := Trans5Data{
 		Kontonamn: getAccNames(),
-		Personer: getPersonNames(),
-		Platser: getPlaceNames(),
-		Vadin: getTypeInNames(),
-		Vadut: getTypeOutNames(),
-		FromAcc: toUtf8(fromAcc),
-		Dest: toUtf8(toAcc),
-		Typ: toUtf8(tType),
-		Datum: toUtf8(date),
-		Vad: toUtf8(what),
-		Vem: toUtf8(who),
-		Belopp: toUtf8(amount),
-		Fixed: strconv.FormatBool(fixed),
-		Text: toUtf8(comment),
-		Löpnr: strconv.Itoa(lopnr),
+		Personer:  getPersonNames(),
+		Platser:   getPlaceNames(),
+		Vadin:     getTypeInNames(),
+		Vadut:     getTypeOutNames(),
+		FromAcc:   toUtf8(fromAcc),
+		Dest:      toUtf8(toAcc),
+		Typ:       toUtf8(tType),
+		Datum:     toUtf8(date),
+		Vad:       toUtf8(what),
+		Vem:       toUtf8(who),
+		Belopp:    toUtf8(amount),
+		Fixed:     strconv.FormatBool(fixed),
+		Text:      toUtf8(comment),
+		Löpnr:     strconv.Itoa(lopnr),
 	}
 	err = t.Execute(w, data)
 	if err != nil {
@@ -758,6 +768,7 @@ func editformTransaction(w http.ResponseWriter, lopnr int, db *sql.DB) {
 
 //go:embed html/transakt6.html
 var htmltrans6 string
+
 type Trans6Data struct {
 	Lopnr int
 }
@@ -805,14 +816,14 @@ func updateTransactionHTML(w http.ResponseWriter, lopnr int, req *http.Request, 
 		comment = req.FormValue("comment")
 	}
 
-	err := updateTransactionSQL(lopnr, db, fromAcc, toAcc, tType, date, what, who, amount, fixed, comment)
-	
+	_ = updateTransactionSQL(lopnr, db, fromAcc, toAcc, tType, date, what, who, amount, fixed, comment)
+
 	t := template.New("Transaktion6")
 	t, _ = t.Parse(htmltrans6)
 	data := Trans6Data{
 		Lopnr: lopnr,
 	}
-	err = t.Execute(w, data)
+	err := t.Execute(w, data)
 	if err != nil {
 		log.Println("While serving HTTP trans6: ", err)
 	}
@@ -887,16 +898,16 @@ func hämtaTransaktion(lopnr int) (result transaction) {
 
 	for res.Next() {
 		var record transaction
-		err = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
+		_ = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
 
 		record.lopnr = nummer
 		record.fromAcc = toUtf8(fromAcc)
 		record.toAcc = toUtf8(toAcc)
 		record.tType = toUtf8(tType)
 		record.what = toUtf8(what)
-		record.date, err = isobytetodate(date)
+		record.date, _ = isobytetodate(date)
 		record.who = toUtf8(who)
-		record.amount, err = decimal.NewFromString(toUtf8(amount))
+		record.amount, _ = decimal.NewFromString(toUtf8(amount))
 		record.comment = toUtf8(comment)
 		record.fixed = fixed
 

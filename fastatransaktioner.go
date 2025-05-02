@@ -27,7 +27,6 @@ type fixedtransaction struct {
 	who     string
 	amount  decimal.Decimal
 	HurOfta string
-	comment string
 	rakning bool
 }
 

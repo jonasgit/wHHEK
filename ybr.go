@@ -71,7 +71,7 @@ func sumKatToday(kat string, selectYear int, intyp bool) decimal.Decimal {
 	var amount []byte // BCD / Decimal Precision 19
 
 	for res.Next() {
-		err = res.Scan(&amount)
+		_ = res.Scan(&amount)
 
 		decamount, err := decimal.NewFromString(toUtf8(amount))
 		if err != nil {

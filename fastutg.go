@@ -103,7 +103,7 @@ func editfastutgHTML(w http.ResponseWriter, req *http.Request) {
 	}
 	_ = t.Execute(w, data)
 
-	r_e_fastutg(w, req, db)
+	r_e_fastutg(req, db)
 	editfastutg(w, req, db)
 
 	showFastUtg(w, db)
@@ -233,7 +233,7 @@ func editfastutg(w http.ResponseWriter, req *http.Request, db *sql.DB) {
 	log.Println("editfastutg slut")
 }
 
-func r_e_fastutg(w http.ResponseWriter, req *http.Request, db *sql.DB) {
+func r_e_fastutg(req *http.Request, db *sql.DB) {
 	log.Println("Func r_e_fastutg")
 
 	err := req.ParseForm()
@@ -251,14 +251,14 @@ func r_e_fastutg(w http.ResponseWriter, req *http.Request, db *sql.DB) {
 	case "editform":
 		log.Println("editform not implemented")
 	case "update":
-		updateFastUtgHTML(w, lopnr, req, db)
+		updateFastUtgHTML(lopnr, req, db)
 	default:
 		log.Println("Okänd form action: ", formaction, getCurrentFuncName())
 	}
 	log.Println("Func r_e_fastutg finished")
 }
 
-func updateFastUtgHTML(w http.ResponseWriter, lopnr int, req *http.Request, db *sql.DB) {
+func updateFastUtgHTML(lopnr int, req *http.Request, db *sql.DB) {
 	log.Println("updateFastUtgHTML lopnr: ", lopnr)
 
 	var fromAcc = ""
@@ -302,16 +302,6 @@ func updateFastUtgHTML(w http.ResponseWriter, lopnr int, req *http.Request, db *
 	if err != nil {
 		log.Println("Error updating fixed expense: ", err)
 		return
-	}
-
-	t := template.New("Fasta6")
-	t, _ = t.Parse(htmlfasta6)
-	data := Fasta6Data{
-		Lopnr: lopnr,
-	}
-	err = t.Execute(w, data)
-	if err != nil {
-		log.Println("While serving HTTP fasta6: ", err)
 	}
 }
 
