@@ -18,11 +18,11 @@ import (
 var platserTemplate embed.FS
 
 type Plats struct {
-	Lopnr      int      // autoinc Primary Key, index
-	Namn       string   // size 40
-	Gironummer string   // size 20
-	Typ        bool     // size 2
-	RefKonto   string   // size 40
+	Lopnr      int    // autoinc Primary Key, index
+	Namn       string // size 40
+	Gironummer string // size 20
+	Typ        bool   // size 2
+	RefKonto   string // size 40
 }
 
 type PlatserTemplateData struct {
@@ -54,10 +54,10 @@ func hämtaPlats(db *sql.DB, lopnr int) Plats {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	var Namn []byte        // size 40
-	var Gironummer []byte  // size 20
-	var Typ []byte         // size 2
-	var RefKonto []byte    // size 40
+	var Namn []byte       // size 40
+	var Gironummer []byte // size 20
+	var Typ []byte        // size 2
+	var RefKonto []byte   // size 40
 
 	err := db.QueryRowContext(ctx,
 		`SELECT Namn,Gironummer,Typ,RefKonto FROM Platser WHERE (Löpnr=?)`, lopnr).Scan(&Namn, &Gironummer, &Typ, &RefKonto)
@@ -142,10 +142,10 @@ func updatePlats(db *sql.DB, lopnr int, namn string, gironum string, acctype str
 
 func hanteraplatser(w http.ResponseWriter, req *http.Request) {
 	var tmpl *template.Template
-	var err error
 
 	// First try to load from file system (for development)
-	if _, err := os.Stat("templates/platser.html"); err == nil {
+	_, err := os.Stat("templates/platser.html")
+	if err == nil {
 		tmpl, _ = template.ParseFiles("templates/platser.html")
 	} else {
 		// Fall back to embedded template
