@@ -18,11 +18,11 @@ import (
 var platserTemplate embed.FS
 
 type Plats struct {
-	Lopnr      int
-	Namn       string
-	Gironummer string
-	Typ        bool
-	RefKonto   string
+	Lopnr      int      // autoinc Primary Key, index
+	Namn       string   // size 40
+	Gironummer string   // size 20
+	Typ        bool     // size 2
+	RefKonto   string   // size 40
 }
 
 type PlatserTemplateData struct {
@@ -54,10 +54,10 @@ func hämtaPlats(db *sql.DB, lopnr int) Plats {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	var Namn []byte
-	var Gironummer []byte
-	var Typ []byte
-	var RefKonto []byte
+	var Namn []byte        // size 40
+	var Gironummer []byte  // size 20
+	var Typ []byte         // size 2
+	var RefKonto []byte    // size 40
 
 	err := db.QueryRowContext(ctx,
 		`SELECT Namn,Gironummer,Typ,RefKonto FROM Platser WHERE (Löpnr=?)`, lopnr).Scan(&Namn, &Gironummer, &Typ, &RefKonto)
