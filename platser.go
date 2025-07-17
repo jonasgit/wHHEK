@@ -10,12 +10,11 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 )
 
-//go:embed html/platser.html
-var platserTemplate embed.FS
+//go:embed html
+var htmlTemplates embed.FS
 
 type Plats struct {
 	Lopnr      int    // autoinc Primary Key, index
@@ -141,25 +140,15 @@ func updatePlats(db *sql.DB, lopnr int, namn string, gironum string, acctype str
 }
 
 func hanteraplatser(w http.ResponseWriter, req *http.Request) {
-	var tmpl *template.Template
-
 	// First try to load from file system (for development)
-	_, err := os.Stat("templates/platser.html")
-	if err == nil {
-		tmpl, _ = template.ParseFiles("templates/platser.html")
-	} else {
+	tmpl, err := template.ParseFiles("templates/platser.html")
+	if err != nil {
 		// Fall back to embedded template
-		tmplContent, err := platserTemplate.ReadFile("templates/platser.html")
+		tmpl, err = template.New("platser.html").ParseFS(htmlTemplates, "html/platser.html")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		tmpl, _ = template.New("platser").Parse(string(tmplContent))
-	}
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
 	data := PlatserTemplateData{
