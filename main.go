@@ -156,7 +156,7 @@ package main
 import (
 	"context"
 	"database/sql"
-	_ "embed"
+	"embed"
 	"errors"
 	"flag"
 	"fmt"
@@ -184,6 +184,10 @@ var dbtype uint8 = 0 // 0=none, 1=mdb/Access2.0, 2=sqlite3
 var currentDatabase = "NONE"
 var dbdecimaldot bool = false
 
+//go:embed html
+var htmlTemplates embed.FS
+
+
 func hello(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func hello")
 
@@ -196,9 +200,6 @@ type RootPageData struct {
 	Filnamn    []string
 }
 
-//go:embed html/root.html
-var htmlroot string
-
 func root(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func root")
 
@@ -207,8 +208,7 @@ func root(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	tmpl := template.New("wHHEK root")
-	tmpl, _ = tmpl.Parse(htmlroot)
+	tmpl, err := template.New("root.html").ParseFS(htmlTemplates, "html/root.html")
 
 	files, err := os.ReadDir(".")
 	if err != nil {
@@ -282,15 +282,9 @@ func GetCountPendingÖverföringar(db *sql.DB, currDate string) int {
 	return cnt
 }
 
-//go:embed html/main4.html
-var htmlmain4 string
-
 type Main4Data struct {
 	Antal int
 }
-
-//go:embed html/main5.html
-var htmlmain5 string
 
 type Main5Data struct {
 	Antal int
@@ -301,8 +295,7 @@ func checkÖverföringar(w http.ResponseWriter, db *sql.DB) {
 	currDate := currentTime.Format("2006-01-02")
 	antal := GetCountPendingÖverföringar(db, currDate)
 	if antal > 0 {
-		t := template.New("Main4")
-		t, _ = t.Parse(htmlmain4)
+		t, _ := template.New("main4.html").ParseFS(htmlTemplates, "html/main4.html")
 		data := Main4Data{
 			Antal: antal,
 		}
@@ -321,8 +314,8 @@ func checkÖverföringar(w http.ResponseWriter, db *sql.DB) {
 	currDate = lastOfMonth.Format("2006-01-02")
 	antal = GetCountPendingÖverföringar(db, currDate)
 	if antal > 0 {
-		t := template.New("Main5")
-		t, _ = t.Parse(htmlmain5)
+		t, _ := template.New("main5.html").ParseFS(htmlTemplates, "html/main5.html")
+
 		data := Main5Data{
 			Antal: antal,
 		}
@@ -333,9 +326,6 @@ func checkÖverföringar(w http.ResponseWriter, db *sql.DB) {
 	}
 }
 
-//go:embed html/main1.html
-var htmlmain1 string
-
 type Main1Data struct {
 	CurrDBName string
 	CurrDate   string
@@ -345,8 +335,7 @@ func printSummaryHead(w http.ResponseWriter) {
 	currentTime := time.Now()
 	currDate := currentTime.Format("2006-01-02")
 
-	t := template.New("Lösenordshantering")
-	t, _ = t.Parse(htmlmain1)
+	t, _ := template.New("main1.html").ParseFS(htmlTemplates, "html/main1.html")
 	data := Main1Data{
 		CurrDBName: currentDatabase,
 		CurrDate:   currDate,
@@ -354,12 +343,8 @@ func printSummaryHead(w http.ResponseWriter) {
 	_ = t.Execute(w, data)
 }
 
-//go:embed html/main6.html
-var htmlmain6 string
-
 func printAccounts(w http.ResponseWriter) {
-	t := template.New("Main6")
-	t, _ = t.Parse(htmlmain6)
+	t, _ := template.New("main6.html").ParseFS(htmlTemplates, "html/main6.html")
 	err := t.Execute(w, t)
 	if err != nil {
 		log.Println("While serving HTTP main6: ", err)
@@ -373,9 +358,6 @@ type sumType struct {
 	DaySaldo string
 	TotSaldo string
 }
-
-//go:embed html/main11.html
-var htmlmain11 string
 
 type Main11Data struct {
 	Konton    []sumType
@@ -452,8 +434,7 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 		kontonDolda = append(kontonDolda, konto)
 	}
 
-	t := template.New("Main11")
-	t, _ = t.Parse(htmlmain11)
+	t, _ := template.New("main11.html").ParseFS(htmlTemplates, "html/main11.html")
 	data := Main11Data{
 		Konton:    kontonDolda,
 		DoldaNamn: doldaNamn,
@@ -468,18 +449,11 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 	}
 }
 
-//go:embed html/main12.html
-var htmlmain12 string
-
-//go:embed html/main13.html
-var htmlmain13 string
-
 func checkpwd(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func checkpwd")
 
 	if nopwDb == nil {
-		t := template.New("Main12")
-		t, _ = t.Parse(htmlmain12)
+		t, _ := template.New("main12.html").ParseFS(htmlTemplates, "html/main12.html")
 		err := t.Execute(w, nil)
 		if err != nil {
 			log.Println("While serving HTTP main12: ", err)
@@ -494,8 +468,7 @@ func checkpwd(w http.ResponseWriter, req *http.Request) {
 			nopwDb = nil
 			showsummary(w)
 		} else {
-			t := template.New("Main13")
-			t, _ = t.Parse(htmlmain13)
+			t, _ := template.New("main13.html").ParseFS(htmlTemplates, "html/main13.html")
 			err := t.Execute(w, nil)
 			if err != nil {
 				log.Println("While serving HTTP main13: ", err)
@@ -504,30 +477,17 @@ func checkpwd(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-//go:embed html/main3.html
-var htmlmain3 string
-
 func showsummary(w http.ResponseWriter) {
-	t := template.New("Main3")
-	t, _ = t.Parse(htmlmain3)
+	t, _ := template.New("main3.html").ParseFS(htmlTemplates, "html/main3.html")
 	err := t.Execute(w, t)
 	if err != nil {
 		log.Println("While serving HTTP main3: ", err)
 	}
 }
 
-//go:embed html/main14.html
-var htmlmain14 string
-
 type Main14Data struct {
 	Filnamn string
 }
-
-//go:embed html/main15.html
-var htmlmain15 string
-
-//go:embed html/main16.html
-var htmlmain16 string
 
 func opendb(w http.ResponseWriter, req *http.Request) {
 	err := req.ParseForm()
@@ -545,8 +505,7 @@ func opendb(w http.ResponseWriter, req *http.Request) {
 			//fmt.Fprintf(w, "Trying to open sqlite3<br>\n")
 			nopwDb = openSqlite(filename)
 		} else {
-			t := template.New("Main14")
-			t, _ = t.Parse(htmlmain14)
+			t, _ := template.New("main14.html").ParseFS(htmlTemplates, "html/main14.html")
 			data := Main14Data{
 				Filnamn: filename,
 			}
@@ -558,8 +517,7 @@ func opendb(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if nopwDb == nil {
-		t := template.New("Main15")
-		t, _ = t.Parse(htmlmain15)
+		t, _ := template.New("main15.html").ParseFS(htmlTemplates, "html/main15.html")
 		err := t.Execute(w, nil)
 		if err != nil {
 			log.Println("While serving HTTP main15: ", err)
@@ -567,8 +525,7 @@ func opendb(w http.ResponseWriter, req *http.Request) {
 	} else {
 		pwd := getdbpw(nopwDb)
 		if pwd != " " {
-			t := template.New("Main16")
-			t, _ = t.Parse(htmlmain16)
+			t, _ := template.New("main16.html").ParseFS(htmlTemplates, "html/main16.html")
 			err := t.Execute(w, nil)
 			if err != nil {
 				log.Println("While serving HTTP main16: ", err)
@@ -595,20 +552,15 @@ func closeDB() {
 func closedb(w http.ResponseWriter, req *http.Request) {
 	closeDB()
 
-	t := template.New("Main3")
-	t, _ = t.Parse(htmlmain3)
+	t, _ := template.New("main3.html").ParseFS(htmlTemplates, "html/main3.html")
 	err := t.Execute(w, t)
 	if err != nil {
 		log.Println("While serving HTTP main3: ", err)
 	}
 }
 
-//go:embed html/main8.html
-var htmlmain8 string
-
 func quitapp(w http.ResponseWriter, req *http.Request) {
-	t := template.New("Main8")
-	t, _ = t.Parse(htmlmain8)
+	t, _ := template.New("main8.html").ParseFS(htmlTemplates, "html/main8.html")
 	err := t.Execute(w, t)
 	if err != nil {
 		log.Println("While serving HTTP main8: ", err)
@@ -626,15 +578,9 @@ func quitapp(w http.ResponseWriter, req *http.Request) {
 	os.Exit(0)
 }
 
-//go:embed html/main9.html
-var htmlmain9 string
-
 type Main9Data struct {
 	Filnamn string
 }
-
-//go:embed html/main10.html
-var htmlmain10 string
 
 type Main10Data struct {
 	Filnamn string
@@ -651,8 +597,7 @@ func createdb(w http.ResponseWriter, req *http.Request) {
 	if (len([]rune(filename)) < 1) ||
 		(strings.ContainsAny(filename, "\\/|:<>.\"'`\x00")) {
 
-		t := template.New("Main9")
-		t, _ = t.Parse(htmlmain9)
+		t, _ := template.New("main9.html").ParseFS(htmlTemplates, "html/main9.html")
 		data := Main9Data{
 			Filnamn: filename,
 		}
@@ -664,8 +609,7 @@ func createdb(w http.ResponseWriter, req *http.Request) {
 	}
 
 	SkapaTomDB(filename + ".db")
-	t := template.New("Main10")
-	t, _ = t.Parse(htmlmain10)
+	t, _ := template.New("main10.html").ParseFS(htmlTemplates, "html/main10.html")
 	data := Main10Data{
 		Filnamn: filename,
 	}
@@ -675,17 +619,13 @@ func createdb(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-//go:embed html/main2.html
-var htmlmain2 string
-
 func generateSummary(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func generateSummary")
 
 	printSummaryHead(w)
 	if db != nil {
 		checkÖverföringar(w, db)
-		t := template.New("Main2")
-		t, _ = t.Parse(htmlmain2)
+		t, _ := template.New("main2.html").ParseFS(htmlTemplates, "html/main2.html")
 		err := t.Execute(w, t)
 		if err != nil {
 			log.Println("While serving HTTP main2: ", err)
@@ -728,9 +668,6 @@ type TextType struct {
 	Y    string
 	Text string
 }
-
-//go:embed html/main20.html
-var htmlmain20 string
 
 type Main20Data struct {
 	Filename     string
@@ -921,8 +858,7 @@ order by datum,löpnr`, endDate, accName, accName)
 	saldoDatum := lastOfMonth
 	DaySaldo, _ := saldonKonto(db, accName, lastOfMonth.Format("2006-01-02"))
 
-	t := template.New("Main20")
-	t, _ = t.Parse(htmlmain20)
+	t, _ := template.New("main20.html").ParseFS(htmlTemplates, "html/main20.html")
 	data := Main20Data{
 		Filename:     currentDatabase,
 		AccName:      accName,
@@ -942,9 +878,6 @@ order by datum,löpnr`, endDate, accName, accName)
 
 }
 
-//go:embed html/main17.html
-var htmlmain17 string
-
 type Main17Data struct {
 	NoDB bool
 }
@@ -962,9 +895,6 @@ type yearType struct {
 	Selected bool
 }
 
-//go:embed html/main18.html
-var htmlmain18 string
-
 type Main18Data struct {
 	Konton      []kontoType
 	Years       []yearType
@@ -976,12 +906,8 @@ type Main18Data struct {
 	PrevMonth   string
 }
 
-//go:embed html/main19.html
-var htmlmain19 string
-
 func monthly(w http.ResponseWriter, req *http.Request) {
-	t := template.New("Main17")
-	t, _ = t.Parse(htmlmain17)
+	t, _ := template.New("main17.html").ParseFS(htmlTemplates, "html/main17.html")
 	data := Main17Data{
 		NoDB: db == nil,
 	}
@@ -1077,8 +1003,7 @@ func monthly(w http.ResponseWriter, req *http.Request) {
 			prevYear = prevYear - 1
 		}
 
-		t := template.New("Main18")
-		t, _ = t.Parse(htmlmain18)
+		t, _ := template.New("main18.html").ParseFS(htmlTemplates, "html/main18.html")
 		data := Main18Data{
 			Konton:      konton,
 			Years:       years,
@@ -1095,8 +1020,7 @@ func monthly(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	t = template.New("Main19")
-	t, _ = t.Parse(htmlmain19)
+	t, _ = template.New("main19.html").ParseFS(htmlTemplates, "html/main19.html")
 	err = t.Execute(w, nil)
 	if err != nil {
 		log.Println("While serving HTTP main19: ", err)
@@ -1176,42 +1100,30 @@ func getTypeOutNames() []string {
 	return names
 }
 
-//go:embed html/help1.html
-var html1 string
-
 func help1(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func help1")
 
-	t := template.New("Hjälp example")
-	t, _ = t.Parse(html1)
+	t, _ := template.New("help1.html").ParseFS(htmlTemplates, "html/help1.html")
 	err := t.Execute(w, t)
 	if err != nil {
 		return
 	}
 }
-
-//go:embed html/faq1.html
-var htmlfaq1 string
 
 func faq1(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func faq1")
 
-	t := template.New("FAQ example")
-	t, _ = t.Parse(htmlfaq1)
+	t, _ := template.New("faq1.html").ParseFS(htmlTemplates, "html/faq1.html")
 	err := t.Execute(w, t)
 	if err != nil {
 		return
 	}
 }
 
-//go:embed html/components.html
-var htmlcomps string
-
 func comps(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func comps")
 
-	t := template.New("Components example")
-	t, _ = t.Parse(htmlcomps)
+	t, _ := template.New("components.html").ParseFS(htmlTemplates, "html/components.html")
 	err := t.Execute(w, t)
 	if err != nil {
 		return

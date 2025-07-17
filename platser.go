@@ -5,16 +5,12 @@ package main
 import (
 	"context"
 	"database/sql"
-	"embed"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"strconv"
 )
-
-//go:embed html
-var htmlTemplates embed.FS
 
 type Plats struct {
 	Lopnr      int    // autoinc Primary Key, index
