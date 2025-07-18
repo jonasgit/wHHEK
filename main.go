@@ -184,7 +184,7 @@ var dbtype uint8 = 0 // 0=none, 1=mdb/Access2.0, 2=sqlite3
 var currentDatabase = "NONE"
 var dbdecimaldot bool = false
 
-//go:embed html
+//go:embed html/*.html
 var htmlTemplates embed.FS
 
 
