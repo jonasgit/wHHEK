@@ -1160,6 +1160,7 @@ func main() {
 	http.HandleFunc("/editfixedtrans", editfixedtransactionHTML)
 	http.HandleFunc("/editfastutg", editfastutgHTML)
 	http.HandleFunc("/editfastink", editfastinkHTML)
+	http.HandleFunc("/editfastovf", editfastovfHTML)
 	//	http.HandleFunc("/addtrans", addtransaction)
 	http.HandleFunc("/monthly", monthly)
 	http.HandleFunc("/transactions", transactions)

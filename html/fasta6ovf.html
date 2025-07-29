@@ -1,14 +1,14 @@
 <!-- //-*- coding: utf-8 -*- -->
-<p>Redigera fast inkomst</p>
+<p>Redigera fast överföring</p>
 
 <form hx-post="/r/e/fastutg" hx-target="#edit_trans-div" hx-swap="innerHTML">
-<!--  <label for="fromAcc">Från konto:</label>
+  <label for="fromAcc">Från konto:</label>
   <select name="fromAcc" id="fromAcc">
     {{range .KontonamnLista}}
     <option {{ if eq . $.Transaktion.FranKonto }}selected{{ end }} value="{{.}}">{{.}}</option>
     {{end}}
     autofocus
-  </select> -->
+  </select> 
   <label for="toAcc">Till konto:</label>
   <select name="toAcc" id="toAcc">
     {{range .KontonamnLista}}
@@ -23,12 +23,12 @@
   <input type="text" id="tilldatum" name="tilldatum" value="{{.Transaktion.TillDatum}}" >
 -->
 
-  <label for="what">Inkomst/Vad:</label>
+  <!--<label for="what">Inkomst/Vad:</label>
   <select name="what" id="what">
     {{range .VadInkomstLista}}
     <option {{ if eq . $.Transaktion.Vad }}selected{{ end }} value="{{.}}">{{.}}</option>
     {{end}}
-  </select>
+  </select>-->
   <label for="who">Vem:</label>
   <select name="who" id="who">
     {{range .PersonerLista}}
