@@ -187,7 +187,6 @@ var dbdecimaldot bool = false
 //go:embed html/*.html
 var htmlTemplates embed.FS
 
-
 func hello(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func hello")
 
@@ -208,7 +207,7 @@ func root(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	tmpl, err := template.New("root.html").ParseFS(htmlTemplates, "html/root.html")
+	tmpl, _ := template.New("root.html").ParseFS(htmlTemplates, "html/root.html")
 
 	files, err := os.ReadDir(".")
 	if err != nil {
@@ -1160,6 +1159,7 @@ func main() {
 	http.HandleFunc("/fixedtrans", fixedtransactionHTML)
 	http.HandleFunc("/editfixedtrans", editfixedtransactionHTML)
 	http.HandleFunc("/editfastutg", editfastutgHTML)
+	http.HandleFunc("/editfastink", editfastinkHTML)
 	//	http.HandleFunc("/addtrans", addtransaction)
 	http.HandleFunc("/monthly", monthly)
 	http.HandleFunc("/transactions", transactions)
