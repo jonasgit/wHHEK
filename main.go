@@ -259,7 +259,7 @@ func restapi(w http.ResponseWriter, req *http.Request) {
 		printSummaryTable(w, db)
 	} else {
 		_, _ = fmt.Fprintf(w, "Rest API not implemented yet.\n")
-		_, _ = fmt.Fprintf(w, "Requested URL "+req.URL.String()+"\n")
+		_, _ = fmt.Fprintf(w, "%s", "Requested URL "+req.URL.String()+"\n")
 	}
 }
 

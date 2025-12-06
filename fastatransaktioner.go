@@ -339,7 +339,7 @@ func registreraFastTransaktion(db *sql.DB, transid int) {
 
 func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.DB) {
 	log.Println("registreraFastTransaktionHTML start")
-	_, _ = fmt.Fprintf(w, "Läser ut fast transaktion#"+strconv.Itoa(transid))
+	_, _ = fmt.Fprintf(w, "%s", "Läser ut fast transaktion#"+strconv.Itoa(transid))
 	if db == nil {
 		_, _ = fmt.Fprintf(w, "registreraFastTransaktion: No database open<p>\n")
 		return
