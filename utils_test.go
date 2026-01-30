@@ -185,7 +185,7 @@ func TestDec2Str(t *testing.T) {
 	} else {
 		t.Error("T1 failed: " + amount + " " + expected)
 	}
-	n,_ = decimal.NewFromString("0.1")
+	n, _ = decimal.NewFromString("0.1")
 	amount = Dec2Str(n)
 	expected = "0,10"
 	if amount == expected {
@@ -193,7 +193,7 @@ func TestDec2Str(t *testing.T) {
 	} else {
 		t.Error("T1 failed: " + amount + " " + expected)
 	}
-	n,_ = decimal.NewFromString("0.12")
+	n, _ = decimal.NewFromString("0.12")
 	amount = Dec2Str(n)
 	expected = "0,12"
 	if amount == expected {
@@ -201,7 +201,7 @@ func TestDec2Str(t *testing.T) {
 	} else {
 		t.Error("T1 failed: " + amount + " " + expected)
 	}
-	n,_ = decimal.NewFromString("0.123")
+	n, _ = decimal.NewFromString("0.123")
 	amount = Dec2Str(n)
 	expected = "0,123"
 	if amount == expected {
@@ -209,7 +209,7 @@ func TestDec2Str(t *testing.T) {
 	} else {
 		t.Error("T1 failed: " + amount + " " + expected)
 	}
-	n,_ = decimal.NewFromString("3000000.12")
+	n, _ = decimal.NewFromString("3000000.12")
 	amount = Dec2Str(n)
 	expected = "3 000 000,12"
 	if amount == expected {
@@ -217,7 +217,7 @@ func TestDec2Str(t *testing.T) {
 	} else {
 		t.Error("T1 failed: " + amount + " " + expected)
 	}
-	n,_ = decimal.NewFromString("3123456.12")
+	n, _ = decimal.NewFromString("3123456.12")
 	amount = Dec2Str(n)
 	expected = "3 123 456,12"
 	if amount == expected {
@@ -225,7 +225,7 @@ func TestDec2Str(t *testing.T) {
 	} else {
 		t.Error("T1 failed: " + amount + " " + expected)
 	}
-	n,_ = decimal.NewFromString("3567.12")
+	n, _ = decimal.NewFromString("3567.12")
 	amount = Dec2Str(n)
 	expected = "3 567,12"
 	if amount == expected {
@@ -233,7 +233,7 @@ func TestDec2Str(t *testing.T) {
 	} else {
 		t.Error("T1 failed: " + amount + " " + expected)
 	}
-	n,_ = decimal.NewFromString("-0.12")
+	n, _ = decimal.NewFromString("-0.12")
 	amount = Dec2Str(n)
 	expected = "-0,12"
 	if amount == expected {
@@ -241,7 +241,7 @@ func TestDec2Str(t *testing.T) {
 	} else {
 		t.Error("T1 failed: " + amount + " " + expected)
 	}
-	n,_ = decimal.NewFromString("-378.70")
+	n, _ = decimal.NewFromString("-378.70")
 	amount = Dec2Str(n)
 	expected = "-378,70"
 	if amount == expected {
@@ -249,7 +249,7 @@ func TestDec2Str(t *testing.T) {
 	} else {
 		t.Error("T1 failed: " + amount + " " + expected)
 	}
-	n,_ = decimal.NewFromString("-2378.70")
+	n, _ = decimal.NewFromString("-2378.70")
 	amount = Dec2Str(n)
 	expected = "-2 378,70"
 	if amount == expected {

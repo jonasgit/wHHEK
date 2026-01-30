@@ -168,10 +168,10 @@ func Dec2Str3Sig(summa decimal.Decimal) string {
 
 	// Convert back to decimal (preserving sign)
 	roundedDec := decimal.NewFromFloat(rounded)
-	
+
 	// Use Dec2Str for formatting (it handles sign internally)
 	formatted := Dec2Str(roundedDec)
-	
+
 	// The rounding already ensures 3 significant digits, so Dec2Str should handle the rest
 	return formatted
 }

@@ -20,24 +20,24 @@ import (
 var budgetTableTemplate embed.FS
 
 type BudgetItem struct {
-	Lopnr      int     // autoinc Primary Key, index
-	Typ        string  // size 40
-	Inkomst    string  // size 1
-	HurOfta    string  // SmallInt
-	StartManad string  // size 10
-	Jan        string  // BCD / Decimal Precision 19
-	Feb        string  // BCD / Decimal Precision 19
-	Mar        string  // BCD / Decimal Precision 19
-	Apr        string  // BCD / Decimal Precision 19
-	Maj        string  // BCD / Decimal Precision 19
-	Jun        string  // BCD / Decimal Precision 19
-	Jul        string  // BCD / Decimal Precision 19
-	Aug        string  // BCD / Decimal Precision 19
-	Sep        string  // BCD / Decimal Precision 19
-	Okt        string  // BCD / Decimal Precision 19
-	Nov        string  // BCD / Decimal Precision 19
-	Dec        string  // BCD / Decimal Precision 19
-	Kontrollnr string  // int32 // Integer
+	Lopnr      int    // autoinc Primary Key, index
+	Typ        string // size 40
+	Inkomst    string // size 1
+	HurOfta    string // SmallInt
+	StartManad string // size 10
+	Jan        string // BCD / Decimal Precision 19
+	Feb        string // BCD / Decimal Precision 19
+	Mar        string // BCD / Decimal Precision 19
+	Apr        string // BCD / Decimal Precision 19
+	Maj        string // BCD / Decimal Precision 19
+	Jun        string // BCD / Decimal Precision 19
+	Jul        string // BCD / Decimal Precision 19
+	Aug        string // BCD / Decimal Precision 19
+	Sep        string // BCD / Decimal Precision 19
+	Okt        string // BCD / Decimal Precision 19
+	Nov        string // BCD / Decimal Precision 19
+	Dec        string // BCD / Decimal Precision 19
+	Kontrollnr string // int32 // Integer
 }
 
 type BudgetData struct {
