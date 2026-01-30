@@ -656,10 +656,28 @@ type TransactionType struct {
 }
 
 type MonthValueType struct {
+	X          string
+	Y          string
+	Width      string
+	Height     string
+	Day        string
+	Saldo      string
+	IsPositive string
+}
+
+type GridLineType struct {
+	X1    string
+	Y1    string
+	X2    string
+	Y2    string
+	IsZero bool
+}
+
+type AxisLabelType struct {
 	X      string
 	Y      string
-	Width  string
-	Height string
+	Text   string
+	IsXAxis bool
 }
 
 type TextType struct {
@@ -679,12 +697,19 @@ type Main20Data struct {
 	ZeroLine     string
 	MonthValues  []MonthValueType
 	Texts        []TextType
+	GridLines    []GridLineType
+	AxisLabels   []AxisLabelType
+	MinSaldo     string
+	MaxSaldo     string
+	ChartTitle   string
 }
 
 func printMonthly(w http.ResponseWriter, db *sql.DB, accName string, accYear int, accMonth int) {
 	var transactions []TransactionType
 	var monthValues []MonthValueType
 	var texts []TextType
+	var gridLines []GridLineType
+	var axisLabels []AxisLabelType
 
 	var startDate, endDate string
 	startDate = fmt.Sprintf("%d-%02d-01", accYear, accMonth)
@@ -731,6 +756,7 @@ order by datum,löpnr`, endDate, accName, accName)
 	var fixed bool     // Boolean
 	var comment []byte // size 60
 
+	// Beräkna saldo från kontot skapades till och med sista dagen i perioden
 	for res.Next() {
 		_ = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
 		decAmount, _ := decimal.NewFromString(toUtf8(amount))
@@ -777,9 +803,18 @@ order by datum,löpnr`, endDate, accName, accName)
 	}
 	res.Close()
 
+	// Fyll på med saknade dagar
+	for i := 2; i < 32; i++ {
+	    if !dayFound[i] {
+	       daySaldo[i] = daySaldo[i-1]
+	       dayFound[i] = true
+	    }
+	}
+
 	minSaldo := decimal.NewFromInt(math.MaxInt64)
 	maxSaldo := decimal.NewFromInt(math.MinInt64)
 
+	// Hitta max och min för perioden
 	for i := 1; i < 32; i++ {
 		if daySaldo[i].GreaterThan(maxSaldo) {
 			maxSaldo = daySaldo[i]
@@ -789,11 +824,28 @@ order by datum,löpnr`, endDate, accName, accName)
 		}
 	}
 
+	// Se till att 0 finns med
+	if decimal.Zero.LessThan(minSaldo) {
+	   minSaldo = decimal.Zero
+	}
+	if decimal.Zero.GreaterThan(maxSaldo) {
+	   maxSaldo = decimal.Zero
+	}
+	   
 	var yf, val float64
 	var y int
 	var y1 decimal.Decimal
 	const colWidth = 20
+	const chartHeight = 500
+	const chartWidth = 900
+	const marginLeft = 60
+	const marginRight = 100
+	const marginTop = 40
+	const marginBottom = 50
+	const plotWidth = chartWidth - marginLeft - marginRight
+	const plotHeight = chartHeight - marginTop - marginBottom
 	var monthValue MonthValueType
+	zeroDecimal := decimal.Zero
 
 	for i := 1; i < 32; i++ {
 		if dayFound[i] {
@@ -805,24 +857,128 @@ order by datum,löpnr`, endDate, accName, accName)
 		val, _ = y1.Float64()
 		y2 := maxSaldo.Sub(minSaldo)
 		y2f, _ := y2.Float64()
-		yf = val / (y2f / (500.0 - 0.0))
+		if y2f > 0 {
+			yf = val / (y2f / float64(plotHeight))
+		} else {
+			yf = 0
+		}
 		y = int(yf)
 
-		monthValue.X = strconv.Itoa((i - 1) * colWidth)
-		monthValue.Y = strconv.Itoa(y)
-		monthValue.Width = strconv.Itoa(colWidth)
-		monthValue.Height = strconv.Itoa(500 - int(y))
+		monthValue.X = strconv.Itoa(marginLeft + (i-1)*colWidth)
+		monthValue.Y = strconv.Itoa(marginTop + y)
+		monthValue.Width = strconv.Itoa(colWidth - 1)
+		monthValue.Height = strconv.Itoa(plotHeight - y)
+		monthValue.Day = strconv.Itoa(i)
+		monthValue.Saldo = Dec2Str(currSaldo)
+		if currSaldo.GreaterThanOrEqual(zeroDecimal) {
+			monthValue.IsPositive = "true"
+		} else {
+			monthValue.IsPositive = "false"
+		}
 		monthValues = append(monthValues, monthValue)
 	}
-	// zero line
-	y1 = maxSaldo //.Sub(0.0)
-	val, _ = y1.Float64()
-	y2 := maxSaldo.Sub(minSaldo)
-	y2f, _ := y2.Float64()
-	yf = val / (y2f / (500.0 - 0.0))
-	y = int(yf)
-	zeroLine := y
+	// zero line - calculate where saldo = 0 should be positioned
+	zeroDecimal = decimal.Zero
+	var zeroLine int
+	if maxSaldo.GreaterThan(zeroDecimal) && minSaldo.LessThan(zeroDecimal) {
+		// Zero is between min and max
+		y1 = maxSaldo.Sub(zeroDecimal)
+		val, _ = y1.Float64()
+		y2 := maxSaldo.Sub(minSaldo)
+		y2f, _ := y2.Float64()
+		if y2f > 0 {
+			yf = val / (y2f / float64(plotHeight))
+		} else {
+			yf = 0
+		}
+		y = int(yf)
+		zeroLine = marginTop + y
+	} else if minSaldo.GreaterThanOrEqual(zeroDecimal) {
+		// All values are positive, zero line is at bottom
+		zeroLine = marginTop + plotHeight
+	} else {
+		// All values are negative, zero line is at top
+		zeroLine = marginTop
+	}
 
+	// Generate grid lines (horizontal)
+	var gridLine GridLineType
+	numGridLines := 5
+	for i := 0; i <= numGridLines; i++ {
+		gridY := marginTop + (i * plotHeight / numGridLines)
+		gridLine.X1 = strconv.Itoa(marginLeft)
+		gridLine.Y1 = strconv.Itoa(gridY)
+		gridLine.X2 = strconv.Itoa(marginLeft + plotWidth)
+		gridLine.Y2 = strconv.Itoa(gridY)
+		// Check if this grid line is close to the zero line (within 2 pixels)
+		diff := gridY - zeroLine
+		if diff < 0 {
+			diff = -diff
+		}
+		if diff <= 2 {
+			gridLine.IsZero = true
+		} else {
+			gridLine.IsZero = false
+		}
+		gridLines = append(gridLines, gridLine)
+	}
+	
+	// Always add a dedicated zero line if it's not already in the grid
+	zeroLineInGrid := false
+	for _, gl := range gridLines {
+		if gl.IsZero {
+			zeroLineInGrid = true
+			break
+		}
+	}
+	if !zeroLineInGrid && zeroLine >= marginTop && zeroLine <= marginTop+plotHeight {
+		gridLine.X1 = strconv.Itoa(marginLeft)
+		gridLine.Y1 = strconv.Itoa(zeroLine)
+		gridLine.X2 = strconv.Itoa(marginLeft + plotWidth)
+		gridLine.Y2 = strconv.Itoa(zeroLine)
+		gridLine.IsZero = true
+		gridLines = append(gridLines, gridLine)
+	}
+
+	// Generate vertical grid lines for key days
+	for i := 1; i <= 31; i += 5 {
+		gridX := marginLeft + (i-1)*colWidth
+		gridLine.X1 = strconv.Itoa(gridX)
+		gridLine.Y1 = strconv.Itoa(marginTop)
+		gridLine.X2 = strconv.Itoa(gridX)
+		gridLine.Y2 = strconv.Itoa(marginTop + plotHeight)
+		gridLine.IsZero = false
+		gridLines = append(gridLines, gridLine)
+	}
+
+	// Generate axis labels for days (X-axis)
+	var axisLabel AxisLabelType
+	// Day labels: 1, 5, 10, 15, 20, 25, 30
+	dayLabels := []int{1, 5, 10, 15, 20, 25, 30}
+	for _, day := range dayLabels {
+		axisLabel.X = strconv.Itoa(marginLeft + (day-1)*colWidth + colWidth/2)
+		axisLabel.Y = strconv.Itoa(marginTop + plotHeight + 20)
+		axisLabel.Text = strconv.Itoa(day)
+		axisLabel.IsXAxis = true
+		axisLabels = append(axisLabels, axisLabel)
+	}
+
+	// Generate Y-axis labels (saldo values)
+	numYLabels := 6
+	for i := 0; i <= numYLabels; i++ {
+		labelY := marginTop + (i * plotHeight / numYLabels)
+		ratio := decimal.NewFromInt(int64(i)).Div(decimal.NewFromInt(int64(numYLabels)))
+		rangeVal := maxSaldo.Sub(minSaldo)
+		offset := rangeVal.Mul(ratio)
+		saldoValue := maxSaldo.Sub(offset)
+		axisLabel.X = strconv.Itoa(marginLeft - 10)
+		axisLabel.Y = strconv.Itoa(labelY + 5)
+		axisLabel.Text = Dec2Str(saldoValue)
+		axisLabel.IsXAxis = false
+		axisLabels = append(axisLabels, axisLabel)
+	}
+
+	// Keep old text labels for backward compatibility (but we'll use axisLabels in template)
 	var text TextType
 	text.X = "0"
 	text.Y = "550"
@@ -857,6 +1013,11 @@ order by datum,löpnr`, endDate, accName, accName)
 	saldoDatum := lastOfMonth
 	DaySaldo, _ := saldonKonto(db, accName, lastOfMonth.Format("2006-01-02"))
 
+	// Generate chart title
+	monthNames := []string{"", "Januari", "Februari", "Mars", "April", "Maj", "Juni",
+		"Juli", "Augusti", "September", "Oktober", "November", "December"}
+	chartTitle := fmt.Sprintf("Saldo per dag - %s %d", monthNames[accMonth], accYear)
+
 	t, _ := template.New("main20.html").ParseFS(htmlTemplates, "html/main20.html")
 	data := Main20Data{
 		Filename:     currentDatabase,
@@ -869,6 +1030,11 @@ order by datum,löpnr`, endDate, accName, accName)
 		ZeroLine:     strconv.Itoa(zeroLine),
 		MonthValues:  monthValues,
 		Texts:        texts,
+		GridLines:    gridLines,
+		AxisLabels:   axisLabels,
+		MinSaldo:     Dec2Str(minSaldo),
+		MaxSaldo:     Dec2Str(maxSaldo),
+		ChartTitle:   chartTitle,
 	}
 	err = t.Execute(w, data)
 	if err != nil {

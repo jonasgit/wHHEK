@@ -37,16 +37,199 @@ Månad: {{.Month}}<br>
   <p align="right">Saldo {{.SaldoDatum}}:
     <nobr>{{.SlutSaldo}}</nobr>
   </p>
-  <p>Diagram:</p>
-  <svg width="900" height="600">
-    {{range .MonthValues}}
-    <rect x={{.X}} y={{.Y}} width="{{.Width}}" height="{{.Height}}"  style="fill:rgb(0,0,255);stroke-width:1;stroke:rgb(0,0,0)" />
-    {{end}}
-    <rect x=0 y={{.ZeroLine}} width=900 height=1
-	  style="fill:rgb(0,0,255);stroke-width:1;stroke:rgb(0,0,0)" />
+  <p><strong>Diagram:</strong></p>
+  
+  <style>
+    .chart-container {
+      width: 100%;
+      max-width: 900px;
+      margin: 20px 0;
+    }
+    .chart-svg {
+      width: 100%;
+      height: auto;
+      border: 1px solid #ddd;
+      background-color: #fafafa;
+    }
+    .bar-positive {
+      fill: #4CAF50;
+      stroke: #2E7D32;
+      stroke-width: 1;
+      transition: opacity 0.2s;
+    }
+    .bar-negative {
+      fill: #F44336;
+      stroke: #C62828;
+      stroke-width: 1;
+      transition: opacity 0.2s;
+    }
+    .bar-positive:hover, .bar-negative:hover {
+      opacity: 0.7;
+      cursor: pointer;
+    }
+    .grid-line {
+      stroke: #e0e0e0;
+      stroke-width: 1;
+      stroke-dasharray: 2,2;
+    }
+    .grid-line-zero {
+      stroke: #000000;
+      stroke-width: 2;
+      stroke-dasharray: none;
+    }
+    .axis-label {
+      font-family: Arial, sans-serif;
+      font-size: 11px;
+      fill: #333;
+    }
+    .axis-label-x {
+      text-anchor: middle;
+    }
+    .axis-label-y {
+      text-anchor: end;
+    }
+    .axis-title {
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      font-weight: bold;
+      fill: #333;
+    }
+    .chart-title {
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      font-weight: bold;
+      fill: #1a1a1a;
+      text-anchor: middle;
+    }
+    .tooltip {
+      position: absolute;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: Arial, sans-serif;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 1000;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tooltip.visible {
+      opacity: 1;
+    }
+    .legend {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    .legend-item {
+      display: inline-block;
+      margin-right: 20px;
+    }
+    .legend-color {
+      display: inline-block;
+      width: 20px;
+      height: 12px;
+      margin-right: 5px;
+      vertical-align: middle;
+      border: 1px solid #333;
+    }
+  </style>
+  
+  <div class="chart-container">
+    <div id="tooltip" class="tooltip"></div>
+    <svg class="chart-svg" viewBox="0 0 900 600" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Saldo diagram för {{.AccName}}">
+      <title>{{.ChartTitle}}</title>
+      
+      <!-- Chart title -->
+      <text x="450" y="25" class="chart-title">{{.ChartTitle}}</text>
+      
+      <!-- Grid lines -->
+      {{range .GridLines}}
+      <line x1="{{.X1}}" y1="{{.Y1}}" x2="{{.X2}}" y2="{{.Y2}}" 
+            class="{{if .IsZero}}grid-line-zero{{else}}grid-line{{end}}" />
+      {{end}}
+      
+      <!-- Bars with color coding and tooltips -->
+      {{range .MonthValues}}
+      <rect x="{{.X}}" y="{{.Y}}" width="{{.Width}}" height="{{.Height}}" 
+            class="{{if eq .IsPositive "true"}}bar-positive{{else}}bar-negative{{end}}"
+            data-day="{{.Day}}"
+            data-saldo="{{.Saldo}}"
+            aria-label="Dag {{.Day}}: Saldo {{.Saldo}}"
+            tabindex="0"
+            onmouseenter="showTooltip(event, '{{.Day}}', '{{.Saldo}}')"
+            onmouseleave="hideTooltip()"
+            onfocus="showTooltip(event, '{{.Day}}', '{{.Saldo}}')"
+            onblur="hideTooltip()" />
+      {{end}}
+      
+      <!-- Zero line (already in grid lines, but kept for compatibility) -->
+      <line x1="60" y1="{{.ZeroLine}}" x2="840" y2="{{.ZeroLine}}" 
+            class="grid-line-zero" />
+      
+      <!-- Axis labels -->
+      {{range .AxisLabels}}
+      <text x="{{.X}}" y="{{.Y}}" 
+            class="axis-label {{if .IsXAxis}}axis-label-x{{else}}axis-label-y{{end}}">
+        {{.Text}}
+      </text>
+      {{end}}
+      
+      <!-- X-axis title -->
+      <text x="450" y="580" class="axis-title" text-anchor="middle">Dag</text>
+      
+      <!-- Y-axis title -->
+      <text x="20" y="300" class="axis-title" text-anchor="middle" transform="rotate(-90, 20, 300)">Saldo</text>
+      
+      Sorry, your browser does not support inline SVG.
+    </svg>
     
-    {{range .Texts}}
-    <text fill="#000000" font-size="12" font-family="Verdana" x="{{.X}}" y="{{.Y}}">{{.Text}}</text>
-    {{end}}
-    Sorry, your browser does not support inline SVG.
-  </svg>
+    <!-- Legend -->
+    <div class="legend">
+      <div class="legend-item">
+        <span class="legend-color" style="background-color: #4CAF50;"></span>
+        <span>Positivt saldo</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color" style="background-color: #F44336;"></span>
+        <span>Negativt saldo</span>
+      </div>
+      <div class="legend-item">
+        <span>Min: {{.MinSaldo}}</span>
+      </div>
+      <div class="legend-item">
+        <span>Max: {{.MaxSaldo}}</span>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    function showTooltip(event, day, saldo) {
+      const tooltip = document.getElementById('tooltip');
+      tooltip.textContent = `Dag ${day}: ${saldo}`;
+      tooltip.classList.add('visible');
+      
+      const rect = event.target.getBoundingClientRect();
+      const container = event.target.closest('.chart-container');
+      const containerRect = container.getBoundingClientRect();
+      
+      tooltip.style.left = (rect.left - containerRect.left + rect.width / 2) + 'px';
+      tooltip.style.top = (rect.top - containerRect.top - 35) + 'px';
+      
+      // Adjust if tooltip goes off screen
+      const tooltipRect = tooltip.getBoundingClientRect();
+      if (tooltipRect.left < containerRect.left) {
+        tooltip.style.left = '0px';
+      }
+      if (tooltipRect.right > containerRect.right) {
+        tooltip.style.left = (containerRect.width - tooltipRect.width) + 'px';
+      }
+    }
+    
+    function hideTooltip() {
+      const tooltip = document.getElementById('tooltip');
+      tooltip.classList.remove('visible');
+    }
+  </script>
