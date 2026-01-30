@@ -995,7 +995,7 @@ order by datum,löpnr`, endDate, accName, accName)
 		saldoValue := maxSaldo.Sub(offset)
 		axisLabel.X = strconv.Itoa(marginLeft - 10)
 		axisLabel.Y = strconv.Itoa(labelY + 5)
-		axisLabel.Text = Dec2Str(saldoValue)
+		axisLabel.Text = Dec2Str3Sig(saldoValue)
 		axisLabel.IsXAxis = false
 		axisLabels = append(axisLabels, axisLabel)
 	}

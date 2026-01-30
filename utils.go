@@ -3,6 +3,7 @@
 package main
 
 import (
+	"math"
 	"runtime"
 	"strings"
 	"unicode"
@@ -143,6 +144,36 @@ func Dec2Str(summa decimal.Decimal) string {
 		ints = ints[0:len-3] + " " + ints[len-3:len]
 	}
 	return sign + ints + decs
+}
+
+// Dec2Str3Sig formats a decimal to a maximum of 3 significant digits
+// Uses Swedish formatting (comma as decimal separator, space as thousands separator)
+func Dec2Str3Sig(summa decimal.Decimal) string {
+	if summa.IsZero() {
+		return "0,00"
+	}
+
+	// Convert to float64 for significant digit calculation
+	val, _ := summa.Float64()
+	absVal := math.Abs(val)
+
+	// Round to 3 significant digits
+	var rounded float64
+	if absVal != 0 {
+		magnitude := math.Pow(10, math.Floor(math.Log10(absVal))-2)
+		rounded = math.Round(val/magnitude) * magnitude
+	} else {
+		rounded = 0
+	}
+
+	// Convert back to decimal (preserving sign)
+	roundedDec := decimal.NewFromFloat(rounded)
+	
+	// Use Dec2Str for formatting (it handles sign internally)
+	formatted := Dec2Str(roundedDec)
+	
+	// The rounding already ensures 3 significant digits, so Dec2Str should handle the rest
+	return formatted
 }
 
 // getCurrentFuncName will return the current function's name.
