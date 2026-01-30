@@ -666,17 +666,17 @@ type MonthValueType struct {
 }
 
 type GridLineType struct {
-	X1    string
-	Y1    string
-	X2    string
-	Y2    string
+	X1     string
+	Y1     string
+	X2     string
+	Y2     string
 	IsZero bool
 }
 
 type AxisLabelType struct {
-	X      string
-	Y      string
-	Text   string
+	X       string
+	Y       string
+	Text    string
 	IsXAxis bool
 }
 
@@ -805,10 +805,10 @@ order by datum,löpnr`, endDate, accName, accName)
 
 	// Fyll på med saknade dagar
 	for i := 2; i < 32; i++ {
-	    if !dayFound[i] {
-	       daySaldo[i] = daySaldo[i-1]
-	       dayFound[i] = true
-	    }
+		if !dayFound[i] {
+			daySaldo[i] = daySaldo[i-1]
+			dayFound[i] = true
+		}
 	}
 
 	minSaldo := decimal.NewFromInt(math.MaxInt64)
@@ -826,12 +826,34 @@ order by datum,löpnr`, endDate, accName, accName)
 
 	// Se till att 0 finns med
 	if decimal.Zero.LessThan(minSaldo) {
-	   minSaldo = decimal.Zero
+		minSaldo = decimal.Zero
 	}
 	if decimal.Zero.GreaterThan(maxSaldo) {
-	   maxSaldo = decimal.Zero
+		maxSaldo = decimal.Zero
 	}
-	   
+
+	// Round down minSaldo to integer and limit to 3 significant digits
+	minSaldo = minSaldo.Floor()
+	minVal, _ := minSaldo.Float64()
+	if minVal != 0 {
+		// Calculate magnitude for 3 significant digits
+		magnitude := math.Pow(10, math.Floor(math.Log10(math.Abs(minVal)))-2)
+		// Round down to previous multiple that gives 3 significant digits
+		rounded := math.Floor(minVal/magnitude) * magnitude
+		minSaldo = decimal.NewFromFloat(rounded)
+	}
+
+	// Round up maxSaldo to integer and limit to 3 significant digits
+	maxSaldo = maxSaldo.Ceil()
+	maxVal, _ := maxSaldo.Float64()
+	if maxVal != 0 {
+		// Calculate magnitude for 3 significant digits
+		magnitude := math.Pow(10, math.Floor(math.Log10(math.Abs(maxVal)))-2)
+		// Round up to next multiple that gives 3 significant digits
+		rounded := math.Ceil(maxVal/magnitude) * magnitude
+		maxSaldo = decimal.NewFromFloat(rounded)
+	}
+
 	var yf, val float64
 	var y int
 	var y1 decimal.Decimal
@@ -922,7 +944,7 @@ order by datum,löpnr`, endDate, accName, accName)
 		}
 		gridLines = append(gridLines, gridLine)
 	}
-	
+
 	// Always add a dedicated zero line if it's not already in the grid
 	zeroLineInGrid := false
 	for _, gl := range gridLines {
