@@ -6,8 +6,6 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
-	"fmt"
-	"html"
 	"html/template"
 	"log"
 	"net/http"
@@ -252,7 +250,12 @@ func htransactions(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if db == nil {
-		_, _ = fmt.Fprintf(w, "Transactions: No database open<p>\n")
+		t := template.New("NoDatabase")
+		t, _ = t.Parse(htmlnodatabase)
+		err := t.Execute(w, nil)
+		if err != nil {
+			log.Println("While serving HTTP no_database: ", err)
+		}
 	} else {
 		printTransactions(w, db, startDate, endDate, req.FormValue("comment"), req.FormValue("fromacc"), kontoeller, req.FormValue("toacc"), req.FormValue("place"), req.FormValue("vad"), req.FormValue("minamount"), req.FormValue("maxamount"))
 	}
@@ -279,7 +282,12 @@ func handletransactions(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if db == nil {
-		_, _ = fmt.Fprintf(w, "Transactions: No database open<p>\n")
+		t := template.New("NoDatabase")
+		t, _ = t.Parse(htmlnodatabase)
+		err := t.Execute(w, nil)
+		if err != nil {
+			log.Println("While serving HTTP no_database: ", err)
+		}
 	} else {
 		var date []byte // size 10
 		_ = db.QueryRow("SELECT MIN(Datum) FROM Transaktioner").Scan(&date)
@@ -399,7 +407,15 @@ func raderaTransaction(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, _ = fmt.Fprintf(w, "Transaktion med löpnr %d raderad.<br>", lopnr)
+	t := template.New("RaderaTransaction")
+	t, _ = t.Parse(htmlraderatransaction)
+	data := RaderaTransactionData{
+		Lopnr: lopnr,
+	}
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Println("While serving HTTP radera_transaction: ", err)
+	}
 }
 
 //go:embed html/newtransaction1.html
@@ -584,23 +600,24 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 		//log.Println("Val: ", place)
 		//log.Println("Val: ", what)
 
-		_, _ = fmt.Fprintf(w, "Registrerar Inköp...<br> ")
-
 		addTransaktionInköp(fromacc, place, date, what, who, amount, text, false)
 
-		_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Frånkonto</th><th>Plats</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
-		sqlStmt := "<tr>"
-		sqlStmt += "<td>" + fromacc + "</td>"
-		sqlStmt += "<td>" + place + "</td>"
-		sqlStmt += "<td>" + transtyp + "</td>"
-		sqlStmt += "<td>" + what + "</td>"
-		sqlStmt += "<td>" + date + "</td>"
-		sqlStmt += "<td>" + who + "</td>"
-		sqlStmt += "<td>" + Dec2Str(amount) + "</td>"
-		sqlStmt += "<td>" + html.EscapeString(text) + "</td>\n"
-		sqlStmt += "</tr>"
-		_, _ = fmt.Fprintf(w, "%s", sqlStmt)
-		_, _ = fmt.Fprintf(w, "</table>\n")
+		t := template.New("AddTransInkop")
+		t, _ = t.Parse(htmladdtransinkop)
+		data := AddTransInkopData{
+			FromAcc: fromacc,
+			Place:   place,
+			Typ:     transtyp,
+			Vad:     what,
+			Datum:   date,
+			Vem:     who,
+			Belopp:  Dec2Str(amount),
+			Text:    text,
+		}
+		err := t.Execute(w, data)
+		if err != nil {
+			log.Println("While serving HTTP addtrans_inkop: ", err)
+		}
 	}
 	if transtyp == "Insättning" {
 		toacc := req.FormValue("toacc")
@@ -608,41 +625,44 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 		//log.Println("Val: ", toacc)
 		//log.Println("Val: ", what)
 
-		_, _ = fmt.Fprintf(w, "Registrerar Insättning...<br> ")
 		addTransaktionInsättning(toacc, date, what, who, amount, text)
 
-		_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Konto</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
-		sqlStmt := "<tr>"
-		sqlStmt += "<td>" + toacc + "</td>"
-		sqlStmt += "<td>" + transtyp + "</td>"
-		sqlStmt += "<td>" + what + "</td>"
-		sqlStmt += "<td>" + date + "</td>"
-		sqlStmt += "<td>" + who + "</td>"
-		sqlStmt += "<td>" + Dec2Str(amount) + "</td>"
-		sqlStmt += "<td>" + html.EscapeString(text) + "</td>\n"
-		sqlStmt += "</tr>"
-		_, _ = fmt.Fprintf(w, "%s", sqlStmt)
-		_, _ = fmt.Fprintf(w, "</table>\n")
+		t := template.New("AddTransInsattning")
+		t, _ = t.Parse(htmladdtransinsattning)
+		data := AddTransInsattningData{
+			ToAcc:  toacc,
+			Typ:    transtyp,
+			Vad:    what,
+			Datum:  date,
+			Vem:    who,
+			Belopp: Dec2Str(amount),
+			Text:   text,
+		}
+		err := t.Execute(w, data)
+		if err != nil {
+			log.Println("While serving HTTP addtrans_insattning: ", err)
+		}
 	}
 	if transtyp == "Uttag" {
 		fromacc := req.FormValue("fromacc")
 		//log.Println("Val: ", fromacc, getCurrentFuncName())
 
-		_, _ = fmt.Fprintf(w, "Registrerar Uttag...<br> ")
-
 		addTransaktionUttag(fromacc, date, who, amount, text)
 
-		_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Frånkonto</th><th>Typ</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
-		sqlStmt := "<tr>"
-		sqlStmt += "<td>" + fromacc + "</td>"
-		sqlStmt += "<td>" + transtyp + "</td>"
-		sqlStmt += "<td>" + date + "</td>"
-		sqlStmt += "<td>" + who + "</td>"
-		sqlStmt += "<td>" + Dec2Str(amount) + "</td>"
-		sqlStmt += "<td>" + html.EscapeString(text) + "</td>\n"
-		sqlStmt += "</tr>"
-		_, _ = fmt.Fprintf(w, "%s", sqlStmt)
-		_, _ = fmt.Fprintf(w, "</table>\n")
+		t := template.New("AddTransUttag")
+		t, _ = t.Parse(htmladdtransuttag)
+		data := AddTransUttagData{
+			FromAcc: fromacc,
+			Typ:     transtyp,
+			Datum:   date,
+			Vem:     who,
+			Belopp:  Dec2Str(amount),
+			Text:    text,
+		}
+		err := t.Execute(w, data)
+		if err != nil {
+			log.Println("While serving HTTP addtrans_uttag: ", err)
+		}
 	}
 	if transtyp == "Överföring" {
 		fromacc := req.FormValue("fromacc")
@@ -650,22 +670,23 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 		//log.Println("Val: ", fromacc, getCurrentFuncName())
 		//log.Println("Val: ", toacc)
 
-		_, _ = fmt.Fprintf(w, "Registrerar Överföring...<br> ")
-
 		addTransaktionÖverföring(fromacc, toacc, date, who, amount, text)
 
-		_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Frånkonto</th><th>Tillkonto</th><th>Typ</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
-		sqlStmt := "<tr>"
-		sqlStmt += "<td>" + fromacc + "</td>"
-		sqlStmt += "<td>" + toacc + "</td>"
-		sqlStmt += "<td>" + transtyp + "</td>"
-		sqlStmt += "<td>" + date + "</td>"
-		sqlStmt += "<td>" + who + "</td>"
-		sqlStmt += "<td>" + Dec2Str(amount) + "</td>"
-		sqlStmt += "<td>" + html.EscapeString(text) + "</td>\n"
-		sqlStmt += "</tr>"
-		_, _ = fmt.Fprintf(w, "%s", sqlStmt)
-		_, _ = fmt.Fprintf(w, "</table>\n")
+		t := template.New("AddTransOverforing")
+		t, _ = t.Parse(htmladdtransoverforing)
+		data := AddTransOverforingData{
+			FromAcc: fromacc,
+			ToAcc:   toacc,
+			Typ:     transtyp,
+			Datum:   date,
+			Vem:     who,
+			Belopp:  Dec2Str(amount),
+			Text:    text,
+		}
+		err := t.Execute(w, data)
+		if err != nil {
+			log.Println("While serving HTTP addtrans_overforing: ", err)
+		}
 	}
 	//log.Println("addtransaction: end")
 }
@@ -769,7 +790,69 @@ func editformTransaction(w http.ResponseWriter, lopnr int, db *sql.DB) {
 //go:embed html/transakt6.html
 var htmltrans6 string
 
+//go:embed html/addtrans_inkop.html
+var htmladdtransinkop string
+
+//go:embed html/addtrans_insattning.html
+var htmladdtransinsattning string
+
+//go:embed html/addtrans_uttag.html
+var htmladdtransuttag string
+
+//go:embed html/addtrans_overforing.html
+var htmladdtransoverforing string
+
+//go:embed html/radera_transaction.html
+var htmlraderatransaction string
+
+//go:embed html/no_database.html
+var htmlnodatabase string
+
 type Trans6Data struct {
+	Lopnr int
+}
+
+type AddTransInkopData struct {
+	FromAcc string
+	Place   string
+	Typ     string
+	Vad     string
+	Datum   string
+	Vem     string
+	Belopp  string
+	Text    string
+}
+
+type AddTransInsattningData struct {
+	ToAcc  string
+	Typ    string
+	Vad    string
+	Datum  string
+	Vem    string
+	Belopp string
+	Text   string
+}
+
+type AddTransUttagData struct {
+	FromAcc string
+	Typ     string
+	Datum   string
+	Vem     string
+	Belopp  string
+	Text    string
+}
+
+type AddTransOverforingData struct {
+	FromAcc string
+	ToAcc   string
+	Typ     string
+	Datum   string
+	Vem     string
+	Belopp  string
+	Text    string
+}
+
+type RaderaTransactionData struct {
 	Lopnr int
 }
 
