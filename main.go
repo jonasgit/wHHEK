@@ -618,6 +618,10 @@ func createdb(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+type SummaryFooterData struct {
+	HasDB bool
+}
+
 func generateSummary(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func generateSummary")
 
@@ -631,14 +635,17 @@ func generateSummary(w http.ResponseWriter, req *http.Request) {
 		}
 
 		printAccounts(w)
-		_, _ = fmt.Fprintf(w, "</td></tr></table>\n")
-	} else {
-		_, _ = fmt.Fprintf(w, "Ingen databas.\n")
-		_, _ = fmt.Fprintf(w, "<a href=\"/\">Tillbaka</a>.\n")
 	}
 
-	_, _ = fmt.Fprintf(w, "</body>\n")
-	_, _ = fmt.Fprintf(w, "</html>\n")
+	// Print footer using template
+	t, _ := template.New("summary_footer.html").ParseFS(htmlTemplates, "html/summary_footer.html")
+	data := SummaryFooterData{
+		HasDB: db != nil,
+	}
+	err := t.Execute(w, data)
+	if err != nil {
+		log.Println("While serving HTTP summary_footer: ", err)
+	}
 }
 
 type TransactionType struct {
