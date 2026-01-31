@@ -51,14 +51,14 @@ Månad: {{.Month}}<br>
       background-color: #fafafa;
     }
     .bar-positive {
-      fill: #4CAF50;
-      stroke: #2E7D32;
+      fill: #2196F3;
+      stroke: #1565C0;
       stroke-width: 1;
       transition: opacity 0.2s;
     }
     .bar-negative {
-      fill: #F44336;
-      stroke: #C62828;
+      fill: url(#diagonalHatch);
+      stroke: #E65100;
       stroke-width: 1;
       transition: opacity 0.2s;
     }
@@ -144,6 +144,14 @@ Månad: {{.Month}}<br>
       <!-- Chart title -->
       <text x="450" y="25" class="chart-title">{{.ChartTitle}}</text>
       
+      <!-- Pattern definition for negative bars (diagonal stripes for accessibility) -->
+      <defs>
+        <pattern id="diagonalHatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+          <rect width="8" height="8" fill="#FF9800"/>
+          <path d="M 0,0 L 8,8" stroke="#E65100" stroke-width="1.5"/>
+        </pattern>
+      </defs>
+      
       <!-- Grid lines -->
       {{range .GridLines}}
       <line x1="{{.X1}}" y1="{{.Y1}}" x2="{{.X2}}" y2="{{.Y2}}" 
@@ -188,11 +196,11 @@ Månad: {{.Month}}<br>
     <!-- Legend -->
     <div class="legend">
       <div class="legend-item">
-        <span class="legend-color" style="background-color: #4CAF50;"></span>
+        <span class="legend-color" style="background-color: #2196F3;"></span>
         <span>Positivt saldo</span>
       </div>
       <div class="legend-item">
-        <span class="legend-color" style="background-color: #F44336;"></span>
+        <span class="legend-color" style="background-color: #FF9800; background-image: repeating-linear-gradient(45deg, transparent, transparent 2px, #E65100 2px, #E65100 4px);"></span>
         <span>Negativt saldo</span>
       </div>
       <div class="legend-item">
