@@ -760,6 +760,9 @@ order by datum,löpnr`, endDate, accName, accName)
 	for res.Next() {
 		_ = res.Scan(&fromAcc, &toAcc, &tType, &date, &what, &who, &amount, &nummer, &saldo, &fixed, &comment)
 		decAmount, _ := decimal.NewFromString(toUtf8(amount))
+		if !dayFound[01] {
+			daySaldo[01] = currSaldo
+		}
 		if !dayFound[01] && toUtf8(date) >= startDate {
 			daySaldo[01] = currSaldo
 			dayFound[01] = true
@@ -869,38 +872,7 @@ order by datum,löpnr`, endDate, accName, accName)
 	var monthValue MonthValueType
 	zeroDecimal := decimal.Zero
 
-	for i := 1; i < 32; i++ {
-		if dayFound[i] {
-			y1 = maxSaldo.Sub(daySaldo[i])
-			currSaldo = daySaldo[i]
-		} else {
-			y1 = maxSaldo.Sub(currSaldo)
-		}
-		val, _ = y1.Float64()
-		y2 := maxSaldo.Sub(minSaldo)
-		y2f, _ := y2.Float64()
-		if y2f > 0 {
-			yf = val / (y2f / float64(plotHeight))
-		} else {
-			yf = 0
-		}
-		y = int(yf)
-
-		monthValue.X = strconv.Itoa(marginLeft + (i-1)*colWidth)
-		monthValue.Y = strconv.Itoa(marginTop + y)
-		monthValue.Width = strconv.Itoa(colWidth - 1)
-		monthValue.Height = strconv.Itoa(plotHeight - y)
-		monthValue.Day = strconv.Itoa(i)
-		monthValue.Saldo = Dec2Str(currSaldo)
-		if currSaldo.GreaterThanOrEqual(zeroDecimal) {
-			monthValue.IsPositive = "true"
-		} else {
-			monthValue.IsPositive = "false"
-		}
-		monthValues = append(monthValues, monthValue)
-	}
-	// zero line - calculate where saldo = 0 should be positioned
-	zeroDecimal = decimal.Zero
+	// zero line - calculate where saldo = 0 should be positioned (needed before bar calculation)
 	var zeroLine int
 	if maxSaldo.GreaterThan(zeroDecimal) && minSaldo.LessThan(zeroDecimal) {
 		// Zero is between min and max
@@ -921,6 +893,59 @@ order by datum,löpnr`, endDate, accName, accName)
 	} else {
 		// All values are negative, zero line is at top
 		zeroLine = marginTop
+	}
+
+	// Calculate bars relative to zero line
+	for i := 1; i < 32; i++ {
+		if dayFound[i] {
+			currSaldo = daySaldo[i]
+		}
+
+		// Calculate the height of the bar in pixels
+		// The range from minSaldo to maxSaldo spans plotHeight pixels
+		rangeVal := maxSaldo.Sub(minSaldo)
+		rangeValF, _ := rangeVal.Float64()
+		var barHeight int
+		var barY int
+
+		if currSaldo.GreaterThanOrEqual(zeroDecimal) {
+			// Positive value: bar extends upward from zero line
+			// Calculate height from zero to currSaldo
+			heightDecimal := currSaldo.Sub(zeroDecimal)
+			heightVal, _ := heightDecimal.Float64()
+			if rangeValF > 0 {
+				barHeight = int(heightVal / (rangeValF / float64(plotHeight)))
+			} else {
+				barHeight = 0
+			}
+			// Y position is zero line minus height (extending upward)
+			barY = zeroLine - barHeight
+		} else {
+			// Negative value: bar extends downward from zero line
+			// Calculate height from zero to currSaldo (absolute value)
+			heightDecimal := zeroDecimal.Sub(currSaldo)
+			heightVal, _ := heightDecimal.Float64()
+			if rangeValF > 0 {
+				barHeight = int(heightVal / (rangeValF / float64(plotHeight)))
+			} else {
+				barHeight = 0
+			}
+			// Y position is zero line (extending downward)
+			barY = zeroLine
+		}
+
+		monthValue.X = strconv.Itoa(marginLeft + (i-1)*colWidth)
+		monthValue.Y = strconv.Itoa(barY)
+		monthValue.Width = strconv.Itoa(colWidth - 1)
+		monthValue.Height = strconv.Itoa(barHeight)
+		monthValue.Day = strconv.Itoa(i)
+		monthValue.Saldo = Dec2Str(currSaldo)
+		if currSaldo.GreaterThanOrEqual(zeroDecimal) {
+			monthValue.IsPositive = "true"
+		} else {
+			monthValue.IsPositive = "false"
+		}
+		monthValues = append(monthValues, monthValue)
 	}
 
 	// Generate grid lines (horizontal)
