@@ -6,7 +6,6 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -80,6 +79,9 @@ func showFastInk(w http.ResponseWriter, db *sql.DB) {
 //go:embed html/fasta5ink.html
 var htmlfasta5ink string
 
+//go:embed html/fasta_footer.html
+var htmlfastafooterink string
+
 func editfastinkHTML(w http.ResponseWriter, req *http.Request) {
 	log.Println("editfastinkHTML start")
 	currentTime := time.Now()
@@ -98,9 +100,9 @@ func editfastinkHTML(w http.ResponseWriter, req *http.Request) {
 
 	showFastInk(w, db)
 
-	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
-	_, _ = fmt.Fprintf(w, "</body>\n")
-	_, _ = fmt.Fprintf(w, "</html>\n")
+	t = template.New("FastaFooter")
+	t, _ = t.Parse(htmlfastafooterink)
+	_ = t.Execute(w, nil)
 	log.Println("editfastinkHTML slut")
 }
 

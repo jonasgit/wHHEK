@@ -6,7 +6,6 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -85,6 +84,9 @@ func showFastUtg(w http.ResponseWriter, db *sql.DB) {
 //go:embed html/fasta5.html
 var htmlfasta5 string
 
+//go:embed html/fasta_footer.html
+var htmlfastafooterutg string
+
 type Fasta5Data struct {
 	CurrDBName string
 	CurrDate   string
@@ -108,9 +110,9 @@ func editfastutgHTML(w http.ResponseWriter, req *http.Request) {
 
 	showFastUtg(w, db)
 
-	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
-	_, _ = fmt.Fprintf(w, "</body>\n")
-	_, _ = fmt.Fprintf(w, "</html>\n")
+	t = template.New("FastaFooter")
+	t, _ = t.Parse(htmlfastafooterutg)
+	_ = t.Execute(w, nil)
 	log.Println("editfastutgHTML slut")
 }
 

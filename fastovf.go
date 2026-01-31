@@ -6,7 +6,6 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -80,6 +79,9 @@ func showFastOvf(w http.ResponseWriter, db *sql.DB) {
 //go:embed html/fasta5ovf.html
 var htmlfasta5ovf string
 
+//go:embed html/fasta_footer.html
+var htmlfastafooterovf string
+
 func editfastovfHTML(w http.ResponseWriter, req *http.Request) {
 	log.Println("editfastovfHTML start")
 	currentTime := time.Now()
@@ -98,9 +100,9 @@ func editfastovfHTML(w http.ResponseWriter, req *http.Request) {
 
 	showFastOvf(w, db)
 
-	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
-	_, _ = fmt.Fprintf(w, "</body>\n")
-	_, _ = fmt.Fprintf(w, "</html>\n")
+	t = template.New("FastaFooter")
+	t, _ = t.Parse(htmlfastafooterovf)
+	_ = t.Execute(w, nil)
 	log.Println("editfastovfHTML slut")
 }
 
