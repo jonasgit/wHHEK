@@ -813,6 +813,12 @@ order by datum,löpnr`, endDate, accName, accName)
 	}
 	res.Close()
 
+	// Initialize day 1 if not already set (e.g., when there are no transactions during the period)
+	if !dayFound[1] {
+		daySaldo[1] = currSaldo
+		dayFound[1] = true
+	}
+
 	// Fyll på med saknade dagar
 	for i := 2; i < 32; i++ {
 		if !dayFound[i] {
