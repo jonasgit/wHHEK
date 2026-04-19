@@ -118,6 +118,7 @@ func editformKonto(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// 1. Fetch account details from the database
 	var KontoNummer []byte    // size 20
 	var Benämning []byte      // size 40, index
 	var Saldo []byte          // BCD / Decimal Precision 19
@@ -129,30 +130,45 @@ func editformKonto(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	err := db.QueryRowContext(ctx,
 		`SELECT KontoNummer,Benämning,Saldo,StartSaldo,StartManad,SaldoArsskifte,ArsskifteManad FROM Konton WHERE (Löpnr=?)`, lopnr).Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &SaldoArsskifte, &ArsskifteManad)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error fetching account for editing: %v", err)
+		http.Error(w, "Konto hittades inte.", http.StatusNotFound)
+		return
 	}
 
-	_, _ = fmt.Fprintf(w, "Redigera konto<br>")
-	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/konton\">")
+	// 2. Prepare data structure for the template
+	data := struct {
+		Benamning      string
+		Saldo          string
+		StartSaldo     string
+		StartManad     string
+		SaldoArsskifte string
+		ArsskifteManad string
+		Lopnr          int
+	}{
+		Benamning:      toUtf8(Benämning),
+		Saldo:          toUtf8(Saldo),
+		StartSaldo:     toUtf8(StartSaldo),
+		StartManad:     toUtf8(StartManad),
+		SaldoArsskifte: toUtf8(SaldoArsskifte),
+		ArsskifteManad: toUtf8(ArsskifteManad),
+		Lopnr:          lopnr,
+	}
 
-	_, _ = fmt.Fprintf(w, "<label for=\"Benamning\">Benämning:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"Benamning\" name=\"Benamning\" value=\"%s\">", toUtf8(Benämning))
-	_, _ = fmt.Fprintf(w, "<label for=\"Saldo\" hidden>Saldo:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"Saldo\" name=\"Saldo\" value=\"%s\" hidden>", Saldo)
-	_, _ = fmt.Fprintf(w, "<label for=\"StartSaldo\">StartSaldo:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"StartSaldo\" name=\"StartSaldo\" value=\"%s\">", StartSaldo)
-	_, _ = fmt.Fprintf(w, "<label for=\"StartManad\">StartMånad:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"StartManad\" name=\"StartManad\" value=\"%s\">", StartManad)
-	_, _ = fmt.Fprintf(w, "<label for=\"SaldoArsskifte\" hidden>Saldo Årsskifte:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"SaldoArsskifte\" name=\"SaldoArsskifte\" value=\"%s\" hidden>", SaldoArsskifte)
-	_, _ = fmt.Fprintf(w, "<label for=\"ArsskifteManad\" hidden>Årsskiftesmanad:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"ArsskifteManad\" name=\"ArsskifteManad\" value=\"%s\" hidden>", ArsskifteManad)
+	// 3. Parse the edit template (Assuming 'htmlTemplates' is accessible and contains the parsed templates)
+	tmpl, err := template.ParseFS(htmlTemplates, "html/edit_konto.html") // Adjust this path based on how you load templates
+	if err != nil {
+		log.Printf("Error parsing edit template: %v", err)
+		http.Error(w, "Kunde inte ladda formuläret.", http.StatusInternalServerError)
+		return
+	}
 
-	_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\">", lopnr)
-	_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"action\" name=\"action\" value=\"update\">")
-	_, _ = fmt.Fprintf(w, "<input type=\"submit\" value=\"Uppdatera\">")
-	_, _ = fmt.Fprintf(w, "</form>\n")
-	_, _ = fmt.Fprintf(w, "<p>\n")
+	// 4. Execute the template and write to ResponseWriter
+	err = tmpl.Execute(w, data)
+	if err != nil {
+		log.Printf("Error executing edit template: %v", err)
+		http.Error(w, "Kunde inte rendera formuläret.", http.StatusInternalServerError)
+		return
+	}
 }
 
 func month2Int(month time.Month) int {
