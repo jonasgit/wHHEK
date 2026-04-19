@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -23,6 +24,13 @@ type konto struct {
 	StartManad     string          // size 10
 	SaldoArsskifte string          // BCD / Decimal Precision 19
 	ArsskifteManad string          // size 10
+	Löpnr          int             // autoinc Primary Key
+}
+
+// AccountListData holds the data for account list template
+type AccountListData struct {
+	Accounts   []konto
+	CurrDBName string
 }
 
 func printKonton(w http.ResponseWriter, db *sql.DB) {
@@ -31,6 +39,8 @@ func printKonton(w http.ResponseWriter, db *sql.DB) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	var accounts []konto
 
 	var KontoNummer []byte    // size 20
 	var Benämning []byte      // size 40, index
@@ -41,42 +51,51 @@ func printKonton(w http.ResponseWriter, db *sql.DB) {
 	var SaldoArsskifte []byte // BCD / Decimal Precision 19
 	var ArsskifteManad []byte // size 10
 
-	_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr>")
-	_, _ = fmt.Fprintf(w, "<th>Kontonummer</th>")
-	_, _ = fmt.Fprintf(w, "<th>Benämning</th>")
-	_, _ = fmt.Fprintf(w, "<th>Saldo</th>")
-	_, _ = fmt.Fprintf(w, "<th>Startsaldo</th>")
-	_, _ = fmt.Fprintf(w, "<th>Startmånad</th>")
-	_, _ = fmt.Fprintf(w, "<th>Saldo årsskifte</th>")
-	_, _ = fmt.Fprintf(w, "<th>Årsskiftesmånad</th>")
-	_, _ = fmt.Fprintf(w, "<th>Redigera</th><th>Radera</th>\n")
+	fmt.Println("Hittar konton2")
 	for res.Next() {
 		_ = res.Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &Löpnr, &SaldoArsskifte, &ArsskifteManad)
 
-		_, _ = fmt.Fprintf(w, "<tr>")
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(KontoNummer))
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Benämning))
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(Saldo))
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(StartSaldo))
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(StartManad))
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(SaldoArsskifte))
-		_, _ = fmt.Fprintf(w, "<td>%s</td>", toUtf8(ArsskifteManad))
+		account := konto{
+			KontoNummer: toUtf8(KontoNummer),
+			Benämning:   toUtf8(Benämning),
+			Saldo: func() decimal.Decimal {
+				d, _ := decimal.NewFromString(toUtf8(Saldo))
+				return d
+			}(),
+			StartSaldo: func() decimal.Decimal {
+				d, _ := decimal.NewFromString(toUtf8(StartSaldo))
+				return d
+			}(),
+			StartManad:     toUtf8(StartManad),
+			SaldoArsskifte: toUtf8(SaldoArsskifte),
+			ArsskifteManad: toUtf8(ArsskifteManad),
+			Löpnr:          Löpnr,
+		}
 
-		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/konton\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"editform\"><input type=\"submit\" value=\"Redigera\"></form></td>\n", Löpnr)
-		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/konton\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"radera\"><input type=\"checkbox\" id=\"OK\" name=\"OK\" required><label for=\"OK\">OK</label><input type=\"submit\" value=\"Radera\"></form></td></tr>\n", Löpnr)
+		accounts = append(accounts, account)
+		fmt.Println("appended konto: ", account.Benämning)
 	}
-	_, _ = fmt.Fprintf(w, "</table>\n")
 
 	res.Close()
 
-	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/konton\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"addform\"><input type=\"submit\" value=\"Nytt konto\"></form>\n")
+	// Use template for rendering
+	tmpl, err := template.New("konton").ParseFS(htmlTemplates, "html/konton.html", "html/account_list.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	data := AccountListData{
+		Accounts:   accounts,
+		CurrDBName: currentDatabase,
+	}
+
+	err = tmpl.Execute(w, data)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
-func printKontonFooter(w http.ResponseWriter) {
-	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
-	_, _ = fmt.Fprintf(w, "</body>\n")
-	_, _ = fmt.Fprintf(w, "</html>\n")
-}
+// Removed printKontonFooter since it's now handled by the template
 
 func raderaKonto(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	fmt.Println("raderaKonto lopnr: ", lopnr)
@@ -300,17 +319,6 @@ func updateKontoSaldo(Benamning string, Saldo decimal.Decimal) {
 }
 
 func hanterakonton(w http.ResponseWriter, req *http.Request) {
-	_, _ = fmt.Fprintf(w, "<html>\n")
-	_, _ = fmt.Fprintf(w, "<head>\n")
-	_, _ = fmt.Fprintf(w, "<style>\n")
-	_, _ = fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
-	_, _ = fmt.Fprintf(w, "</style>\n")
-	_, _ = fmt.Fprintf(w, "</head>\n")
-	_, _ = fmt.Fprintf(w, "<body>\n")
-
-	_, _ = fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
-	_, _ = fmt.Fprintf(w, "<h2>Konton</h2>\n")
-
 	err := req.ParseForm()
 	if err != nil {
 		log.Fatal(err)
@@ -360,8 +368,9 @@ func hanterakonton(w http.ResponseWriter, req *http.Request) {
 	default:
 		fmt.Println("Okänd action: ", formaction)
 	}
+
+	// Render the main konton page with forms
 	printKonton(w, db)
-	printKontonFooter(w)
 }
 
 func getAccNames() []string {

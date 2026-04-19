@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redigera konto</title>
+    <!-- Assuming some base CSS or structure is available, keeping it minimal for now -->
+</head>
+<body>
+    <h1>Redigera konto</h1>
+    <form method="POST" action="/konton">
+        <label for="Benamning">Benämning:</label><br>
+        <input type="text" id="Benamning" name="Benamning" value="{{.Benamning}}"><br><br>
+
+        <label for="Saldo" hidden>Saldo:</label><br>
+        <input type="text" id="Saldo" name="Saldo" value="{{.Saldo}}" hidden><br>
+
+        <label for="StartSaldo">StartSaldo:</label><br>
+        <input type="text" id="StartSaldo" name="StartSaldo" value="{{.StartSaldo}}"><br><br>
+
+        <label for="StartManad">StartMånad:</label><br>
+        <input type="text" id="StartManad" name="StartManad" value="{{.StartManad}}"><br><br>
+
+        <label for="SaldoArsskifte" hidden>Saldo Årsskifte:</label><br>
+        <input type="text" id="SaldoArsskifte" name="SaldoArsskifte" value="{{.SaldoArsskifte}}" hidden><br>
+
+        <label for="ArsskifteManad" hidden>Årsskiftesmanad:</label><br>
+        <input type="text" id="ArsskifteManad" name="ArsskifteManad" value="{{.ArsskifteManad}}" hidden><br><br>
+
+        <input type="hidden" id="lopnr" name="lopnr" value="{{.Löpnr}}">
+        <input type="hidden" id="action" name="action" value="update">
+        
+        <input type="submit" value="Uppdatera">
+    </form>
+    <p></p>
+</body>
+</html>

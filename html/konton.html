@@ -1,0 +1,26 @@
+{{/* Konton page template */}}
+{{define "konton"}}
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <title>Konton</title>
+    <!-- Load htmx -->
+    <script src="/htmx.js"></script>
+
+    <style>
+        table,th,td { border: 1px solid black ; text-align: center }
+    </style>
+</head>
+<body>
+
+<h1>{{.CurrDBName}}</h1>
+<h2>Konton</h2>
+
+{{/* Konton list using account_list template */}}
+{{template "account_list" .}}
+
+<a href="summary">Översikt</a>
+</body>
+</html>
+{{end}}
