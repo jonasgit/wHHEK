@@ -3,6 +3,8 @@ package main
 
 import (
 	"database/sql"
+	"os"
+	"path/filepath"
 	"strconv"
 	"testing"
 
@@ -10,29 +12,42 @@ import (
 )
 
 func transaktionInit(t *testing.T, filnamn string) *sql.DB {
-	// Förberedelser
+	t.Helper()
+	dir := t.TempDir()
 	if JetDBSupport {
-		var filename = "got" + filnamn + ".mdb"
+		filename := filepath.Join(dir, "got"+filnamn+".mdb")
 		t.Log("Jet Supported.")
-
 		SkapaTomMDB(t, filename)
-		db = openJetDB(filename, false)
-	} else {
-		var filename = "got" + filnamn + ".db"
-		t.Log("Jet NOT Supported.")
-		SkapaTomDB(filename)
-		db = openSqlite(filename)
+		dbConn := openJetDB(filename, false)
+		if dbConn == nil {
+			t.Fatal("Ingen databas.")
+		}
+		t.Cleanup(func() { _ = dbConn.Close() })
+		return dbConn
 	}
-
-	if db == nil {
+	filename := filepath.Join(dir, "got"+filnamn+".db")
+	t.Log("Jet NOT Supported.")
+	if FileExists(filename) {
+		if err := os.Remove(filename); err != nil {
+			t.Fatalf("remove test db: %v", err)
+		}
+	}
+	dbConn, err := sql.Open("sqlite3", filename)
+	if err != nil {
+		t.Fatalf("sqlite open: %v", err)
+	}
+	if dbConn == nil {
 		t.Fatal("Ingen databas.")
 	}
-	return db
+	InitiateDB(dbConn)
+	t.Cleanup(func() { _ = dbConn.Close() })
+	return dbConn
 }
 
 func TestTransaktionTomDB1(t *testing.T) {
+	t.Parallel()
 	t.Log("TestTransaktionTomDB1")
-	transaktionInit(t, "trt")
+	db := transaktionInit(t, "trt")
 
 	// Denna testen
 	antal := antalTransaktioner(db)
@@ -43,12 +58,12 @@ func TestTransaktionTomDB1(t *testing.T) {
 		t.Log("Antal transaktioner ok (0).")
 	}
 
-	closeDB()
 }
 
 func TestTransaktionDB1(t *testing.T) {
+	t.Parallel()
 	t.Log("TestTransaktionDB1")
-	transaktionInit(t, "tr1")
+	db := transaktionInit(t, "tr1")
 
 	// Denna testen
 	// Kontrollera att vi utgår från startsaldo 0.00
@@ -74,7 +89,7 @@ func TestTransaktionDB1(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
+	addTransaktionInsättning(db, "Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
 
 	antal = antalTransaktioner(db)
 
@@ -107,12 +122,12 @@ func TestTransaktionDB1(t *testing.T) {
 		t.Log("Test efter saldo ok. " + saldoExpected.String())
 	}
 
-	closeDB()
 }
 
 func TestTransaktionDB2(t *testing.T) {
+	t.Parallel()
 	t.Log("TestTransaktionDB2")
-	transaktionInit(t, "tr2")
+	db := transaktionInit(t, "tr2")
 
 	// Denna testen
 	// Gör insättning 0,10kr 9 ggr och kontrollerar att resultatet blir 0,90kr
@@ -121,15 +136,15 @@ func TestTransaktionDB2(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
-	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
-	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
-	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
-	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
-	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
-	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
-	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
-	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
+	addTransaktionInsättning(db, "Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
+	addTransaktionInsättning(db, "Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
+	addTransaktionInsättning(db, "Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
+	addTransaktionInsättning(db, "Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
+	addTransaktionInsättning(db, "Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
+	addTransaktionInsättning(db, "Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
+	addTransaktionInsättning(db, "Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
+	addTransaktionInsättning(db, "Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
+	addTransaktionInsättning(db, "Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
 
 	antal := antalTransaktioner(db)
 
@@ -162,8 +177,8 @@ func TestTransaktionDB2(t *testing.T) {
 		t.Log("Test efter saldo ok. " + saldoExpected.String())
 	}
 
-	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
-	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
+	addTransaktionInsättning(db, "Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
+	addTransaktionInsättning(db, "Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
 
 	antal = antalTransaktioner(db)
 
@@ -196,12 +211,12 @@ func TestTransaktionDB2(t *testing.T) {
 		t.Log("Test efter saldo ok. " + saldoExpected.String())
 	}
 
-	closeDB()
 }
 
 func TestTransaktionDB3(t *testing.T) {
+	t.Parallel()
 	t.Log("TestTransaktionDB3")
-	transaktionInit(t, "tr3")
+	db := transaktionInit(t, "tr3")
 
 	// Denna testen
 	// Kontrollera att vi utgår från startsaldo 0.00
@@ -232,7 +247,7 @@ func TestTransaktionDB3(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
+	addTransaktionInsättning(db, "Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
 
 	antal = antalTransaktioner(db)
 
@@ -262,7 +277,7 @@ func TestTransaktionDB3(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	addTransaktionInköp("Plånboken", plats, "2021-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås", false)
+	addTransaktionInköp(db, "Plånboken", plats, "2021-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås", false)
 	konto = hämtaKonto(db, 1)
 
 	saldoExpected, _ = decimal.NewFromString("1.1")
@@ -279,8 +294,8 @@ func TestTransaktionDB3(t *testing.T) {
 		t.Log("Test efter saldo ok. " + saldoExpected.String())
 	}
 
-	addTransaktionInköp("Plånboken", plats, "2021-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås", false)
-	addTransaktionInköp("Plånboken", plats, "2021-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås", false)
+	addTransaktionInköp(db, "Plånboken", plats, "2021-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås", false)
+	addTransaktionInköp(db, "Plånboken", plats, "2021-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås", false)
 	konto = hämtaKonto(db, 1)
 
 	saldoExpected, _ = decimal.NewFromString("0.9")
@@ -297,12 +312,12 @@ func TestTransaktionDB3(t *testing.T) {
 		t.Log("Test efter saldo ok. " + saldoExpected.String())
 	}
 
-	closeDB()
 }
 
 func TestTransaktionDB4(t *testing.T) {
+	t.Parallel()
 	t.Log("TestTransaktionDB4")
-	transaktionInit(t, "tr4")
+	db := transaktionInit(t, "tr4")
 
 	// Denna testen
 	// Kontrollera att vi utgår från startsaldo 0.00
@@ -332,7 +347,7 @@ func TestTransaktionDB4(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
+	addTransaktionInsättning(db, "Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "Tom € Räksmörgås")
 
 	antal = antalTransaktioner(db)
 
@@ -362,7 +377,7 @@ func TestTransaktionDB4(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	addTransaktionInköp("Plånboken", plats, "2099-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås", false)
+	addTransaktionInköp(db, "Plånboken", plats, "2099-07-27", "Övriga utgifter", "Gemensamt", summa, "Tom € Räksmörgås", false)
 	konto = hämtaKonto(db, 1)
 
 	saldoExpected, _ = decimal.NewFromString("1.1")
@@ -388,12 +403,12 @@ func TestTransaktionDB4(t *testing.T) {
 		t.Log("Test efter saldo ok. " + saldoExpected.String())
 	}
 
-	closeDB()
 }
 
 func TestTransaktionDB5(t *testing.T) {
+	t.Parallel()
 	t.Log("TestTransaktionDB5")
-	transaktionInit(t, "tr5")
+	db := transaktionInit(t, "tr5")
 
 	// Denna testen
 	// Kommentar klarar citat-tecken
@@ -422,7 +437,7 @@ func TestTransaktionDB5(t *testing.T) {
 		t.Error(err)
 	}
 	comment := "Tom '€' \"Räksmörgås\""
-	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, comment)
+	addTransaktionInsättning(db, "Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, comment)
 
 	antal = antalTransaktioner(db)
 
@@ -432,7 +447,7 @@ func TestTransaktionDB5(t *testing.T) {
 		t.Log("Antal transaktioner ok (1).")
 	}
 
-	trans := hämtaTransaktion(1)
+	trans := hämtaTransaktion(db, 1)
 
 	if trans.comment != comment {
 		t.Error("Transaktion text '" + comment + "' != '" + trans.comment + "'.")
@@ -440,12 +455,12 @@ func TestTransaktionDB5(t *testing.T) {
 		t.Log("Test Text ok.", "Tom '€' \"Räksmörgås\"")
 	}
 
-	closeDB()
 }
 
 func TestTransaktionDB6(t *testing.T) {
+	t.Parallel()
 	t.Log("TestTransaktionDB6")
-	transaktionInit(t, "tr6")
+	db := transaktionInit(t, "tr6")
 
 	// Denna testen
 	// Kontrollera att vi utgår från startsaldo 0.00
@@ -472,7 +487,7 @@ func TestTransaktionDB6(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "")
+	addTransaktionInsättning(db, "Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "")
 
 	antal = antalTransaktioner(db)
 
@@ -482,7 +497,7 @@ func TestTransaktionDB6(t *testing.T) {
 		t.Log("Antal transaktioner ok (1).")
 	}
 
-	trans := hämtaTransaktion(1)
+	trans := hämtaTransaktion(db, 1)
 
 	if trans.comment != " " {
 		t.Error("Transaktion text ' ' != '" + trans.comment + "'.")
@@ -490,12 +505,12 @@ func TestTransaktionDB6(t *testing.T) {
 		t.Log("Test Text ok.", "' '")
 	}
 
-	closeDB()
 }
 
 func TestTransaktionDB7(t *testing.T) {
+	t.Parallel()
 	t.Log("TestTransaktionDB7")
-	transaktionInit(t, "tr7")
+	db := transaktionInit(t, "tr7")
 
 	// Denna testen
 	// Kontrollera att vi utgår från startsaldo 0.00
@@ -524,7 +539,7 @@ func TestTransaktionDB7(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	addTransaktionInsättning("Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "")
+	addTransaktionInsättning(db, "Plånboken", "2021-07-27", "Övriga inkomster", "Gemensamt", summa, "")
 
 	antal = antalTransaktioner(db)
 
@@ -534,7 +549,7 @@ func TestTransaktionDB7(t *testing.T) {
 		t.Log("Antal transaktioner ok (1).")
 	}
 
-	trans := hämtaTransaktion(1)
+	trans := hämtaTransaktion(db, 1)
 
 	if trans.comment != " " {
 		t.Error("Transaktion text ' ' != '" + trans.comment + "'.")
@@ -557,7 +572,7 @@ func TestTransaktionDB7(t *testing.T) {
 		t.Log("Antal transaktioner ok (1).")
 	}
 
-	trans = hämtaTransaktion(1)
+	trans = hämtaTransaktion(db, 1)
 
 	if trans.comment != " " {
 		t.Error("Transaktion text ' ' != '" + trans.comment + "'.")
@@ -573,7 +588,6 @@ func TestTransaktionDB7(t *testing.T) {
 		t.Log("Test efter saldo ok. " + saldoExpected.String())
 	}
 
-	closeDB()
 }
 
 /*  Ett test:

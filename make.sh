@@ -39,9 +39,9 @@ if [[ "$1" = "test" ]]
 then
     if [[ "$2" = "verbose" ]]
     then
-	export BUILDCMD="test -p 1 -v"
+	export BUILDCMD="test -v"
     else
-	export BUILDCMD="test -p 1"
+	export BUILDCMD="test "
     fi
 else
     export BUILDCMD="build"

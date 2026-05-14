@@ -470,7 +470,7 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 	_ = tmpl2.Execute(w, data2)
 }
 
-func addTransaktionSQL(transtyp string, fromacc string, toacc string, date string, what string, who string, summa decimal.Decimal, text string) {
+func addTransaktionSQL(db *sql.DB, transtyp string, fromacc string, toacc string, date string, what string, who string, summa decimal.Decimal, text string) {
 	var amount = "NONE"
 
 	amount = AmountDec2DBStr(summa)
@@ -499,7 +499,7 @@ func addTransaktionSQL(transtyp string, fromacc string, toacc string, date strin
 	}
 }
 
-func addTransaktionInsättning(toacc string, date string, what string, who string, summa decimal.Decimal, text string) {
+func addTransaktionInsättning(db *sql.DB, toacc string, date string, what string, who string, summa decimal.Decimal, text string) {
 	var transtyp = "Insättning"
 
 	// TODO: Check length of "text"
@@ -508,13 +508,13 @@ func addTransaktionInsättning(toacc string, date string, what string, who strin
 	// TODO: Check what valid
 	// TODO: Check who valid
 
-	addTransaktionSQL(transtyp, "---", toacc, date, what, who, summa, text)
+	addTransaktionSQL(db, transtyp, "---", toacc, date, what, who, summa, text)
 
 	saldo := saldoKonto(db, toacc, "")
-	updateKontoSaldo(toacc, saldo)
+	updateKontoSaldo(db, toacc, saldo)
 }
 
-func addTransaktionInköp(fromacc string, place string, date string, what string, who string, summa decimal.Decimal, text string, fixed bool) {
+func addTransaktionInköp(db *sql.DB, fromacc string, place string, date string, what string, who string, summa decimal.Decimal, text string, fixed bool) {
 	var transtyp = "Inköp"
 	if fixed {
 		transtyp = "Fast Utgift"
@@ -525,13 +525,13 @@ func addTransaktionInköp(fromacc string, place string, date string, what string
 	// TODO: Check what valid
 	// TODO: Check who valid
 
-	addTransaktionSQL(transtyp, fromacc, place, date, what, who, summa, text)
+	addTransaktionSQL(db, transtyp, fromacc, place, date, what, who, summa, text)
 
 	saldo := saldoKonto(db, fromacc, "")
-	updateKontoSaldo(fromacc, saldo)
+	updateKontoSaldo(db, fromacc, saldo)
 }
 
-func addTransaktionUttag(fromacc string, date string, who string, summa decimal.Decimal, text string) {
+func addTransaktionUttag(db *sql.DB, fromacc string, date string, who string, summa decimal.Decimal, text string) {
 	var transtyp = "Uttag"
 
 	// TODO: Check length of "text"
@@ -540,16 +540,16 @@ func addTransaktionUttag(fromacc string, date string, who string, summa decimal.
 	// TODO: Check what valid
 	// TODO: Check who valid
 
-	addTransaktionSQL(transtyp, fromacc, "Plånboken", date, "---", who, summa, text)
+	addTransaktionSQL(db, transtyp, fromacc, "Plånboken", date, "---", who, summa, text)
 
 	saldo := saldoKonto(db, fromacc, "")
-	updateKontoSaldo(fromacc, saldo)
+	updateKontoSaldo(db, fromacc, saldo)
 
 	saldo = saldoKonto(db, "Plånboken", "")
-	updateKontoSaldo("Plånboken", saldo)
+	updateKontoSaldo(db, "Plånboken", saldo)
 }
 
-func addTransaktionÖverföring(fromacc string, toacc string, date string, who string, summa decimal.Decimal, text string) {
+func addTransaktionÖverföring(db *sql.DB, fromacc string, toacc string, date string, who string, summa decimal.Decimal, text string) {
 	var transtyp = "Överföring"
 
 	// TODO: Check length of "text"
@@ -558,13 +558,13 @@ func addTransaktionÖverföring(fromacc string, toacc string, date string, who s
 	// TODO: Check what valid
 	// TODO: Check who valid
 
-	addTransaktionSQL(transtyp, fromacc, toacc, date, "---", who, summa, text)
+	addTransaktionSQL(db, transtyp, fromacc, toacc, date, "---", who, summa, text)
 
 	saldo := saldoKonto(db, fromacc, "")
-	updateKontoSaldo(fromacc, saldo)
+	updateKontoSaldo(db, fromacc, saldo)
 
 	saldo = saldoKonto(db, toacc, "")
-	updateKontoSaldo(toacc, saldo)
+	updateKontoSaldo(db, toacc, saldo)
 }
 
 func addtransaction(w http.ResponseWriter, req *http.Request) {
@@ -600,7 +600,7 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 		//log.Println("Val: ", place)
 		//log.Println("Val: ", what)
 
-		addTransaktionInköp(fromacc, place, date, what, who, amount, text, false)
+		addTransaktionInköp(db, fromacc, place, date, what, who, amount, text, false)
 
 		t := template.New("AddTransInkop")
 		t, _ = t.Parse(htmladdtransinkop)
@@ -625,7 +625,7 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 		//log.Println("Val: ", toacc)
 		//log.Println("Val: ", what)
 
-		addTransaktionInsättning(toacc, date, what, who, amount, text)
+		addTransaktionInsättning(db, toacc, date, what, who, amount, text)
 
 		t := template.New("AddTransInsattning")
 		t, _ = t.Parse(htmladdtransinsattning)
@@ -647,7 +647,7 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 		fromacc := req.FormValue("fromacc")
 		//log.Println("Val: ", fromacc, getCurrentFuncName())
 
-		addTransaktionUttag(fromacc, date, who, amount, text)
+		addTransaktionUttag(db, fromacc, date, who, amount, text)
 
 		t := template.New("AddTransUttag")
 		t, _ = t.Parse(htmladdtransuttag)
@@ -670,7 +670,7 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 		//log.Println("Val: ", fromacc, getCurrentFuncName())
 		//log.Println("Val: ", toacc)
 
-		addTransaktionÖverföring(fromacc, toacc, date, who, amount, text)
+		addTransaktionÖverföring(db, fromacc, toacc, date, who, amount, text)
 
 		t := template.New("AddTransOverforing")
 		t, _ = t.Parse(htmladdtransoverforing)
@@ -954,7 +954,7 @@ func antalTransaktioner(db *sql.DB) int {
 	return antal
 }
 
-func hämtaTransaktion(lopnr int) (result transaction) {
+func hämtaTransaktion(db *sql.DB, lopnr int) (result transaction) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var err error

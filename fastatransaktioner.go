@@ -276,7 +276,7 @@ func registreraFastTransaktion(db *sql.DB, transid int) {
 	// Register transaction
 	if toUtf8(Vad) == "---" {
 		// Fasta överföringar
-		addTransaktionÖverföring(toUtf8(FrånKonto),
+		addTransaktionÖverföring(db, toUtf8(FrånKonto),
 			toUtf8(TillKonto),
 			toUtf8(Datum),
 			toUtf8(Vem),
@@ -284,7 +284,7 @@ func registreraFastTransaktion(db *sql.DB, transid int) {
 			"Fast transaktion wHHEK")
 	} else if toUtf8(FrånKonto) == "---" {
 		// Fasta inkomster
-		addTransaktionInsättning(toUtf8(TillKonto),
+		addTransaktionInsättning(db, toUtf8(TillKonto),
 			toUtf8(Datum),
 			toUtf8(Vad),
 			toUtf8(Vem),
@@ -292,7 +292,7 @@ func registreraFastTransaktion(db *sql.DB, transid int) {
 			"Fast transaktion wHHEK")
 	} else {
 		// Fasta utgifter
-		addTransaktionInköp(toUtf8(FrånKonto),
+		addTransaktionInköp(db, toUtf8(FrånKonto),
 			toUtf8(TillKonto),
 			toUtf8(Datum),
 			toUtf8(Vad),
@@ -407,7 +407,7 @@ func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.D
 		_, _ = fmt.Fprintf(w, "Registrerar Överföring...<br> ")
 		log.Println("registreraFastTransaktionHTML Registrerar Överföring...")
 
-		addTransaktionÖverföring(toUtf8(FrånKonto), toUtf8(TillKonto), toUtf8(Datum), toUtf8(Vem), amount, "Fast transaktion wHHEK")
+		addTransaktionÖverföring(db, toUtf8(FrånKonto), toUtf8(TillKonto), toUtf8(Datum), toUtf8(Vem), amount, "Fast transaktion wHHEK")
 
 		_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Frånkonto</th><th>Tillkonto</th><th>Typ</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
 		sqlStmt := "<tr>"
@@ -425,7 +425,7 @@ func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.D
 		_, _ = fmt.Fprintf(w, "Registrerar Insättning...<br> ")
 		log.Println("registreraFastTransaktionHTML Insättning...")
 
-		addTransaktionInsättning(toUtf8(TillKonto), toUtf8(Datum), toUtf8(Vad), toUtf8(Vem), amount, "Fast transaktion wHHEK")
+		addTransaktionInsättning(db, toUtf8(TillKonto), toUtf8(Datum), toUtf8(Vad), toUtf8(Vem), amount, "Fast transaktion wHHEK")
 
 		_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Konto</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
 		sqlStmt := "<tr>"
@@ -443,7 +443,7 @@ func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.D
 		_, _ = fmt.Fprintf(w, "Registrerar Fast Utgift...<br> ")
 		log.Println("registreraFastTransaktionHTML Fast Utgift...")
 
-		addTransaktionInköp(toUtf8(FrånKonto), toUtf8(TillKonto), toUtf8(Datum), toUtf8(Vad), toUtf8(Vem), amount, "Fast transaktion wHHEK", true)
+		addTransaktionInköp(db, toUtf8(FrånKonto), toUtf8(TillKonto), toUtf8(Datum), toUtf8(Vad), toUtf8(Vem), amount, "Fast transaktion wHHEK", true)
 
 		_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Frånkonto</th><th>Plats</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
 		sqlStmt := "<tr>"

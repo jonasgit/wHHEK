@@ -317,7 +317,7 @@ func updateKonto(w http.ResponseWriter, lopnr int, Benamning string, StartSaldo 
 	_, _ = fmt.Fprintf(w, "Konto %s uppdaterad.<br>", Benamning)
 }
 
-func updateKontoSaldo(Benamning string, Saldo decimal.Decimal) {
+func updateKontoSaldo(db *sql.DB, Benamning string, Saldo decimal.Decimal) {
 	lopnr := hämtakontoID(db, Benamning)
 	//fmt.Println("updateKontoSaldo lopnr: ", lopnr)
 	var amount string = AmountDec2DBStr(Saldo)

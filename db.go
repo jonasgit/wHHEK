@@ -175,51 +175,51 @@ func InitiateDB(db *sql.DB) {
 	/* Data for table Betalningar */
 
 	/* Data for table Budget */
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Lön efter skatt','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,1);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Barnbidrag','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,2);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Underhållsbidrag','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,3);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Bidragsförskott','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,4);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Bostadsbidrag','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,5);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Studiestöd','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,6);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Utbildningsbidrag','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,7);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Arbetslöshetsersättning','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,8);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Pension','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,9);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Sjukpenning','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,10);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Föräldrapenning','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,11);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Övriga inkomster','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,12);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Arbetslunch','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,13);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Bostad/hyra utan lån och ränta','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,14);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Bostadslån och ränta','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,15);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Kollektiva resor','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,16);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Bil','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,17);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Fackavgifter','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,18);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Läkare/tandläkare/medicin','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,19);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Barnomsorg','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,20);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Underhåll till barn','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,21);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Amorteringar','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,22);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Räntor','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,23);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Övriga utg.-lån','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,24);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Övriga utgifter','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,25);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Dagstidning, Tel, TV-licens','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,26);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Förbrukn.varor','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,27);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Hemförsäkring','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,28);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Hushålls-el','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,29);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Hygien','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,30);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Kläder och skor','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,31);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Lek och fritid','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,32);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Livsmedel','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,33);")
-	InsertRow("INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Möbler, husgeråd, TV, radio','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,34);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Lön efter skatt','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,1);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Barnbidrag','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,2);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Underhållsbidrag','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,3);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Bidragsförskott','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,4);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Bostadsbidrag','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,5);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Studiestöd','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,6);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Utbildningsbidrag','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,7);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Arbetslöshetsersättning','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,8);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Pension','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,9);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Sjukpenning','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,10);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Föräldrapenning','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,11);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Övriga inkomster','J',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,12);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Arbetslunch','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,13);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Bostad/hyra utan lån och ränta','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,14);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Bostadslån och ränta','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,15);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Kollektiva resor','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,16);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Bil','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,17);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Fackavgifter','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,18);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Läkare/tandläkare/medicin','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,19);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Barnomsorg','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,20);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Underhåll till barn','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,21);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Amorteringar','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,22);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Räntor','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,23);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Övriga utg.-lån','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,24);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Övriga utgifter','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,25);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Dagstidning, Tel, TV-licens','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,26);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Förbrukn.varor','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,27);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Hemförsäkring','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,28);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Hushålls-el','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,29);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Hygien','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,30);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Kläder och skor','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,31);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Lek och fritid','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,32);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Livsmedel','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,33);")
+	InsertRow(db, "INSERT INTO [Budget] ([Typ],[Inkomst],[HurOfta],[StartMånad],[Jan],[Feb],[Mar],[Apr],[Maj],[Jun],[Jul],[Aug],[Sep],[Okt],[Nov],[Dec],[Kontrollnr],[Löpnr]) VALUES ('Möbler, husgeråd, TV, radio','N',1,'1',0,0,0,0,0,0,0,0,0,0,0,0,NULL,34);")
 
 	/* Data for table DtbVer */
-	InsertRow("INSERT INTO [DtbVer] ([VerNum],[Benämning],[Losenord]) VALUES ('3.01','Databas med stöd för betalning till Postgirot',' ');")
+	InsertRow(db, "INSERT INTO [DtbVer] ([VerNum],[Benämning],[Losenord]) VALUES ('3.01','Databas med stöd för betalning till Postgirot',' ');")
 
 	/* Data for table Konton */
-	InsertRow("INSERT INTO [Konton] ([KontoNummer],[Benämning],[Saldo],[StartSaldo],[StartManad],[Löpnr],[SaldoArsskifte],[ArsskifteManad]) VALUES ('0','Plånboken',0,0,'Jan',1,0,'Jan');")
+	InsertRow(db, "INSERT INTO [Konton] ([KontoNummer],[Benämning],[Saldo],[StartSaldo],[StartManad],[Löpnr],[SaldoArsskifte],[ArsskifteManad]) VALUES ('0','Plånboken',0,0,'Jan',1,0,'Jan');")
 
 	/* Data for table LÅN */
 
 	/* Data for table Personer */
-	InsertRow("INSERT INTO [Personer] ([Namn],[Född],[Kön],[Löpnr]) VALUES ('Gemensamt','0','Gemensamt',1);")
+	InsertRow(db, "INSERT INTO [Personer] ([Namn],[Född],[Kön],[Löpnr]) VALUES ('Gemensamt','0','Gemensamt',1);")
 
 	/* Data for table Platser */
 
@@ -230,7 +230,7 @@ func InitiateDB(db *sql.DB) {
 	//log.Println("InitiateDB: Done.")
 }
 
-func InsertRow(sqlStmt string) {
+func InsertRow(db *sql.DB, sqlStmt string) {
 	if db == nil {
 		log.Println("InsertRow: No DB.")
 		return
