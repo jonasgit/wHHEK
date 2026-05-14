@@ -149,7 +149,7 @@ order by datum,löpnr
 	}
 
 	querystring = querystring1 + querystring2 + querystring3
-	b := make([]interface{}, 0, len(queryargs))
+	b := make([]any, 0, len(queryargs))
 	for _, i := range queryargs {
 		b = append(b, i)
 	}

@@ -20,19 +20,19 @@ func SanitizeAmount(amount string) string {
 	//fmt.Println("Sanitize IN:" + amount)
 	amount = strings.ReplaceAll(amount, ",", ".")
 
-	var newamount = ""
+	var newamount strings.Builder
 	for _, char := range amount {
 		if unicode.IsDigit(char) {
-			newamount += string(char)
+			newamount.WriteString(string(char))
 		}
 		if char == '.' {
-			newamount += string(char)
+			newamount.WriteString(string(char))
 		}
 		if char == '-' {
-			newamount += string(char)
+			newamount.WriteString(string(char))
 		}
 	}
-	amount = newamount
+	amount = newamount.String()
 
 	if strings.Count(amount, ".") > 1 {
 		amount = strings.Replace(amount, ".", "", strings.Count(amount, ".")-1)

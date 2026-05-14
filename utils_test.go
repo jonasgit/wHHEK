@@ -120,7 +120,7 @@ func TestDec1(t *testing.T) {
 	var n = decimal.NewFromInt(0)
 	incr, _ := decimal.NewFromString(".01")
 
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		n = n.Add(incr)
 	}
 	var expected = decimal.NewFromInt(10)
