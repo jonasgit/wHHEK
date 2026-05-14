@@ -5,7 +5,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"embed"
 	"fmt"
 	"html/template"
 	"log"
@@ -15,9 +14,6 @@ import (
 
 	"github.com/shopspring/decimal" // MIT License
 )
-
-//go:embed html/budget_table.html
-var budgetTableTemplate embed.FS
 
 type BudgetItem struct {
 	Lopnr      int    // autoinc Primary Key, index
@@ -44,15 +40,44 @@ type BudgetData struct {
 	BudgetItems []BudgetItem
 }
 
-func printBudget(w http.ResponseWriter, db *sql.DB) {
-	res, err := db.Query("SELECT Löpnr,Typ,Inkomst,HurOfta,StartMånad,Jan,Feb,Mar,Apr,Maj,Jun,Jul,Aug,Sep,Okt,Nov,Dec,Kontrollnr FROM Budget ORDER BY Inkomst ASC, Typ ASC")
+// BudgetEditForm holds one row for the budget edit form (template html/budget_edit_form.html).
+type BudgetEditForm struct {
+	Lopnr          int
+	Typ            string
+	Inkomst        string
+	HurOfta        string
+	StartManad     string
+	Jan            string
+	Feb            string
+	Mar            string
+	Apr            string
+	Maj            string
+	Jun            string
+	Jul            string
+	Aug            string
+	Sep            string
+	Okt            string
+	Nov            string
+	Dec            string
+	Kontrollnr     string
+}
 
+// BudgetPageView is passed to template "budget_page".
+type BudgetPageView struct {
+	Database      string
+	UpdateMessage string
+	Edit          *BudgetEditForm
+	BudgetData    BudgetData
+}
+
+func loadBudgetData(db *sql.DB) BudgetData {
+	res, err := db.Query("SELECT Löpnr,Typ,Inkomst,HurOfta,StartMånad,Jan,Feb,Mar,Apr,Maj,Jun,Jul,Aug,Sep,Okt,Nov,Dec,Kontrollnr FROM Budget ORDER BY Inkomst ASC, Typ ASC")
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer res.Close()
 
 	var budgetData BudgetData
-	var budgetItems []BudgetItem
 
 	for res.Next() {
 		var item BudgetItem
@@ -101,105 +126,71 @@ func printBudget(w http.ResponseWriter, db *sql.DB) {
 			item.Kontrollnr = "null"
 		}
 
-		budgetItems = append(budgetItems, item)
+		budgetData.BudgetItems = append(budgetData.BudgetItems, item)
 	}
 
-	budgetData.BudgetItems = budgetItems
-
-	tmplContent, err := budgetTableTemplate.ReadFile("html/budget_table.html")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	tmpl, err := template.New("budget_table").Parse(string(tmplContent))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = tmpl.ExecuteTemplate(w, "budget_table", budgetData)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	res.Close()
+	return budgetData
 }
 
-func printBudgetFooter(w http.ResponseWriter) {
-	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
-	_, _ = fmt.Fprintf(w, "</body>\n")
-	_, _ = fmt.Fprintf(w, "</html>\n")
-}
-
-func PrintEditCellText(w http.ResponseWriter, label string, title string, value string) {
-	_, _ = fmt.Fprintf(w, "<label for=\"%s\">%s:</label>", label, title)
-	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"%s\" name=\"%s\" value=\"%s\" >", label, label, value)
-}
-
-func editformBudget(w http.ResponseWriter, lopnr int, db *sql.DB) {
+func loadBudgetEditForm(lopnr int, db *sql.DB) *BudgetEditForm {
 	fmt.Println("editformBudget lopnr: ", lopnr)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	var Typ []byte        // size 40
-	var Inkomst []byte    // size 1
-	var HurOfta int16     // SmallInt
-	var StartMånad []byte // size 10
-	var Jan []byte        // BCD / Decimal Precision 19
-	var Feb []byte        // BCD / Decimal Precision 19
-	var Mar []byte        // BCD / Decimal Precision 19
-	var Apr []byte        // BCD / Decimal Precision 19
-	var Maj []byte        // BCD / Decimal Precision 19
-	var Jun []byte        // BCD / Decimal Precision 19
-	var Jul []byte        // BCD / Decimal Precision 19
-	var Aug []byte        // BCD / Decimal Precision 19
-	var Sep []byte        // BCD / Decimal Precision 19
-	var Okt []byte        // BCD / Decimal Precision 19
-	var Nov []byte        // BCD / Decimal Precision 19
-	var Dec []byte        // BCD / Decimal Precision 19
-	var Kontrollnr []byte //int32 // Integer
-	var Löpnr int         // autoinc Primary Key, index
+	var Typ []byte
+	var Inkomst []byte
+	var HurOfta int16
+	var StartMånad []byte
+	var Jan []byte
+	var Feb []byte
+	var Mar []byte
+	var Apr []byte
+	var Maj []byte
+	var Jun []byte
+	var Jul []byte
+	var Aug []byte
+	var Sep []byte
+	var Okt []byte
+	var Nov []byte
+	var Dec []byte
+	var Kontrollnr []byte
+	var Löpnr int
 
 	err := db.QueryRowContext(ctx,
 		`SELECT Löpnr,Typ,Inkomst,HurOfta,StartMånad,Jan,Feb,Mar,Apr,Maj,Jun,Jul,Aug,Sep,Okt,Nov,Dec,Kontrollnr FROM Budget WHERE (Löpnr=?)`, lopnr).Scan(&Löpnr, &Typ, &Inkomst, &HurOfta, &StartMånad, &Jan, &Feb, &Mar, &Apr, &Maj, &Jun, &Jul, &Aug, &Sep, &Okt, &Nov, &Dec, &Kontrollnr)
-
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	_, _ = fmt.Fprintf(w, "Redigera budgetpost<br>")
-	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/budget\">")
-
-	PrintEditCellText(w, "Typ", "Typ", toUtf8(Typ))
-	PrintEditCellText(w, "Inkomst", "Inkomst", toUtf8(Inkomst))
-	PrintEditCellText(w, "HurOfta", "HurOfta", strconv.Itoa(int(HurOfta)))
-	PrintEditCellText(w, "StartMånad", "StartMånad", toUtf8(StartMånad))
-	PrintEditCellText(w, "Jan", "Jan", toUtf8(Jan))
-	PrintEditCellText(w, "Feb", "Feb", toUtf8(Feb))
-	PrintEditCellText(w, "Mar", "Mar", toUtf8(Mar))
-	PrintEditCellText(w, "Apr", "Apr", toUtf8(Apr))
-	PrintEditCellText(w, "Maj", "Maj", toUtf8(Maj))
-	PrintEditCellText(w, "Jun", "Jun", toUtf8(Jun))
-	PrintEditCellText(w, "Jul", "Jul", toUtf8(Jul))
-	PrintEditCellText(w, "Aug", "Aug", toUtf8(Aug))
-	PrintEditCellText(w, "Sep", "Sep", toUtf8(Sep))
-	PrintEditCellText(w, "Okt", "Okt", toUtf8(Okt))
-	PrintEditCellText(w, "Nov", "Nov", toUtf8(Nov))
-	PrintEditCellText(w, "Dec", "Dec", toUtf8(Dec))
+	knr := "null"
 	if Kontrollnr != nil {
-		PrintEditCellText(w, "Kontrollnr", "Kontrollnr", toUtf8(Kontrollnr))
-	} else {
-		PrintEditCellText(w, "Kontrollnr", "Kontrollnr", "null")
+		knr = toUtf8(Kontrollnr)
 	}
 
-	_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\">", Löpnr)
-	_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"action\" name=\"action\" value=\"update\">")
-	_, _ = fmt.Fprintf(w, "<input type=\"submit\" value=\"Uppdatera\">")
-	_, _ = fmt.Fprintf(w, "</form>\n")
-	_, _ = fmt.Fprintf(w, "<p>\n")
+	return &BudgetEditForm{
+		Lopnr:      Löpnr,
+		Typ:        toUtf8(Typ),
+		Inkomst:    toUtf8(Inkomst),
+		HurOfta:    strconv.Itoa(int(HurOfta)),
+		StartManad: toUtf8(StartMånad),
+		Jan:        toUtf8(Jan),
+		Feb:        toUtf8(Feb),
+		Mar:        toUtf8(Mar),
+		Apr:        toUtf8(Apr),
+		Maj:        toUtf8(Maj),
+		Jun:        toUtf8(Jun),
+		Jul:        toUtf8(Jul),
+		Aug:        toUtf8(Aug),
+		Sep:        toUtf8(Sep),
+		Okt:        toUtf8(Okt),
+		Nov:        toUtf8(Nov),
+		Dec:        toUtf8(Dec),
+		Kontrollnr: knr,
+	}
 }
 
-func updateBudget(w http.ResponseWriter, lopnr int, req *http.Request, db *sql.DB) {
+func updateBudget(lopnr int, req *http.Request, db *sql.DB) string {
 	fmt.Println("updateBudget lopnr: ", lopnr)
 
 	var Typ = ""
@@ -293,21 +284,10 @@ func updateBudget(w http.ResponseWriter, lopnr int, req *http.Request, db *sql.D
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, _ = fmt.Fprintf(w, "Budgetpost %s uppdaterad.<br>", Typ)
+	return fmt.Sprintf("Budgetpost %s uppdaterad.", Typ)
 }
 
 func hanteraBudget(w http.ResponseWriter, req *http.Request) {
-	_, _ = fmt.Fprintf(w, "<html>\n")
-	_, _ = fmt.Fprintf(w, "<head>\n")
-	_, _ = fmt.Fprintf(w, "<style>\n")
-	_, _ = fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
-	_, _ = fmt.Fprintf(w, "</style>\n")
-	_, _ = fmt.Fprintf(w, "</head>\n")
-	_, _ = fmt.Fprintf(w, "<body>\n")
-
-	_, _ = fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
-	_, _ = fmt.Fprintf(w, "<h2>Budget</h2>\n")
-
 	err := req.ParseForm()
 	if err != nil {
 		log.Fatal(err)
@@ -319,16 +299,40 @@ func hanteraBudget(w http.ResponseWriter, req *http.Request) {
 		lopnr, _ = strconv.Atoi(req.FormValue("lopnr"))
 	}
 
+	var updateMsg string
+	var editForm *BudgetEditForm
+
 	switch formaction {
 	case "editform":
-		editformBudget(w, lopnr, db)
+		editForm = loadBudgetEditForm(lopnr, db)
 	case "update":
-		updateBudget(w, lopnr, req, db)
+		updateMsg = updateBudget(lopnr, req, db)
 	default:
-		fmt.Println("Okänd action: ", formaction)
+		if formaction != "" {
+			fmt.Println("Okänd action: ", formaction)
+		}
 	}
-	printBudget(w, db)
-	printBudgetFooter(w)
+
+	page := BudgetPageView{
+		Database:      currentDatabase,
+		UpdateMessage: updateMsg,
+		Edit:          editForm,
+		BudgetData:    loadBudgetData(db),
+	}
+
+	tmpl, err := template.ParseFS(htmlTemplates,
+		"html/budget_page.html",
+		"html/budget_edit_form.html",
+		"html/budget_table.html",
+		"html/budget_footer.html",
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = tmpl.ExecuteTemplate(w, "budget_page", page)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func antalBudgetposter(db *sql.DB) int {
