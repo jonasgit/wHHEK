@@ -1,0 +1,43 @@
+{{define "budget_edit_form"}}
+<p>Redigera budgetpost</p>
+<form method="POST" action="/budget">
+    <label for="Typ">Typ:</label>
+    <input type="text" id="Typ" name="Typ" value="{{.Typ}}">
+    <label for="Inkomst">Inkomst:</label>
+    <input type="text" id="Inkomst" name="Inkomst" value="{{.Inkomst}}">
+    <label for="HurOfta">HurOfta:</label>
+    <input type="text" id="HurOfta" name="HurOfta" value="{{.HurOfta}}">
+    <label for="StartMånad">StartMånad:</label>
+    <input type="text" id="StartMånad" name="StartMånad" value="{{.StartManad}}">
+    <label for="Jan">Jan:</label>
+    <input type="text" id="Jan" name="Jan" value="{{.Jan}}">
+    <label for="Feb">Feb:</label>
+    <input type="text" id="Feb" name="Feb" value="{{.Feb}}">
+    <label for="Mar">Mar:</label>
+    <input type="text" id="Mar" name="Mar" value="{{.Mar}}">
+    <label for="Apr">Apr:</label>
+    <input type="text" id="Apr" name="Apr" value="{{.Apr}}">
+    <label for="Maj">Maj:</label>
+    <input type="text" id="Maj" name="Maj" value="{{.Maj}}">
+    <label for="Jun">Jun:</label>
+    <input type="text" id="Jun" name="Jun" value="{{.Jun}}">
+    <label for="Jul">Jul:</label>
+    <input type="text" id="Jul" name="Jul" value="{{.Jul}}">
+    <label for="Aug">Aug:</label>
+    <input type="text" id="Aug" name="Aug" value="{{.Aug}}">
+    <label for="Sep">Sep:</label>
+    <input type="text" id="Sep" name="Sep" value="{{.Sep}}">
+    <label for="Okt">Okt:</label>
+    <input type="text" id="Okt" name="Okt" value="{{.Okt}}">
+    <label for="Nov">Nov:</label>
+    <input type="text" id="Nov" name="Nov" value="{{.Nov}}">
+    <label for="Dec">Dec:</label>
+    <input type="text" id="Dec" name="Dec" value="{{.Dec}}">
+    <label for="Kontrollnr">Kontrollnr:</label>
+    <input type="text" id="Kontrollnr" name="Kontrollnr" value="{{.Kontrollnr}}">
+    <input type="hidden" id="lopnr" name="lopnr" value="{{.Lopnr}}">
+    <input type="hidden" id="action" name="action" value="update">
+    <input type="submit" value="Uppdatera">
+</form>
+<p></p>
+{{end}}

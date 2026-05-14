@@ -1,0 +1,20 @@
+{{define "budget_page"}}
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Budget</title>
+<style>
+table,th,td { border: 1px solid black }
+</style>
+</head>
+<body>
+<h1>{{.Database}}</h1>
+<h2>Budget</h2>
+{{if .UpdateMessage}}<p>{{.UpdateMessage}}</p>{{end}}
+{{if .Edit}}{{template "budget_edit_form" .Edit}}{{end}}
+{{template "budget_table" .BudgetData}}
+{{template "budget_footer" .}}
+</body>
+</html>
+{{end}}
