@@ -168,6 +168,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3" // MIT License
@@ -183,6 +184,10 @@ var nopwDb *sql.DB = nil
 var dbtype uint8 = 0 // 0=none, 1=mdb/Access2.0, 2=sqlite3
 var currentDatabase = "NONE"
 var dbdecimaldot bool = false
+
+// httpSrv is set in main before ListenAndServe; quitapp triggers Shutdown on it.
+var httpSrv *http.Server
+var httpShutdownOnce sync.Once
 
 //go:embed html/*.html
 var htmlTemplates embed.FS
@@ -566,15 +571,26 @@ func quitapp(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if db != nil {
-		closedb(w, req)
+		closeDB()
 	}
 
 	if f, ok := w.(http.Flusher); ok {
 		f.Flush()
 	}
-	//time.Sleep(8 * time.Second)
-	//srv.Shutdown(ctx);
-	os.Exit(0)
+
+	// Shutdown must not block this handler (deadlock). Run after response completes.
+	httpShutdownOnce.Do(func() {
+		go func() {
+			if httpSrv == nil {
+				return
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			if err := httpSrv.Shutdown(ctx); err != nil {
+				log.Println("HTTP Shutdown: ", err)
+			}
+		}()
+	})
 }
 
 type Main9Data struct {
@@ -1409,7 +1425,6 @@ func main() {
 	fmt.Println("Öppna URL i webläsaren:  http://localhost:8090/")
 	//fmt.Printf(" eller :  http://%s:8090/\n", ip)
 	browser.OpenURL("http://localhost:8090/")
-	_ = context.Background()
 	srv := &http.Server{
 		Addr:           "127.0.0.1:8090",
 		Handler:        nil,
@@ -1417,8 +1432,10 @@ func main() {
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
+	httpSrv = srv
 	httpError := srv.ListenAndServe()
-	if httpError != nil {
+	if httpError != nil && httpError != http.ErrServerClosed {
 		log.Println("While serving HTTP: ", httpError)
 	}
+	closeDB()
 }
