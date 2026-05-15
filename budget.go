@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
@@ -66,14 +67,19 @@ type BudgetEditForm struct {
 type BudgetPageView struct {
 	Database      string
 	UpdateMessage string
+	ErrorMessage  string
 	Edit          *BudgetEditForm
 	BudgetData    BudgetData
 }
 
-func loadBudgetData(db *sql.DB) BudgetData {
+func loadBudgetData(db *sql.DB) (BudgetData, error) {
+	if db == nil {
+		return BudgetData{}, fmt.Errorf("ingen databas är öppen")
+	}
+
 	res, err := db.Query("SELECT Löpnr,Typ,Inkomst,HurOfta,StartMånad,Jan,Feb,Mar,Apr,Maj,Jun,Jul,Aug,Sep,Okt,Nov,Dec,Kontrollnr FROM Budget ORDER BY Inkomst ASC, Typ ASC")
 	if err != nil {
-		log.Fatal(err)
+		return BudgetData{}, fmt.Errorf("kunde inte läsa budgettabellen: %w", err)
 	}
 	defer res.Close()
 
@@ -101,7 +107,8 @@ func loadBudgetData(db *sql.DB) BudgetData {
 
 		err = res.Scan(&item.Lopnr, &Typ, &Inkomst, &HurOfta, &StartMånad, &Jan, &Feb, &Mar, &Apr, &Maj, &Jun, &Jul, &Aug, &Sep, &Okt, &Nov, &Dec, &Kontrollnr)
 		if err != nil {
-			log.Fatal(err)
+			res.Close()
+			return BudgetData{}, fmt.Errorf("kunde inte läsa budgetrad: %w", err)
 		}
 
 		item.Typ = toUtf8(Typ)
@@ -129,11 +136,18 @@ func loadBudgetData(db *sql.DB) BudgetData {
 		budgetData.BudgetItems = append(budgetData.BudgetItems, item)
 	}
 
-	return budgetData
+	return budgetData, nil
 }
 
-func loadBudgetEditForm(lopnr int, db *sql.DB) *BudgetEditForm {
-	fmt.Println("editformBudget lopnr: ", lopnr)
+func loadBudgetEditForm(lopnr int, db *sql.DB) (*BudgetEditForm, error) {
+	log.Printf("budget editform: lopnr=%d", lopnr)
+
+	if db == nil {
+		return nil, fmt.Errorf("ingen databas är öppen")
+	}
+	if lopnr < 0 {
+		return nil, fmt.Errorf("ogiltigt löpnr")
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -160,7 +174,10 @@ func loadBudgetEditForm(lopnr int, db *sql.DB) *BudgetEditForm {
 	err := db.QueryRowContext(ctx,
 		`SELECT Löpnr,Typ,Inkomst,HurOfta,StartMånad,Jan,Feb,Mar,Apr,Maj,Jun,Jul,Aug,Sep,Okt,Nov,Dec,Kontrollnr FROM Budget WHERE (Löpnr=?)`, lopnr).Scan(&Löpnr, &Typ, &Inkomst, &HurOfta, &StartMånad, &Jan, &Feb, &Mar, &Apr, &Maj, &Jun, &Jul, &Aug, &Sep, &Okt, &Nov, &Dec, &Kontrollnr)
 	if err != nil {
-		log.Fatal(err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("budgetpost med löpnr %d hittades inte", lopnr)
+		}
+		return nil, fmt.Errorf("kunde inte läsa budgetpost: %w", err)
 	}
 
 	knr := "null"
@@ -187,11 +204,18 @@ func loadBudgetEditForm(lopnr int, db *sql.DB) *BudgetEditForm {
 		Nov:        toUtf8(Nov),
 		Dec:        toUtf8(Dec),
 		Kontrollnr: knr,
-	}
+	}, nil
 }
 
-func updateBudget(lopnr int, req *http.Request, db *sql.DB) string {
-	fmt.Println("updateBudget lopnr: ", lopnr)
+func updateBudget(lopnr int, req *http.Request, db *sql.DB) (string, error) {
+	log.Printf("budget update: lopnr=%d", lopnr)
+
+	if db == nil {
+		return "", fmt.Errorf("ingen databas är öppen")
+	}
+	if lopnr < 0 {
+		return "", fmt.Errorf("ogiltigt löpnr")
+	}
 
 	var Typ = ""
 	if len(req.FormValue("Typ")) > 0 {
@@ -282,44 +306,12 @@ func updateBudget(lopnr int, req *http.Request, db *sql.DB) string {
 		lopnr)
 
 	if err != nil {
-		log.Fatal(err)
+		return "", fmt.Errorf("kunde inte uppdatera budgetpost: %w", err)
 	}
-	return fmt.Sprintf("Budgetpost %s uppdaterad.", Typ)
+	return fmt.Sprintf("Budgetpost %s uppdaterad.", Typ), nil
 }
 
-func hanteraBudget(w http.ResponseWriter, req *http.Request) {
-	err := req.ParseForm()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	formaction := req.FormValue("action")
-	var lopnr = -1
-	if len(req.FormValue("lopnr")) > 0 {
-		lopnr, _ = strconv.Atoi(req.FormValue("lopnr"))
-	}
-
-	var updateMsg string
-	var editForm *BudgetEditForm
-
-	switch formaction {
-	case "editform":
-		editForm = loadBudgetEditForm(lopnr, db)
-	case "update":
-		updateMsg = updateBudget(lopnr, req, db)
-	default:
-		if formaction != "" {
-			fmt.Println("Okänd action: ", formaction)
-		}
-	}
-
-	page := BudgetPageView{
-		Database:      currentDatabase,
-		UpdateMessage: updateMsg,
-		Edit:          editForm,
-		BudgetData:    loadBudgetData(db),
-	}
-
+func renderBudgetPage(w http.ResponseWriter, page BudgetPageView) {
 	tmpl, err := template.ParseFS(htmlTemplates,
 		"html/budget_page.html",
 		"html/budget_edit_form.html",
@@ -327,12 +319,83 @@ func hanteraBudget(w http.ResponseWriter, req *http.Request) {
 		"html/budget_footer.html",
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("budget: parse templates: %v", err)
+		http.Error(w, "Kunde inte ladda budgetsidan.", http.StatusInternalServerError)
+		return
 	}
-	err = tmpl.ExecuteTemplate(w, "budget_page", page)
+	if err := tmpl.ExecuteTemplate(w, "budget_page", page); err != nil {
+		log.Printf("budget: render page: %v", err)
+		http.Error(w, "Kunde inte visa budgetsidan.", http.StatusInternalServerError)
+	}
+}
+
+func hanteraBudget(w http.ResponseWriter, req *http.Request) {
+	log.Printf("budget: %s action=%q lopnr=%q", req.Method, req.FormValue("action"), req.FormValue("lopnr"))
+
+	page := BudgetPageView{
+		Database: currentDatabase,
+	}
+
+	if err := req.ParseForm(); err != nil {
+		log.Printf("budget: parse form: %v", err)
+		page.ErrorMessage = "Kunde inte läsa formulärdata."
+		renderBudgetPage(w, page)
+		return
+	}
+
+	formaction := req.FormValue("action")
+	lopnr := -1
+	if lopnrStr := req.FormValue("lopnr"); lopnrStr != "" {
+		var err error
+		lopnr, err = strconv.Atoi(lopnrStr)
+		if err != nil {
+			log.Printf("budget: ogiltigt lopnr %q: %v", lopnrStr, err)
+			page.ErrorMessage = fmt.Sprintf("Ogiltigt löpnr: %s", lopnrStr)
+		}
+	}
+
+	var editForm *BudgetEditForm
+
+	switch formaction {
+	case "editform":
+		if page.ErrorMessage == "" {
+			var err error
+			editForm, err = loadBudgetEditForm(lopnr, db)
+			if err != nil {
+				log.Printf("budget: editform lopnr=%d: %v", lopnr, err)
+				page.ErrorMessage = err.Error()
+			}
+		}
+	case "update":
+		if page.ErrorMessage == "" {
+			msg, err := updateBudget(lopnr, req, db)
+			if err != nil {
+				log.Printf("budget: update lopnr=%d: %v", lopnr, err)
+				page.ErrorMessage = err.Error()
+			} else {
+				page.UpdateMessage = msg
+			}
+		}
+	default:
+		if formaction != "" {
+			log.Printf("budget: okänd action %q", formaction)
+			page.ErrorMessage = fmt.Sprintf("Okänd åtgärd: %s", formaction)
+		}
+	}
+
+	page.Edit = editForm
+
+	budgetData, err := loadBudgetData(db)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("budget: load data: %v", err)
+		if page.ErrorMessage == "" {
+			page.ErrorMessage = err.Error()
+		}
+	} else {
+		page.BudgetData = budgetData
 	}
+
+	renderBudgetPage(w, page)
 }
 
 func antalBudgetposter(db *sql.DB) int {

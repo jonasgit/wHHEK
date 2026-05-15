@@ -6,11 +6,13 @@
 <title>Budget</title>
 <style>
 table,th,td { border: 1px solid black }
+.error { color: red; font-weight: bold }
 </style>
 </head>
 <body>
 <h1>{{.Database}}</h1>
 <h2>Budget</h2>
+{{if .ErrorMessage}}<p class="error">{{.ErrorMessage}}</p>{{end}}
 {{if .UpdateMessage}}<p>{{.UpdateMessage}}</p>{{end}}
 {{if .Edit}}{{template "budget_edit_form" .Edit}}{{end}}
 {{template "budget_table" .BudgetData}}

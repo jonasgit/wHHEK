@@ -75,13 +75,14 @@ func readCsvFile(f multipart.File, filtyp string) [][]string {
 	var r io.Reader
 
 	// Select char encoding, UTF-8 or ISO8859
-	if filtyp == "okq8csv" {
+	switch filtyp {
+	case "okq8csv":
 		r = f
-	} else if filtyp == "lunarcsv" {
+	case "lunarcsv":
 		r = f
-	} else if filtyp == "morrowcsv" {
+	case "morrowcsv":
 		r = f
-	} else {
+	default:
 		r = charmap.ISO8859_1.NewDecoder().Reader(f)
 	}
 	scanner := bufio.NewScanner(r)
@@ -185,11 +186,12 @@ func amountEquals(dbrad transaction, amount decimal.Decimal, kontonamn string, f
 	//	log.Println("amountEquals", dbrad.lopnr, dbrad.amount, amount, kontonamn, filtyp, getCurrentFuncName())
 	//}
 	if dbrad.tType == "Inköp" {
-		if filtyp == "eurocardxls" {
+		switch filtyp {
+		case "eurocardxls":
 			return dbrad.amount.Equal(amount)
-		} else if filtyp == "morrowcsv" {
+		case "morrowcsv":
 			return dbrad.amount.Equal(amount)
-		} else {
+		default:
 			return dbrad.amount.Equal(amount.Neg())
 		}
 	}
@@ -200,11 +202,12 @@ func amountEquals(dbrad transaction, amount decimal.Decimal, kontonamn string, f
 		return dbrad.amount.Equal(amount)
 	}
 	if (dbrad.tType == "Överföring") && (dbrad.fromAcc == kontonamn) {
-		if filtyp == "eurocardxls" {
+		switch filtyp {
+		case "eurocardxls":
 			return dbrad.amount.Equal(amount)
-		} else if filtyp == "morrowcsv" {
+		case "morrowcsv":
 			return dbrad.amount.Equal(amount)
-		} else {
+		default:
 			return dbrad.amount.Equal(amount.Neg())
 		}
 	}
@@ -558,9 +561,10 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 					data = ExcelDay(days)
 				}
 				if radnrInAvst {
-					if klassning == 1 {
+					switch klassning {
+					case 1:
 						item.Matches = true
-					} else if klassning == 2 {
+					case 2:
 						item.FuzzyMatches = true
 					}
 				}
@@ -579,9 +583,10 @@ func printAvstämning(w http.ResponseWriter, db *sql.DB, kontonamn string, filty
 
 		radnr, lopnrInAvst, klassning := lopnrInAvst(rad.lopnr, avst)
 		if lopnrInAvst {
-			if klassning == 1 {
+			switch klassning {
+			case 1:
 				item.Matches = true
-			} else if klassning == 2 {
+			case 2:
 				item.FuzzyMatches = true
 			}
 		}
