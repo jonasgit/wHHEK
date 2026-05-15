@@ -361,6 +361,7 @@ type sumType struct {
 	DbSaldo  string
 	DaySaldo string
 	TotSaldo string
+	IsEven   bool
 }
 
 type Main11Data struct {
@@ -404,7 +405,7 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 		}
 
 		DaySaldo, TotSaldo := saldonKonto(db, acc, currDate)
-		konton = append(konton, sumType{acc, false, Dec2Str(DbSaldo), Dec2Str(DaySaldo), Dec2Str(TotSaldo)})
+		konton = append(konton, sumType{acc, false, Dec2Str(DbSaldo), Dec2Str(DaySaldo), Dec2Str(TotSaldo), false})
 	}
 	res.Close()
 
@@ -412,6 +413,7 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 	var nolla = decimal.NewFromInt(0)
 	var kontonDolda []sumType
 	var doldaNamn []string
+	var isEven bool = false
 	for _, konto := range konton {
 		DaySaldo, err2 := decimal.NewFromString(
 			strings.ReplaceAll(
@@ -434,6 +436,10 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 				konto.Hidden = true
 				doldaNamn = append(doldaNamn, konto.Name)
 			}
+		}
+		if konto.Hidden == false {
+			konto.IsEven = isEven
+			isEven = !isEven
 		}
 		kontonDolda = append(kontonDolda, konto)
 	}

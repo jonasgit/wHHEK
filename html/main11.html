@@ -15,8 +15,9 @@
   <tr
     {{if .Hidden}}
     id="HiddenRow" style="display: none;"
+    {{else}}
+    style="background-color: {{if .IsEven}}#f9f9f9{{else}}#ffffff{{end}};"
     {{end}}
-    style="background-color: #ffffff;"
     > 
 
     <td style="padding: 12px; border: 1px solid #ddd;">{{.Name}}</td>
