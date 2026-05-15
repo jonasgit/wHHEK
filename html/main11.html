@@ -4,7 +4,7 @@
   <table style="width:100%; border-collapse: collapse; margin-top: 20px;">
     <thead>
       <tr style="background-color: #f4f4f4;">
-        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Kontonamn</th>
+        <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">Kontonamn</th>
         <th style="padding: 12px; border: 1px solid #ddd;">Saldo enligt databas</th>
         <th style="padding: 12px; border: 1px solid #ddd;">Saldo uträknat för idag</th>
         <th style="padding: 12px; border: 1px solid #ddd;">Saldo uträknat totalt</th>
@@ -20,7 +20,7 @@
     {{end}}
     > 
 
-    <td style="padding: 12px; border: 1px solid #ddd;">{{.Name}}</td>
+    <td style="padding: 12px; text-align: right; border: 1px solid #ddd;">{{.Name}}</td>
 
     {{/* Check if all three balances are present and equal */}}
     {{if and (eq .DbSaldo .DaySaldo) (eq .DbSaldo .TotSaldo)}}
