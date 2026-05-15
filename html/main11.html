@@ -1,35 +1,52 @@
 <!-- -*- coding: utf-8 -*- -->
-<table style="width:100%">
-  <tr>
-    <th>Kontonamn</th>
-    <th>Saldo enligt databas</th>
-    <th>Saldo uträknat för idag</th>
-    <th>Saldo uträknat totalt</th>
-  </tr>
+<div style="font-family: Arial, sans-serif; padding: 20px;">
+  <h2 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">Kontosaldon</h2>
+  <table style="width:100%; border-collapse: collapse; margin-top: 20px;">
+    <thead>
+      <tr style="background-color: #f4f4f4;">
+        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Kontonamn</th>
+        <th style="padding: 12px; border: 1px solid #ddd;">Saldo enligt databas</th>
+        <th style="padding: 12px; border: 1px solid #ddd;">Saldo uträknat för idag</th>
+        <th style="padding: 12px; border: 1px solid #ddd;">Saldo uträknat totalt</th>
+      </tr>
+    </thead>
+    <tbody>
   {{range .Konton}}
   <tr
     {{if .Hidden}}
     id="HiddenRow" style="display: none;"
     {{end}}
-    >
-    <td>{{.Name}}</td>
+    style="background-color: #ffffff;"
+    > 
+
+    <td style="padding: 12px; border: 1px solid #ddd;">{{.Name}}</td>
+
+    {{/* Check if all three balances are present and equal */}}
     {{if and (eq .DbSaldo .DaySaldo) (eq .DbSaldo .TotSaldo)}}
-    <td colspan="3">{{.DbSaldo}}</td>
+        <td colspan="3" style="padding: 12px; border: 1px solid #ddd;">{{.DbSaldo}}</td>
+    {{/* Check if DbSaldo equals DaySaldo, and both are present */}}
+
     {{else if eq .DbSaldo .DaySaldo}}
-    <td colspan="2">{{.DbSaldo}}</td>
-    <td>{{.TotSaldo}}</td>
+        <td colspan="2" style="padding: 12px; border: 1px solid #ddd;">{{.DbSaldo}}</td>
+
     {{else if eq .DaySaldo .TotSaldo}}
-    <td>{{.DbSaldo}}</td>
-    <td colspan="2">{{.TotSaldo}}</td>
-    {{else}}
-    <td>{{.DbSaldo}}</td>
-    <td>{{.DaySaldo}}</td>
-    <td>{{.TotSaldo}}</td>
+        <td style="padding: 12px; border: 1px solid #ddd;">{{.DbSaldo}}</td>
+        <td colspan="2" style="padding: 12px; border: 1px solid #ddd;">{{.TotSaldo}}</td>
+
+   {{else}}
+    {{/* Default case: display all three */}}
+        <td style="padding: 12px; border: 1px solid #ddd;">{{.DbSaldo}}</td>
+        <td style="padding: 12px; border: 1px solid #ddd;">{{.DaySaldo}}</td>
+        <td style="padding: 12px; border: 1px solid #ddd;">{{.TotSaldo}}</td>
     {{end}}
+          
   </tr>
   {{end}}
+    </tbody>
 </table>
-<p>
+</div>
+
+<p style="margin-top: 20px; padding: 10px; background-color: #eef; border-left: 4px solid #333;">
   Dolda konton:
   {{range .DoldaNamn}}
   {{ . }},
