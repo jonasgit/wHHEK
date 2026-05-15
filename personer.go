@@ -3,13 +3,27 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"strconv"
 )
+
+// PersonRow holds the data for a single person record displayed in the table.
+type PersonRow struct {
+	Namn  string
+	Birth string
+	Sex   string
+	Lopnr int
+}
+
+type PageData struct {
+	People []PersonRow
+}
 
 type person struct {
 	namn  string
@@ -18,29 +32,65 @@ type person struct {
 }
 
 func printPersoner(w http.ResponseWriter, db *sql.DB) {
-	res, err := db.Query("SELECT Namn,Född,Kön,Löpnr FROM Personer")
+	// 1. Fetch all data into memory structure
+	rows := make([]PersonRow, 0)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
+	res, err := db.QueryContext(ctx, "SELECT Namn,Född,Kön,Löpnr FROM Personer")
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error querying person data: %v", err)
+		// Instead of log.Fatal, write an error message to the user and proceed with empty table structure if possible.
+		http.Error(w, "Could not load person records.", http.StatusInternalServerError)
+		return
 	}
+	defer res.Close()
 
 	var namn []byte  // size 50
 	var birth string // size 4 (år, 0 för Gemensamt)
 	var sex string   // size 10 (text: Gemensamt, Man, Kvinna)
 	var nummer int   // autoinc Primary Key, index
 
-	_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Namn</th><th>Födelsedag</th><th>Kön</th><th>Redigera</th><th>Radera</th>\n")
 	for res.Next() {
-		_ = res.Scan(&namn, &birth, &sex, &nummer)
-
-		_, _ = fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td><td>%s</td>", toUtf8(namn), birth, sex)
-		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/personer\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"editform\"><input type=\"submit\" value=\"Redigera\"></form></td>\n", nummer)
-		_, _ = fmt.Fprintf(w, "<td><form method=\"POST\" action=\"/personer\"><input type=\"hidden\" id=\"lopnr\" name=\"lopnr\" value=\"%d\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"radera\"><input type=\"checkbox\" id=\"OK\" name=\"OK\" required><label for=\"OK\">OK</label><input type=\"submit\" value=\"Radera\"></form></td></tr>\n", nummer)
+		if err := res.Scan(&namn, &birth, &sex, &nummer); err != nil {
+			log.Printf("Error scanning person row: %v", err)
+			continue // Skip this row and continue processing others
+		}
+		rows = append(rows, PersonRow{
+			Namn:  toUtf8(namn),
+			Birth: birth,
+			Sex:   sex,
+			Lopnr: nummer,
+		})
 	}
-	res.Close()
-	_, _ = fmt.Fprintf(w, "</table>\n")
 
-	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/personer\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"addform\"><input type=\"submit\" value=\"Ny person\"></form>\n")
+	if err := res.Err(); err != nil {
+		log.Printf("Error iterating person rows: %v", err)
+	}
+
+	data := PageData{People: rows}
+
+	// 2. Execute the template
+	tmpl, err := template.New("person_list.html").ParseFS(htmlTemplates, "html/person_list.html")
+	if err != nil {
+		log.Printf("Error loading template: %v", err)
+		http.Error(w, "Internal server error: Template missing.", http.StatusInternalServerError)
+		return
+	}
+
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, data)
+	if err != nil {
+		log.Printf("Error executing template: %v", err)
+		http.Error(w, "Internal server error during rendering.", http.StatusInternalServerError)
+		return
+	}
+
+	// Write the generated table content to the response writer
+	_, _ = fmt.Fprint(w, buf.String())
+
+	// Append the form for adding a new person (this part remains outside template scope for simplicity)
+	fmt.Fprintf(w, "<form method=\"POST\" action=\"/personer\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"addform\"><input type=\"submit\" value=\"Ny person\"></form>\n")
 }
 
 func printPersonerFooter(w http.ResponseWriter) {
@@ -59,7 +109,9 @@ func raderaPerson(w http.ResponseWriter, lopnr int, db *sql.DB) {
 		`DELETE FROM Personer WHERE (Löpnr=?)`, lopnr)
 
 	if err != nil {
-		log.Fatal(err)
+		// Use http.Error instead of log.Fatal for API handlers
+		http.Error(w, fmt.Sprintf("Could not delete person: %v", err), http.StatusInternalServerError)
+		return
 	}
 	_, _ = fmt.Fprintf(w, "Person med löpnr %d raderad.<br>", lopnr)
 }
@@ -77,7 +129,9 @@ func editformPerson(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	err := db.QueryRowContext(ctx,
 		`SELECT Namn,Född,Kön FROM Personer WHERE (Löpnr=?)`, lopnr).Scan(&namn, &birth, &sex)
 	if err != nil {
-		log.Fatal(err)
+		// Use http.Error instead of log.Fatal
+		http.Error(w, fmt.Sprintf("Could not load person details: %v", err), http.StatusInternalServerError)
+		return
 	}
 
 	_, _ = fmt.Fprintf(w, "Redigera person<br>")
@@ -121,7 +175,7 @@ func addformPerson(w http.ResponseWriter) {
 
 func skapaPerson(db *sql.DB, namn string, birth int, sex string) error {
 	if db == nil {
-		log.Fatal("skapaPerson anropad med db=nil")
+		return fmt.Errorf("skapaPerson anropad med db=nil")
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -130,9 +184,9 @@ func skapaPerson(db *sql.DB, namn string, birth int, sex string) error {
 		`INSERT INTO Personer(Namn, Född, Kön) VALUES (?, ?, ?)`, namn, birth, sex)
 
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to insert person: %w", err)
 	}
-	return err
+	return nil
 }
 
 func addPerson(w http.ResponseWriter, namn string, birth string, sex string, db *sql.DB) {
@@ -141,13 +195,16 @@ func addPerson(w http.ResponseWriter, namn string, birth string, sex string, db 
 	birthint, err := strconv.Atoi(birth)
 	if err != nil {
 		_, _ = fmt.Fprintf(w, "Person ej tillagd, felaktigt födelseår.<br>")
-		log.Fatal(err)
+		return // Return instead of log.Fatal
 	}
 
 	err = skapaPerson(db, namn, birthint, sex)
 
 	if err != nil {
-		log.Fatal(err)
+		// Log the error but don't crash the request handler
+		log.Printf("Error adding person: %v", err)
+		_, _ = fmt.Fprintf(w, "Kunde inte lägga till personen: %v<br>", err)
+		return
 	}
 	_, _ = fmt.Fprintf(w, "Person %s tillagd.<br>", namn)
 }
@@ -162,34 +219,42 @@ func updatePerson(w http.ResponseWriter, lopnr int, namn string, birth string, s
 		`UPDATE Personer SET Namn = ?, Född = ?, Kön = ? WHERE (Löpnr=?)`, namn, birth, sex, lopnr)
 
 	if err != nil {
-		log.Fatal(err)
+		// Use http.Error instead of log.Fatal
+		http.Error(w, fmt.Sprintf("Could not update person: %v", err), http.StatusInternalServerError)
+		return
 	}
 	_, _ = fmt.Fprintf(w, "Person %s uppdaterad.<br>", namn)
 }
 
 func hanterapersoner(w http.ResponseWriter, req *http.Request) {
+	// --- Start HTML Structure Writing ---
 	_, _ = fmt.Fprintf(w, "<html>\n")
 	_, _ = fmt.Fprintf(w, "<head>\n")
 	_, _ = fmt.Fprintf(w, "<style>\n")
 	_, _ = fmt.Fprintf(w, "table,th,td { border: 1px solid black }\n")
 	_, _ = fmt.Fprintf(w, "</style>\n")
 	_, _ = fmt.Fprintf(w, "</head>\n")
-	_, _ = fmt.Fprintf(w, "<body>\n")
+	_, _ = fmt.Fprintf(w, "<body class=\"person-page\">\n")
 
-	_, _ = fmt.Fprintf(w, "<h1>%s</h1>\n", currentDatabase)
+	_, _ = fmt.Fprintf(w, "<h1 id=\"title\">%s</h1>\n", currentDatabase)
 	_, _ = fmt.Fprintf(w, "<h2>Personer</h2>\n")
 
 	err := req.ParseForm()
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error parsing form: %v", err)
+		// Continue rendering the page structure even if form parsing fails partially
 	}
 
 	formaction := req.FormValue("action")
 	var lopnr = -1
 	if len(req.FormValue("lopnr")) > 0 {
-		lopnr, _ = strconv.Atoi(req.FormValue("lopnr"))
+		parsedLopnr, err := strconv.Atoi(req.FormValue("lopnr"))
+		if err == nil {
+			lopnr = parsedLopnr
+		}
 	}
 
+	// Handle actions that modify data (these write their own response content)
 	switch formaction {
 	case "radera":
 		raderaPerson(w, lopnr, db)
@@ -226,9 +291,14 @@ func hanterapersoner(w http.ResponseWriter, req *http.Request) {
 		}
 		updatePerson(w, lopnr, namn, birth, sex, db)
 	default:
-		fmt.Println("Okänd action: ", formaction)
+		// If no action is specified, we proceed to render the list via printPersoner
+		fmt.Println("No specific action taken.")
 	}
+
+	// Render the main table content using templates
 	printPersoner(w, db)
+
+	// --- End HTML Structure Writing ---
 	printPersonerFooter(w)
 }
 
@@ -238,7 +308,8 @@ func getPersonNames() []string {
 	res, err := db.Query("select DISTINCT Namn from Personer union select DISTINCT Vem from Transaktioner order by Namn")
 
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error getting person names: %v", err)
+		return nil // Return empty slice on error
 	}
 
 	var Namn []byte // size 50, index
@@ -259,7 +330,8 @@ func antalPersoner(db *sql.DB) int {
 	err := db.QueryRowContext(ctx,
 		`SELECT COUNT(*) FROM Personer`).Scan(&antal)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error counting persons: %v", err)
+		return 0 // Return 0 on error
 	}
 
 	return antal
@@ -276,7 +348,9 @@ func hämtaPerson(lopnr int) person {
 	err := db.QueryRowContext(ctx,
 		`SELECT Namn,Född,Kön FROM Personer WHERE (Löpnr=?)`, lopnr).Scan(&namn, &birth, &sex)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error fetching person: %v", err)
+		// Return zero-value struct on error instead of crashing
+		return person{}
 	}
 
 	var retperson person
