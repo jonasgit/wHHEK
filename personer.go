@@ -71,7 +71,7 @@ func printPersoner(w http.ResponseWriter, db *sql.DB) {
 	data := PageData{People: rows}
 
 	// 2. Execute the template
-	tmpl, err := template.New("person_list.html").ParseFS(htmlTemplates, "html/person_list.html")
+	tmpl, err := template.New("person_list").ParseFS(htmlTemplates, "html/person_list.html")
 	if err != nil {
 		log.Printf("Error loading template: %v", err)
 		http.Error(w, "Internal server error: Template missing.", http.StatusInternalServerError)
@@ -91,9 +91,21 @@ func printPersoner(w http.ResponseWriter, db *sql.DB) {
 }
 
 func printPersonerFooter(w http.ResponseWriter) {
-	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
-	_, _ = fmt.Fprintf(w, "</body>\n")
-	_, _ = fmt.Fprintf(w, "</html>\n")
+	// Execute the footer template
+	tmpl, err := template.New("personer_footer").ParseFS(htmlTemplates, "html/personer_footer.html")
+	if err != nil {
+		log.Printf("Error loading footer template: %v", err)
+		return // Cannot write footer if template fails to load
+	}
+
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, nil)
+	if err != nil {
+		log.Printf("Error executing footer template: %v", err)
+		return
+	}
+
+	_, _ = fmt.Fprint(w, buf.String())
 }
 
 func raderaPerson(w http.ResponseWriter, lopnr int, db *sql.DB) {
