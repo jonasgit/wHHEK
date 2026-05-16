@@ -1,0 +1,22 @@
+{{define "person_list"}}
+<table>
+    <thead>
+        <tr>
+            <th>Namn</th>
+            <th>Födelsedag</th>
+            <th>Kön</th>
+            <th>Löpnr</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .People}}
+        <tr>
+            <td>{{.Namn}}</td>
+            <td>{{.Birth}}</td>
+            <td>{{.Sex}}</td>
+            <td>{{.Lopnr}}</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{end}}
