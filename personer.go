@@ -88,9 +88,6 @@ func printPersoner(w http.ResponseWriter, db *sql.DB) {
 
 	// Write the generated table content to the response writer
 	_, _ = fmt.Fprint(w, buf.String())
-
-	// Append the form for adding a new person (this part remains outside template scope for simplicity)
-	fmt.Fprintf(w, "<form method=\"POST\" action=\"/personer\"><input type=\"hidden\" id=\"action\" name=\"action\" value=\"addform\"><input type=\"submit\" value=\"Ny person\"></form>\n")
 }
 
 func printPersonerFooter(w http.ResponseWriter) {
