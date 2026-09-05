@@ -1,0 +1,245 @@
+<!-- //-*- coding: utf-8 -*-  -->
+<html lang="sv">
+<head>
+  <style>
+    table, th, td {
+      border: 1px solid black
+    }
+    .chart-container {
+      width: 100%;
+      margin: 20px 0;
+    }
+    .chart-svg {
+      width: 100%;
+      height: auto;
+      border: 1px solid #ddd;
+      background-color: #fafafa;
+    }
+    .bar-positive {
+      fill: #2196F3;
+      stroke: #1565C0;
+      stroke-width: 1;
+      transition: opacity 0.2s;
+    }
+    .bar-negative {
+      fill: url(#diagonalHatch);
+      stroke: #E65100;
+      stroke-width: 1;
+      transition: opacity 0.2s;
+    }
+    .bar-positive:hover, .bar-negative:hover {
+      opacity: 0.7;
+      cursor: pointer;
+    }
+    .grid-line {
+      stroke: #e0e0e0;
+      stroke-width: 1;
+      stroke-dasharray: 2,2;
+    }
+    .grid-line-zero {
+      stroke: #000000;
+      stroke-width: 2;
+      stroke-dasharray: none;
+    }
+    .axis-label {
+      font-family: Arial, sans-serif;
+      font-size: 11px;
+      fill: #333;
+    }
+    .axis-label-x {
+      text-anchor: middle;
+    }
+    .axis-label-y {
+      text-anchor: end;
+    }
+    .axis-title {
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      font-weight: bold;
+      fill: #333;
+    }
+    .chart-title {
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      font-weight: bold;
+      fill: #1a1a1a;
+      text-anchor: middle;
+    }
+    .tooltip {
+      position: absolute;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: Arial, sans-serif;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 1000;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tooltip.visible {
+      opacity: 1;
+    }
+    .legend {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    .legend-item {
+      display: inline-block;
+      margin-right: 20px;
+    }
+    .legend-color {
+      display: inline-block;
+      width: 20px;
+      height: 12px;
+      margin-right: 5px;
+      vertical-align: middle;
+      border: 1px solid #333;
+    }
+    .avg-line {
+      fill: none;
+      stroke: #6A1B9A;
+      stroke-width: 2.5;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+    }
+    .legend-line {
+      display: inline-block;
+      width: 20px;
+      height: 0;
+      margin-right: 5px;
+      vertical-align: middle;
+      border-top: 3px solid #6A1B9A;
+    }
+  </style>
+  <title>3årsresultat</title>
+  <script src="/htmx.js"></script>
+</head>
+<body>
+<h1>wHHEK - hemekonomi</h1>
+<h2>3årsresultat</h2>
+Varje stapel visar summa inkomster/utgifter för resp månad.
+<p><strong>Diagram:</strong></p>
+<div class="chart-container">
+  <div id="tooltip" class="tooltip"></div>
+  <svg class="chart-svg" viewBox="0 0 900 600" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Summa per månad de senaste 36 månaderna">
+    <title>{{.ChartTitle}}</title>
+
+    <text x="450" y="25" class="chart-title">{{.ChartTitle}}</text>
+
+    <defs>
+      <pattern id="diagonalHatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+        <rect width="8" height="8" fill="#FF9800"/>
+        <path d="M 0,0 L 8,8" stroke="#E65100" stroke-width="1.5"/>
+      </pattern>
+    </defs>
+
+    {{range .GridLines}}
+    <line x1="{{.X1}}" y1="{{.Y1}}" x2="{{.X2}}" y2="{{.Y2}}"
+          class="{{if .IsZero}}grid-line-zero{{else}}grid-line{{end}}" />
+    {{end}}
+
+    {{range .MonthValues}}
+    <rect x="{{.X}}" y="{{.Y}}" width="{{.Width}}" height="{{.Height}}"
+          class="{{if eq .IsPositive "true"}}bar-positive{{else}}bar-negative{{end}}"
+          data-day="{{.Day}}"
+          data-saldo="{{.Saldo}}"
+          aria-label="Månad {{.Day}}: Summa {{.Saldo}}"
+          tabindex="0"
+          onmouseenter="showTooltip(event, '{{.Day}}', '{{.Saldo}}')"
+          onmouseleave="hideTooltip()"
+          onfocus="showTooltip(event, '{{.Day}}', '{{.Saldo}}')"
+          onblur="hideTooltip()" />
+    {{end}}
+
+    {{if .AverageLine}}
+    <polyline points="{{.AverageLine}}" class="avg-line" />
+    {{end}}
+
+    <line x1="60" y1="{{.ZeroLine}}" x2="840" y2="{{.ZeroLine}}"
+          class="grid-line-zero" />
+
+    {{range .AxisLabels}}
+    <text x="{{.X}}" y="{{.Y}}"
+          class="axis-label {{if .IsXAxis}}axis-label-x{{else}}axis-label-y{{end}}">
+      {{.Text}}
+    </text>
+    {{end}}
+
+    <text x="450" y="580" class="axis-title" text-anchor="middle">Månad</text>
+
+    Sorry, your browser does not support inline SVG.
+  </svg>
+
+  <div class="legend">
+    <div class="legend-item">
+      <span class="legend-color" style="background-color: #2196F3;"></span>
+      <span>Positiv summa</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-color" style="background-color: #FF9800; background-image: repeating-linear-gradient(45deg, transparent, transparent 2px, #E65100 2px, #E65100 4px);"></span>
+      <span>Negativ summa</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-line"></span>
+      <span>Rullande 3-månaders medel</span>
+    </div>
+    <div class="legend-item">
+      <span>Min: {{.MinSaldo}}</span>
+    </div>
+    <div class="legend-item">
+      <span>Max: {{.MaxSaldo}}</span>
+    </div>
+  </div>
+</div>
+
+<table style="width:100%">
+  <tr>
+    <th>Månad</th>
+    <th>Inkomster</th>
+    <th>Utgifter</th>
+    <th>Summa</th>
+  </tr>
+  {{range .Months}}
+  <tr>
+    <td>{{.MonthName}}</td>
+    <td align="right"><nobr>{{.Income}}</nobr></td>
+    <td align="right"><nobr>{{.Expense}}</nobr></td>
+    <td align="right"><nobr>{{.Sum}}</nobr></td>
+  </tr>
+  {{end}}
+</table>
+<p>
+<a href="summary">Översikt</a>
+<script>
+  function showTooltip(event, day, saldo) {
+    const tooltip = document.getElementById('tooltip');
+    tooltip.textContent = day + ': ' + saldo;
+    tooltip.classList.add('visible');
+
+    const rect = event.target.getBoundingClientRect();
+    const container = event.target.closest('.chart-container');
+    const containerRect = container.getBoundingClientRect();
+
+    tooltip.style.left = (rect.left - containerRect.left + rect.width / 2) + 'px';
+    tooltip.style.top = (rect.top - containerRect.top - 35) + 'px';
+
+    const tooltipRect = tooltip.getBoundingClientRect();
+    if (tooltipRect.left < containerRect.left) {
+      tooltip.style.left = '0px';
+    }
+    if (tooltipRect.right > containerRect.right) {
+      tooltip.style.left = (containerRect.width - tooltipRect.width) + 'px';
+    }
+  }
+
+  function hideTooltip() {
+    const tooltip = document.getElementById('tooltip');
+    tooltip.classList.remove('visible');
+  }
+</script>
+</body>
+</html>
