@@ -313,7 +313,7 @@ func y3ChartFromSums(sums []decimal.Decimal, monthTimes []time.Time) (int, []Mon
 
 	dec3 := decimal.NewFromInt(3)
 	var avgPoints []string
-	for i := 1; i < (len(sums)-1); i++ {
+	for i := 1; i < (len(sums) - 1); i++ {
 		avg := sums[i-1].Add(sums[i]).Add(sums[i+1]).Div(dec3)
 		x := marginLeft + i*colWidth + colWidth/2
 		var y int
@@ -448,18 +448,18 @@ func hanteraY3Result(w http.ResponseWriter, req *http.Request) {
 
 		dateStr := toUtf8(dateBuf)
 		if len(dateStr) < 7 {
-                        log.Println("hanterY3Result, saknar datum:"+dateStr)
+			log.Println("hanterY3Result, saknar datum:" + dateStr)
 			continue
 		}
 		year, errY := strconv.Atoi(dateStr[0:4])
 		month, errM := strconv.Atoi(dateStr[5:7])
 		if errY != nil || errM != nil {
-                        log.Println("hanterY3Result, trasigt datum:"+dateStr[0:4]+" eller "+dateStr[5:7])
+			log.Println("hanterY3Result, trasigt datum:" + dateStr[0:4] + " eller " + dateStr[5:7])
 			continue
 		}
 		idx := (year-firstMonth.Year())*12 + (month - int(firstMonth.Month()))
 		if idx < 0 || idx > 35 {
-                        log.Println("hanterY3Result, utanför index:"+strconv.Itoa(idx))
+			log.Println("hanterY3Result, utanför index:" + strconv.Itoa(idx))
 			continue
 		}
 

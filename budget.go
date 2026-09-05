@@ -43,24 +43,24 @@ type BudgetData struct {
 
 // BudgetEditForm holds one row for the budget edit form (template html/budget_edit_form.html).
 type BudgetEditForm struct {
-	Lopnr          int
-	Typ            string
-	Inkomst        string
-	HurOfta        string
-	StartManad     string
-	Jan            string
-	Feb            string
-	Mar            string
-	Apr            string
-	Maj            string
-	Jun            string
-	Jul            string
-	Aug            string
-	Sep            string
-	Okt            string
-	Nov            string
-	Dec            string
-	Kontrollnr     string
+	Lopnr      int
+	Typ        string
+	Inkomst    string
+	HurOfta    string
+	StartManad string
+	Jan        string
+	Feb        string
+	Mar        string
+	Apr        string
+	Maj        string
+	Jun        string
+	Jul        string
+	Aug        string
+	Sep        string
+	Okt        string
+	Nov        string
+	Dec        string
+	Kontrollnr string
 }
 
 // BudgetPageView is passed to template "budget_page".
