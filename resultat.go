@@ -398,6 +398,165 @@ func y3ChartFromSums(sums []decimal.Decimal, monthTimes []time.Time) (int, []Mon
 	return zeroLine, monthValues, gridLines, axisLabels, minSaldo, maxSaldo, averageLine
 }
 
+func y10ChartFromSums(sums []decimal.Decimal, yearTimes []time.Time) (int, []MonthValueType, []GridLineType, []AxisLabelType, decimal.Decimal, decimal.Decimal, string) {
+	n := len(sums)
+	minSaldo := sums[0]
+	maxSaldo := sums[0]
+	for _, s := range sums {
+		if s.GreaterThan(maxSaldo) {
+			maxSaldo = s
+		}
+		if s.LessThan(minSaldo) {
+			minSaldo = s
+		}
+	}
+	if decimal.Zero.LessThan(minSaldo) {
+		minSaldo = decimal.Zero
+	}
+	if decimal.Zero.GreaterThan(maxSaldo) {
+		maxSaldo = decimal.Zero
+	}
+	minSaldo = minSaldo.Floor()
+	maxSaldo = maxSaldo.Ceil()
+	rangeVal := maxSaldo.Sub(minSaldo)
+	if rangeVal.IsZero() {
+		maxSaldo = decimal.NewFromInt(1)
+		rangeVal = maxSaldo.Sub(minSaldo)
+	}
+
+	const chartHeight = 500
+	const chartWidth = 900
+	// Left margin must fit Swedish-formatted y-labels such as "1 230 000".
+	// With marginLeft=60 the labels sit at x=50 and overflow the SVG, so
+	// amounts above 99 000 are clipped and look missing from the scale.
+	const marginLeft = 110
+	const marginRight = 50
+	const marginTop = 40
+	const marginBottom = 50
+	const plotWidth = chartWidth - marginLeft - marginRight
+	const plotHeight = chartHeight - marginTop - marginBottom
+	colWidth := plotWidth / n
+	zeroDecimal := decimal.Zero
+
+	var zeroLine int
+	if maxSaldo.GreaterThan(zeroDecimal) && minSaldo.LessThan(zeroDecimal) {
+		zeroLine = marginTop + decimalToPlotPx(maxSaldo.Sub(zeroDecimal), rangeVal, plotHeight)
+	} else if minSaldo.GreaterThanOrEqual(zeroDecimal) {
+		zeroLine = marginTop + plotHeight
+	} else {
+		zeroLine = marginTop
+	}
+
+	var monthValues []MonthValueType
+	for i, currSum := range sums {
+		var barHeight int
+		var barY int
+		if currSum.GreaterThanOrEqual(zeroDecimal) {
+			barHeight = decimalToPlotPx(currSum.Sub(zeroDecimal), rangeVal, plotHeight)
+			barY = zeroLine - barHeight
+		} else {
+			barHeight = decimalToPlotPx(zeroDecimal.Sub(currSum), rangeVal, plotHeight)
+			barY = zeroLine
+		}
+		isPositive := "false"
+		if currSum.GreaterThanOrEqual(zeroDecimal) {
+			isPositive = "true"
+		}
+		monthValues = append(monthValues, MonthValueType{
+			X:          strconv.Itoa(marginLeft + i*colWidth),
+			Y:          strconv.Itoa(barY),
+			Width:      strconv.Itoa(colWidth - 1),
+			Height:     strconv.Itoa(barHeight),
+			Day:        yearTimes[i].Format("2006"),
+			Saldo:      Dec2Str(currSum),
+			IsPositive: isPositive,
+		})
+	}
+
+	dec3 := decimal.NewFromInt(3)
+	var avgPoints []string
+	for i := 1; i < (len(sums) - 1); i++ {
+		avg := sums[i-1].Add(sums[i]).Add(sums[i+1]).Div(dec3)
+		x := marginLeft + i*colWidth + colWidth/2
+		var y int
+		if avg.GreaterThanOrEqual(zeroDecimal) {
+			y = zeroLine - decimalToPlotPx(avg.Sub(zeroDecimal), rangeVal, plotHeight)
+		} else {
+			y = zeroLine + decimalToPlotPx(zeroDecimal.Sub(avg), rangeVal, plotHeight)
+		}
+		avgPoints = append(avgPoints, fmt.Sprintf("%d,%d", x, y))
+	}
+	averageLine := strings.Join(avgPoints, " ")
+
+	var gridLines []GridLineType
+	numGridLines := 5
+	for i := 0; i <= numGridLines; i++ {
+		gridY := marginTop + (i * plotHeight / numGridLines)
+		diff := gridY - zeroLine
+		if diff < 0 {
+			diff = -diff
+		}
+		gridLines = append(gridLines, GridLineType{
+			X1:     strconv.Itoa(marginLeft),
+			Y1:     strconv.Itoa(gridY),
+			X2:     strconv.Itoa(marginLeft + plotWidth),
+			Y2:     strconv.Itoa(gridY),
+			IsZero: diff <= 2,
+		})
+	}
+	zeroLineInGrid := false
+	for _, gl := range gridLines {
+		if gl.IsZero {
+			zeroLineInGrid = true
+			break
+		}
+	}
+	if !zeroLineInGrid && zeroLine >= marginTop && zeroLine <= marginTop+plotHeight {
+		gridLines = append(gridLines, GridLineType{
+			X1:     strconv.Itoa(marginLeft),
+			Y1:     strconv.Itoa(zeroLine),
+			X2:     strconv.Itoa(marginLeft + plotWidth),
+			Y2:     strconv.Itoa(zeroLine),
+			IsZero: true,
+		})
+	}
+	for i := 0; i < n; i++ {
+		gridX := marginLeft + i*colWidth
+		gridLines = append(gridLines, GridLineType{
+			X1:     strconv.Itoa(gridX),
+			Y1:     strconv.Itoa(marginTop),
+			X2:     strconv.Itoa(gridX),
+			Y2:     strconv.Itoa(marginTop + plotHeight),
+			IsZero: false,
+		})
+	}
+
+	var axisLabels []AxisLabelType
+	for i := 0; i < n; i++ {
+		axisLabels = append(axisLabels, AxisLabelType{
+			X:       strconv.Itoa(marginLeft + i*colWidth + colWidth/2),
+			Y:       strconv.Itoa(marginTop + plotHeight + 20),
+			Text:    yearTimes[i].Format("2006"),
+			IsXAxis: true,
+		})
+	}
+	numYLabels := 6
+	numY := decimal.NewFromInt(int64(numYLabels))
+	for i := 0; i <= numYLabels; i++ {
+		labelY := marginTop + (i * plotHeight / numYLabels)
+		ratio := decimal.NewFromInt(int64(i)).Div(numY)
+		saldoValue := maxSaldo.Sub(rangeVal.Mul(ratio))
+		axisLabels = append(axisLabels, AxisLabelType{
+			X:       strconv.Itoa(marginLeft - 10),
+			Y:       strconv.Itoa(labelY + 5),
+			Text:    Dec2StrAxis(saldoValue),
+			IsXAxis: false,
+		})
+	}
+
+	return zeroLine, monthValues, gridLines, axisLabels, minSaldo, maxSaldo, averageLine
+}
+
 func hanteraY3Result(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func hanteraY3Result")
 
@@ -513,5 +672,120 @@ func hanteraY3Result(w http.ResponseWriter, req *http.Request) {
 	})
 	if err != nil {
 		log.Println("While serving HTTP y3result: ", err)
+	}
+}
+
+func hanteraY10Result(w http.ResponseWriter, req *http.Request) {
+	log.Println("Func hanteraY10Result")
+
+	if db == nil {
+		t := template.New("NoDatabase")
+		t, _ = t.Parse(htmlnodatabase)
+		err := t.Execute(w, nil)
+		if err != nil {
+			log.Println("While serving HTTP y10result no_database: ", err)
+		}
+		return
+	}
+
+	const nYears = 10
+	now := time.Now()
+	lastYear := now.Year()
+	firstYear := lastYear - (nYears - 1)
+	startstring := time.Date(firstYear, 1, 1, 0, 0, 0, 0, now.Location()).Format("2006-01-02")
+	endstring := time.Date(lastYear, 12, 31, 0, 0, 0, 0, now.Location()).Format("2006-01-02")
+
+	incomeByYear := make([]decimal.Decimal, nYears)
+	expenseByYear := make([]decimal.Decimal, nYears)
+	zero := decimal.NewFromInt32(0)
+	for i := 0; i < nYears; i++ {
+		incomeByYear[i] = zero
+		expenseByYear[i] = zero
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	res, err := db.QueryContext(ctx,
+		`SELECT Typ, Belopp, Datum from transaktioner
+  where (Typ = ? or Typ = ? or Typ = ? or Typ = ?) and Datum >= ? and Datum <= ?`,
+		"Insättning", "Fast Inkomst", "Inköp", "Fast Utgift", startstring, endstring)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var typBuf []byte
+	var amountBuf []byte
+	var dateBuf []byte
+	for res.Next() {
+		_ = res.Scan(&typBuf, &amountBuf, &dateBuf)
+
+		decamount, err := decimal.NewFromString(toUtf8(amountBuf))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		dateStr := toUtf8(dateBuf)
+		if len(dateStr) < 4 {
+			log.Println("hanteraY10Result, saknar datum:" + dateStr)
+			continue
+		}
+		year, errY := strconv.Atoi(dateStr[0:4])
+		if errY != nil {
+			log.Println("hanteraY10Result, trasigt datum:" + dateStr[0:4])
+			continue
+		}
+		idx := year - firstYear
+		if idx < 0 || idx >= nYears {
+			log.Println("hanteraY10Result, utanför index:" + strconv.Itoa(idx))
+			continue
+		}
+
+		typ := toUtf8(typBuf)
+		if typ == "Insättning" || typ == "Fast Inkomst" {
+			incomeByYear[idx] = incomeByYear[idx].Add(decamount)
+		} else {
+			expenseByYear[idx] = expenseByYear[idx].Add(decamount)
+		}
+	}
+	res.Close()
+
+	var months []Y3MonthRow
+	sums := make([]decimal.Decimal, nYears)
+	yearTimes := make([]time.Time, nYears)
+	for i := 0; i < nYears; i++ {
+		y := firstYear + i
+		income := incomeByYear[i]
+		expense := expenseByYear[i]
+		sum := income.Add(expense.Neg())
+		sums[i] = sum
+		yearTimes[i] = time.Date(y, 1, 1, 0, 0, 0, 0, now.Location())
+		months = append(months, Y3MonthRow{
+			MonthName: strconv.Itoa(y),
+			Income:    Dec2Str(income),
+			Expense:   Dec2Str(expense),
+			Sum:       Dec2Str(sum),
+		})
+	}
+
+	zeroLine, monthValues, gridLines, axisLabels, minSaldo, maxSaldo, averageLine := y10ChartFromSums(sums, yearTimes)
+
+	t, err := template.New("y10result.html").ParseFS(htmlTemplates, "html/y10result.html")
+	if err != nil {
+		log.Println("While parsing y10result.html: ", err)
+		return
+	}
+	err = t.Execute(w, Y3ResultData{
+		Months:      months,
+		ZeroLine:    strconv.Itoa(zeroLine),
+		MonthValues: monthValues,
+		GridLines:   gridLines,
+		AxisLabels:  axisLabels,
+		MinSaldo:    Dec2Str(minSaldo),
+		MaxSaldo:    Dec2Str(maxSaldo),
+		ChartTitle:  "Summa per år - 10 år",
+		AverageLine: averageLine,
+	})
+	if err != nil {
+		log.Println("While serving HTTP y10result: ", err)
 	}
 }

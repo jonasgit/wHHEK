@@ -1419,6 +1419,7 @@ func main() {
 	http.HandleFunc("/budget", hanteraBudget)
 	http.HandleFunc("/yresult", hanteraYResult)
 	http.HandleFunc("/y3result", hanteraY3Result)
+	http.HandleFunc("/y10result", hanteraY10Result)
 	http.HandleFunc("/ybr", hanteraYBR)
 	http.HandleFunc("/summary", generateSummary)
 	http.HandleFunc("/acccmp", compareaccount)

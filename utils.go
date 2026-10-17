@@ -146,6 +146,12 @@ func Dec2Str(summa decimal.Decimal) string {
 	return sign + ints + decs
 }
 
+// Dec2StrAxis formats an amount for chart axis ticks using Swedish thousands
+// grouping and no trailing öre, so large yearly sums stay readable.
+func Dec2StrAxis(summa decimal.Decimal) string {
+	return strings.TrimSuffix(Dec2Str(summa.Round(0)), ",00")
+}
+
 // Dec2Str3Sig formats a decimal to a maximum of 3 significant digits
 // Uses Swedish formatting (comma as decimal separator, space as thousands separator)
 func Dec2Str3Sig(summa decimal.Decimal) string {
