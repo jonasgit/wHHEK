@@ -11,7 +11,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/shopspring/decimal" // MIT License
 )
@@ -291,18 +290,18 @@ func updateBudget(lopnr int, req *http.Request, db *sql.DB) (string, error) {
 		Inkomst,
 		HurOfta,
 		StartMånad,
-		strings.ReplaceAll(Jan, ".", ","),
-		strings.ReplaceAll(Feb, ".", ","),
-		strings.ReplaceAll(Mar, ".", ","),
-		strings.ReplaceAll(Apr, ".", ","),
-		strings.ReplaceAll(Maj, ".", ","),
-		strings.ReplaceAll(Jun, ".", ","),
-		strings.ReplaceAll(Jul, ".", ","),
-		strings.ReplaceAll(Aug, ".", ","),
-		strings.ReplaceAll(Sep, ".", ","),
-		strings.ReplaceAll(Okt, ".", ","),
-		strings.ReplaceAll(Nov, ".", ","),
-		strings.ReplaceAll(Dec, ".", ","),
+		AmountStr2DBStr(SanitizeAmount(Jan)),
+		AmountStr2DBStr(SanitizeAmount(Feb)),
+		AmountStr2DBStr(SanitizeAmount(Mar)),
+		AmountStr2DBStr(SanitizeAmount(Apr)),
+		AmountStr2DBStr(SanitizeAmount(Maj)),
+		AmountStr2DBStr(SanitizeAmount(Jun)),
+		AmountStr2DBStr(SanitizeAmount(Jul)),
+		AmountStr2DBStr(SanitizeAmount(Aug)),
+		AmountStr2DBStr(SanitizeAmount(Sep)),
+		AmountStr2DBStr(SanitizeAmount(Okt)),
+		AmountStr2DBStr(SanitizeAmount(Nov)),
+		AmountStr2DBStr(SanitizeAmount(Dec)),
 		lopnr)
 
 	if err != nil {
@@ -446,12 +445,14 @@ func getAllBudgetposter(db *sql.DB) [][2]string {
 	return result
 }
 
+// addDecStr adderar ett belopp från databasen. Både "100.50" och "100,50"
+// accepteras (äldre SQLite-databaser kan innehålla kommatecken). Ett belopp som
+// inte går att tolka loggas och räknas som 0 i stället för att krascha sidan.
 func addDecStr(v1 decimal.Decimal, v2 string) decimal.Decimal {
-
-	tot, err := decimal.NewFromString(v2)
+	tot, err := decimal.NewFromString(SanitizeAmount(v2))
 	if err != nil {
-		log.Println("addDecStr strasig decimal sträng: ", v2)
-		panic(err)
+		log.Println("addDecStr trasig decimal sträng: ", v2, err)
+		return v1
 	}
 	return v1.Add(tot)
 }

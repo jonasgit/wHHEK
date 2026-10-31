@@ -182,3 +182,44 @@ func TestKontoDB4(t *testing.T) {
 // TODO: test startmånad = "foo" should fail
 // TODO: test startsaldo = "Foo" should fail
 // TODO: test namn = "😁" should fail? Due to Windows-1252 charset.
+
+func TestKontoUppdateraDecimal(t *testing.T) {
+	t.Parallel()
+	db := newTestDB(t, "kon6")
+	want := decimal.RequireFromString("123.45")
+	for _, in := range []string{"123.45", "123,45"} {
+		updateKonto(1, "Plånboken", in, "Jan", db)
+		if k := hämtaKonto(db, 1); !k.StartSaldo.Equal(want) {
+			t.Errorf("startsaldo %q: förväntade %s, fick %s", in, want, k.StartSaldo)
+		}
+		if s := saldoKonto(db, "Plånboken", ""); !s.Equal(want) {
+			t.Errorf("saldo efter startsaldo %q: förväntade %s, fick %s", in, want, s)
+		}
+	}
+}
+
+func TestKontoNyttSvensktBelopp(t *testing.T) {
+	t.Parallel()
+	db := newTestDB(t, "kon7")
+	addKontow("Sparkonto", "1 234,50", "1", db)
+	k := hämtaKonto(db, hämtakontoID(db, "Sparkonto"))
+	if want := decimal.RequireFromString("1234.50"); !k.StartSaldo.Equal(want) {
+		t.Errorf("förväntade startsaldo %s, fick %s", want, k.StartSaldo)
+	}
+}
+
+func TestKontoLäserGammaltKommatecken(t *testing.T) {
+	t.Parallel()
+	db := newTestDB(t, "kon8")
+	// Så sparade updateKonto tidigare startsaldo i SQLite.
+	if _, err := db.Exec("UPDATE Konton SET StartSaldo = '123,45' WHERE Löpnr = 1"); err != nil {
+		t.Fatal(err)
+	}
+	want := decimal.RequireFromString("123.45")
+	if k := hämtaKonto(db, 1); !k.StartSaldo.Equal(want) {
+		t.Errorf("förväntade %s, fick %s", want, k.StartSaldo)
+	}
+	if s := saldoKonto(db, "Plånboken", ""); !s.Equal(want) {
+		t.Errorf("förväntade saldo %s, fick %s", want, s)
+	}
+}

@@ -3,7 +3,12 @@
 package main
 
 import (
+	"net/http/httptest"
+	"net/url"
+	"strings"
 	"testing"
+
+	"github.com/shopspring/decimal" // MIT License
 )
 
 func TestBudgetTomMDB1(t *testing.T) {
@@ -69,5 +74,38 @@ func TestBudgetTomMDB1(t *testing.T) {
 		} else {
 			t.Error("Budgetpost stämmer inte överens:", typdata[i*2], s[0], typdata[i*2+1], s[1])
 		}
+	}
+}
+
+func TestBudgetUppdateraDecimal(t *testing.T) {
+	t.Parallel()
+	db := newTestDB(t, "bdg2")
+	var lopnr int
+	if err := db.QueryRow("SELECT Löpnr FROM Budget WHERE Typ = 'Livsmedel'").Scan(&lopnr); err != nil {
+		t.Fatal(err)
+	}
+	form := url.Values{"Typ": {"Livsmedel"}, "Inkomst": {"N"}, "HurOfta": {"1"}, "StartMånad": {"Jan"},
+		"Jan": {"100.50"}, "Feb": {"1 000,25"}}
+	for _, m := range []string{"Mar", "Apr", "Maj", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"} {
+		form.Set(m, "0")
+	}
+	req := httptest.NewRequest("POST", "/budget", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if err := req.ParseForm(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := updateBudget(lopnr, req, db); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := getKatYearSum(db, "Livsmedel"), decimal.RequireFromString("1100.75"); !got.Equal(want) {
+		t.Errorf("årssumma: förväntade %s, fick %s", want, got)
+	}
+
+	// Så sparade updateBudget tidigare belopp i SQLite: ska läsas utan krasch.
+	if _, err := db.Exec("UPDATE Budget SET Mar = '50,25' WHERE Löpnr = ?", lopnr); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := getKatYearSum(db, "Livsmedel"), decimal.RequireFromString("1151"); !got.Equal(want) {
+		t.Errorf("årssumma med gammalt kommatecken: förväntade %s, fick %s", want, got)
 	}
 }

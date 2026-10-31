@@ -222,3 +222,88 @@ func TestFastTransaktionTomDB3(t *testing.T) {
 	}
 
 }
+
+func TestNextFixedDate(t *testing.T) {
+	t.Parallel()
+	for _, c := range []struct{ datum, hurofta, want string }{
+		{"2021-01-31", "Varje månad", "2021-02-28"},
+		{"2021-1-31", "varje månad", "2021-02-28"},
+		{" 2021-01-15 ", " VARANNAN VECKA ", "2021-01-29"},
+		{"2020-11-30", "Varje kvartal", "2021-02-28"},
+		{"2021-01-15", "12", "2022-01-15"},
+		{"2021-01-31", "Månadsvis", ""},
+		{"31/1 2021", "Varje månad", ""},
+		{"", "Varje månad", ""},
+	} {
+		got, err := nextFixedDate(c.datum, c.hurofta)
+		if c.want == "" {
+			if err == nil {
+				t.Errorf("nextFixedDate(%q, %q) = %q, förväntade fel", c.datum, c.hurofta, got)
+			}
+		} else if err != nil || got != c.want {
+			t.Errorf("nextFixedDate(%q, %q) = %q, %v; förväntade %q", c.datum, c.hurofta, got, err, c.want)
+		}
+	}
+}
+
+func TestFastTransaktionOkändPeriodRegistrerasInte(t *testing.T) {
+	t.Parallel()
+	db := newTestDB(t, "ftrt4")
+	_ = skapaPlats(db, "Mack", "", false, "")
+	_ = skapaFastUtgift(db, "Bil", "Plånboken", "Gemensamt", "Mack", decimal.NewFromInt(1), "2021-01-31", "Varje månad")
+	// Äldre data eller annan källa: okänd periodicitet i databasen.
+	if _, err := db.Exec("UPDATE Överföringar SET HurOfta = 'Månadsvis' WHERE Löpnr = 1"); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := registreraFastTransaktion(db, 1); err == nil {
+		t.Error("förväntade fel för okänd periodicitet")
+	}
+	if antal := antalTransaktioner(db); antal != 0 {
+		t.Errorf("ingen transaktion ska registreras, fick %d", antal)
+	}
+	if ft := hämtaFastTransaktion(db, 1); !compareDates(t, ft.date, time.Date(2021, 1, 31, 0, 0, 0, 0, time.UTC)) {
+		t.Errorf("datumet ska inte flyttas fram, fick %v", ft.date)
+	}
+}
+
+func TestFastTransaktionGammaltDatumformat(t *testing.T) {
+	t.Parallel()
+	db := newTestDB(t, "ftrt5")
+	_ = skapaPlats(db, "Mack", "", false, "")
+	_ = skapaFastUtgift(db, "Bil", "Plånboken", "Gemensamt", "Mack", decimal.NewFromInt(1), "2021-1-31", "varje månad")
+
+	if err := registreraFastTransaktion(db, 1); err != nil {
+		t.Fatal(err)
+	}
+	if tr := hämtaTransaktion(db, 1); tr.date.Format("2006-01-02") != "2021-01-31" {
+		t.Errorf("transaktionen ska få datumet 2021-01-31, fick %q", tr.date)
+	}
+	if ft := hämtaFastTransaktion(db, 1); !compareDates(t, ft.date, time.Date(2021, 2, 28, 0, 0, 0, 0, time.UTC)) {
+		t.Errorf("nästa datum ska vara 2021-02-28, fick %v", ft.date)
+	}
+}
+
+func TestUpdateFastUtgNormaliserar(t *testing.T) {
+	t.Parallel()
+	db := newTestDB(t, "ftrt6")
+	_ = skapaPlats(db, "Mack", "", false, "")
+	_ = skapaFastUtgift(db, "Bil", "Plånboken", "Gemensamt", "Mack", decimal.NewFromInt(1), "2021-01-31", "Varje månad")
+
+	if err := updateFastUtgSQL(1, db, "Plånboken", "Mack", "2021-3-5", "varje kvartal", "", "Bil", "Gemensamt", "1", ""); err != nil {
+		t.Fatal(err)
+	}
+	var datum, hurofta string
+	_ = db.QueryRow("SELECT Datum, HurOfta FROM Överföringar WHERE Löpnr = 1").Scan(&datum, &hurofta)
+	if datum != "2021-03-05" || hurofta != "Varje kvartal" {
+		t.Errorf("förväntade 2021-03-05 / Varje kvartal, fick %q / %q", datum, hurofta)
+	}
+
+	if err := updateFastUtgSQL(1, db, "Plånboken", "Mack", "2021-03-05", "Månadsvis", "", "Bil", "Gemensamt", "1", ""); err == nil {
+		t.Error("förväntade fel för okänd periodicitet")
+	}
+	_ = db.QueryRow("SELECT HurOfta FROM Överföringar WHERE Löpnr = 1").Scan(&hurofta)
+	if hurofta != "Varje kvartal" {
+		t.Errorf("ogiltig ändring ska inte sparas, fick %q", hurofta)
+	}
+}

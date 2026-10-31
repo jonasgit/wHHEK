@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -105,7 +106,9 @@ func editfastutgHTML(w http.ResponseWriter, req *http.Request) {
 	}
 	_ = t.Execute(w, data)
 
-	r_e_fastutg(req, db)
+	if msg := r_e_fastutg(req, db); msg != "" {
+		_, _ = fmt.Fprintf(w, "<p>%s</p>\n", template.HTMLEscapeString(msg))
+	}
 	editfastutg(w, req, db)
 
 	showFastUtg(w, db)
@@ -235,7 +238,9 @@ func editfastutg(w http.ResponseWriter, req *http.Request, db *sql.DB) {
 	log.Println("editfastutg slut")
 }
 
-func r_e_fastutg(req *http.Request, db *sql.DB) {
+// r_e_fastutg hanterar formulärets action och returnerar ett meddelande att visa
+// (tomt om allt gick bra).
+func r_e_fastutg(req *http.Request, db *sql.DB) string {
 	log.Println("Func r_e_fastutg")
 
 	err := req.ParseForm()
@@ -253,14 +258,17 @@ func r_e_fastutg(req *http.Request, db *sql.DB) {
 	case "editform":
 		log.Println("editform not implemented")
 	case "update":
-		updateFastUtgHTML(lopnr, req, db)
+		if err := updateFastUtgHTML(lopnr, req, db); err != nil {
+			return "Ändringen sparades inte: " + err.Error()
+		}
 	default:
 		log.Println("Okänd form action: ", formaction, getCurrentFuncName())
 	}
 	log.Println("Func r_e_fastutg finished")
+	return ""
 }
 
-func updateFastUtgHTML(lopnr int, req *http.Request, db *sql.DB) {
+func updateFastUtgHTML(lopnr int, req *http.Request, db *sql.DB) error {
 	log.Println("updateFastUtgHTML lopnr: ", lopnr)
 
 	var fromAcc = ""
@@ -303,19 +311,27 @@ func updateFastUtgHTML(lopnr int, req *http.Request, db *sql.DB) {
 	err := updateFastUtgSQL(lopnr, db, fromAcc, toAcc, date, hurofta, tilldatum, what, who, amount, rakning)
 	if err != nil {
 		log.Println("Error updating fixed expense: ", err)
-		return
+		return err
 	}
+	return nil
 }
 
 func updateFastUtgSQL(lopnr int, db *sql.DB, fromAcc string, toAcc string, date string, hurofta string, tilldatum string, what string, who string, amount string, rakning string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// Only save what can be registered later (date ÅÅÅÅ-MM-DD and a known period).
+	var err error
+	date, hurofta, err = normalizeFixed(date, hurofta)
+	if err != nil {
+		return err
+	}
+
 	// empty string is not allowed in MDB
 	if len(rakning) < 1 {
 		rakning = " "
 	}
-	_, err := db.ExecContext(ctx,
+	_, err = db.ExecContext(ctx,
 		`UPDATE Överföringar SET FrånKonto = ?, TillKonto = ?, Datum = ?, HurOfta = ?, TillDatum = ?, Vad = ?, Vem = ?, Belopp = ?, Rakning = ? WHERE (Löpnr=?)`,
 		fromAcc,
 		toAcc,

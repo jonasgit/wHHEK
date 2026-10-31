@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/shopspring/decimal" // MIT License
@@ -36,56 +37,89 @@ func CurrDate() string {
 	return currDate
 }
 
-func IncrDate(datum string, veckor int, månader int) string {
-	//log.Println("IncrDate start ")
-	year, _ := strconv.Atoi(datum[0:4])
-	var month time.Month
-	monthval, _ := strconv.Atoi(datum[5:7])
-	switch monthval {
-	case 1:
-		month = time.January
-	case 2:
-		month = time.February
-	case 3:
-		month = time.March
-	case 4:
-		month = time.April
-	case 5:
-		month = time.May
-	case 6:
-		month = time.June
-	case 7:
-		month = time.July
-	case 8:
-		month = time.August
-	case 9:
-		month = time.September
-	case 10:
-		month = time.October
-	case 11:
-		month = time.November
-	case 12:
-		month = time.December
-	default:
-		log.Fatal("Okänd månad: ", monthval)
+// parseFixedDate tolkar ett datum som "2021-01-31" eller "2021-1-31".
+func parseFixedDate(datum string) (time.Time, error) {
+	datum = strings.TrimSpace(datum)
+	for _, layout := range []string{"2006-01-02", "2006-1-2"} {
+		if t, err := time.Parse(layout, datum); err == nil {
+			return t, nil
+		}
 	}
-	day, _ := strconv.Atoi(datum[8:10])
-	location := time.FixedZone("CET", 0)
-	t := time.Date(year, month, day, 12, 0, 0, 0, location)
+	return time.Time{}, fmt.Errorf("ogiltigt datum '%s' (ska vara ÅÅÅÅ-MM-DD)", datum)
+}
+
+// IncrDate räknar fram datumet veckor/månader efter datum. Hamnar en månadsökning
+// på en dag som inte finns (t.ex. 31 feb) blir det sista dagen i månaden.
+func IncrDate(datum string, veckor int, månader int) (string, error) {
+	if månader != 0 && veckor != 0 {
+		return "", fmt.Errorf("inte tillåtet med både veckor och månader")
+	}
+	t, err := parseFixedDate(datum)
+	if err != nil {
+		return "", err
+	}
+	day := t.Day()
+	t = time.Date(t.Year(), t.Month(), day, 12, 0, 0, 0, time.FixedZone("CET", 0))
 	nytt := t.AddDate(0, månader, veckor*7)
 	//fix date at end of month spilling over to next month
-	if månader != 0 {
-		if veckor != 0 {
-			log.Fatal("Inte tillåtet med både veckor och månader")
-		}
-		if nytt.Day() != day {
-			nytt = BeginningOfMonth(nytt)
-			nytt = nytt.AddDate(0, 0, -1)
+	if månader != 0 && nytt.Day() != day {
+		nytt = BeginningOfMonth(nytt)
+		nytt = nytt.AddDate(0, 0, -1)
+	}
+	return nytt.Format("2006-01-02"), nil
+}
+
+// fixedPeriods är de periodiciteter som finns för fasta transaktioner, som
+// veckor och månader. Både text och Hogias sifferkoder förekommer i databasen.
+var fixedPeriods = []struct {
+	names           []string
+	veckor, månader int
+}{
+	{[]string{"Varannan vecka"}, 2, 0},
+	{[]string{"Varje månad", "1"}, 0, 1},
+	{[]string{"Varannan månad", "2"}, 0, 2},
+	{[]string{"Varje kvartal", "3"}, 0, 3},
+	{[]string{"Varje halvår", "6"}, 0, 6},
+	{[]string{"Varje år", "12"}, 0, 12},
+}
+
+// normalizePeriod känner igen en periodicitet oavsett skiftläge och mellanslag
+// runt omkring och returnerar den som den ska sparas, t.ex. "varje månad" ->
+// "Varje månad". Sifferkoderna behålls som de är.
+func normalizePeriod(hurofta string) (string, int, int, error) {
+	s := strings.TrimSpace(hurofta)
+	for _, p := range fixedPeriods {
+		for _, name := range p.names {
+			if strings.EqualFold(s, name) {
+				return name, p.veckor, p.månader, nil
+			}
 		}
 	}
+	return "", 0, 0, fmt.Errorf("okänd periodicitet '%s' (giltiga: Varannan vecka, Varje månad, "+
+		"Varannan månad, Varje kvartal, Varje halvår, Varje år)", hurofta)
+}
 
-	//log.Println("IncrDate slut ", nytt)
-	return nytt.Format("2006-01-02")
+// nextFixedDate räknar fram nästa datum för en fast transaktion.
+func nextFixedDate(datum string, hurofta string) (string, error) {
+	_, veckor, månader, err := normalizePeriod(hurofta)
+	if err != nil {
+		return "", err
+	}
+	return IncrDate(datum, veckor, månader)
+}
+
+// normalizeFixed kontrollerar och snyggar till datum och periodicitet innan en
+// fast transaktion sparas, så att den går att registrera senare.
+func normalizeFixed(datum string, hurofta string) (string, string, error) {
+	t, err := parseFixedDate(datum)
+	if err != nil {
+		return "", "", err
+	}
+	period, _, _, err := normalizePeriod(hurofta)
+	if err != nil {
+		return "", "", err
+	}
+	return t.Format("2006-01-02"), period, nil
 }
 
 func BeginningOfMonth(date time.Time) time.Time {
@@ -216,10 +250,12 @@ func addfixedtransaction(w http.ResponseWriter, req *http.Request, db *sql.DB) {
 	log.Println("addfixedtransaction slut")
 }
 
-func registreraFastTransaktion(db *sql.DB, transid int) {
+// registreraFastTransaktion registrerar en fast transaktion och flyttar fram dess
+// datum. Är datum eller periodicitet ogiltiga registreras ingenting.
+func registreraFastTransaktion(db *sql.DB, transid int) error {
 	if db == nil {
 		log.Println("registreraFastTransaktion: No database open")
-		return
+		return fmt.Errorf("ingen databas öppen")
 	}
 
 	// Retrieve repeating transaction
@@ -228,7 +264,7 @@ func registreraFastTransaktion(db *sql.DB, transid int) {
 	if err != nil {
 		log.Println("registreraFastTransaktion: SELECT ERROR")
 		log.Println(err)
-		return
+		return err
 	}
 
 	var FrånKonto []byte  // size 40
@@ -249,7 +285,8 @@ func registreraFastTransaktion(db *sql.DB, transid int) {
 		log.Println("registreraFastTransaktion: SCAN ERROR")
 		log.Println(err)
 		log.Println("registreraFastTransaktion: Bail out")
-		return
+		_ = res.Close()
+		return err
 	}
 
 	amountstr := SanitizeAmountb(Belopp)
@@ -273,19 +310,32 @@ func registreraFastTransaktion(db *sql.DB, transid int) {
 	sqlStmt += "</tr>\n"
 
 	_ = res.Close()
+
+	// Next date first: if date or period is invalid nothing is registered.
+	newDatum, err := nextFixedDate(toUtf8(Datum), toUtf8(HurOfta))
+	if err != nil {
+		log.Println("registreraFastTransaktion:", err)
+		return err
+	}
+
+	// Register with the date in standard form (ÅÅÅÅ-MM-DD), also for old rows
+	// saved as e.g. 2021-1-31, so the transactions sort correctly.
+	regDate, _ := parseFixedDate(toUtf8(Datum))
+	regDatum := regDate.Format("2006-01-02")
+
 	// Register transaction
 	if toUtf8(Vad) == "---" {
 		// Fasta överföringar
 		addTransaktionÖverföring(db, toUtf8(FrånKonto),
 			toUtf8(TillKonto),
-			toUtf8(Datum),
+			regDatum,
 			toUtf8(Vem),
 			amount,
 			"Fast transaktion wHHEK")
 	} else if toUtf8(FrånKonto) == "---" {
 		// Fasta inkomster
 		addTransaktionInsättning(db, toUtf8(TillKonto),
-			toUtf8(Datum),
+			regDatum,
 			toUtf8(Vad),
 			toUtf8(Vem),
 			amount,
@@ -294,7 +344,7 @@ func registreraFastTransaktion(db *sql.DB, transid int) {
 		// Fasta utgifter
 		addTransaktionInköp(db, toUtf8(FrånKonto),
 			toUtf8(TillKonto),
-			toUtf8(Datum),
+			regDatum,
 			toUtf8(Vad),
 			toUtf8(Vem),
 			amount,
@@ -303,38 +353,9 @@ func registreraFastTransaktion(db *sql.DB, transid int) {
 	}
 
 	// Update repeating transaction
-	var newDatum string
-	switch toUtf8(HurOfta) {
-	case "Varannan vecka":
-		newDatum = IncrDate(toUtf8(Datum), 2, 0)
-	case "1":
-		fallthrough
-	case "Varje månad":
-		newDatum = IncrDate(toUtf8(Datum), 0, 1)
-	case "2":
-		fallthrough
-	case "Varannan månad":
-		newDatum = IncrDate(toUtf8(Datum), 0, 2)
-	case "3":
-		fallthrough
-	case "Varje kvartal":
-		newDatum = IncrDate(toUtf8(Datum), 0, 3)
-	case "6":
-		fallthrough
-	case "Varje halvår":
-		newDatum = IncrDate(toUtf8(Datum), 0, 6)
-	case "12":
-		fallthrough
-	case "Varje år":
-		newDatum = IncrDate(toUtf8(Datum), 0, 12)
-	default:
-		log.Fatal("Okänd periodicitet: " + toUtf8(HurOfta))
-	}
 	sqlStatement := `UPDATE Överföringar SET Datum = ? WHERE Löpnr = ?`
 	_, err = db.Exec(sqlStatement, newDatum, transid)
-	if err != nil {
-		panic(err)
-	}
+	return err
 }
 
 func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.DB) {
@@ -401,20 +422,34 @@ func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.D
 
 	res.Close()
 
+	// Next date first: if date or period is invalid nothing is registered.
+	newDatum, err := nextFixedDate(toUtf8(Datum), toUtf8(HurOfta))
+	if err != nil {
+		log.Println("registreraFastTransaktionHTML:", err)
+		_, _ = fmt.Fprintf(w, "Kan inte registrera: %s. Rätta den fasta transaktionen först.<p>\n",
+			template.HTMLEscapeString(err.Error()))
+		return
+	}
+
+	// Register with the date in standard form (ÅÅÅÅ-MM-DD), also for old rows
+	// saved as e.g. 2021-1-31, so the transactions sort correctly.
+	regDate, _ := parseFixedDate(toUtf8(Datum))
+	regDatum := regDate.Format("2006-01-02")
+
 	// Register transaction
 	if toUtf8(Vad) == "---" {
 		// Fasta överföringar
 		_, _ = fmt.Fprintf(w, "Registrerar Överföring...<br> ")
 		log.Println("registreraFastTransaktionHTML Registrerar Överföring...")
 
-		addTransaktionÖverföring(db, toUtf8(FrånKonto), toUtf8(TillKonto), toUtf8(Datum), toUtf8(Vem), amount, "Fast transaktion wHHEK")
+		addTransaktionÖverföring(db, toUtf8(FrånKonto), toUtf8(TillKonto), regDatum, toUtf8(Vem), amount, "Fast transaktion wHHEK")
 
 		_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Frånkonto</th><th>Tillkonto</th><th>Typ</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
 		sqlStmt := "<tr>"
 		sqlStmt += "<td>" + toUtf8(FrånKonto) + "</td>"
 		sqlStmt += "<td>" + toUtf8(TillKonto) + "</td>"
 		sqlStmt += "<td>" + "Överföring" + "</td>"
-		sqlStmt += "<td>" + toUtf8(Datum) + "</td>"
+		sqlStmt += "<td>" + regDatum + "</td>"
 		sqlStmt += "<td>" + toUtf8(Vem) + "</td>"
 		sqlStmt += "<td>" + toUtf8(Belopp) + "</td>"
 		sqlStmt += "</tr>"
@@ -425,14 +460,14 @@ func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.D
 		_, _ = fmt.Fprintf(w, "Registrerar Insättning...<br> ")
 		log.Println("registreraFastTransaktionHTML Insättning...")
 
-		addTransaktionInsättning(db, toUtf8(TillKonto), toUtf8(Datum), toUtf8(Vad), toUtf8(Vem), amount, "Fast transaktion wHHEK")
+		addTransaktionInsättning(db, toUtf8(TillKonto), regDatum, toUtf8(Vad), toUtf8(Vem), amount, "Fast transaktion wHHEK")
 
 		_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Konto</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
 		sqlStmt := "<tr>"
 		sqlStmt += "<td>" + toUtf8(TillKonto) + "</td>"
 		sqlStmt += "<td>" + "Insättning" + "</td>"
 		sqlStmt += "<td>" + toUtf8(Vad) + "</td>"
-		sqlStmt += "<td>" + toUtf8(Datum) + "</td>"
+		sqlStmt += "<td>" + regDatum + "</td>"
 		sqlStmt += "<td>" + toUtf8(Vem) + "</td>"
 		sqlStmt += "<td>" + toUtf8(Belopp) + "</td>"
 		sqlStmt += "</tr>"
@@ -443,7 +478,7 @@ func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.D
 		_, _ = fmt.Fprintf(w, "Registrerar Fast Utgift...<br> ")
 		log.Println("registreraFastTransaktionHTML Fast Utgift...")
 
-		addTransaktionInköp(db, toUtf8(FrånKonto), toUtf8(TillKonto), toUtf8(Datum), toUtf8(Vad), toUtf8(Vem), amount, "Fast transaktion wHHEK", true)
+		addTransaktionInköp(db, toUtf8(FrånKonto), toUtf8(TillKonto), regDatum, toUtf8(Vad), toUtf8(Vem), amount, "Fast transaktion wHHEK", true)
 
 		_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Frånkonto</th><th>Plats</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
 		sqlStmt := "<tr>"
@@ -451,7 +486,7 @@ func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.D
 		sqlStmt += "<td>" + toUtf8(TillKonto) + "</td>"
 		sqlStmt += "<td>" + "Fast Utgift" + "</td>"
 		sqlStmt += "<td>" + toUtf8(Vad) + "</td>"
-		sqlStmt += "<td>" + toUtf8(Datum) + "</td>"
+		sqlStmt += "<td>" + regDatum + "</td>"
 		sqlStmt += "<td>" + toUtf8(Vem) + "</td>"
 		sqlStmt += "<td>" + toUtf8(Belopp) + "</td>"
 		sqlStmt += "</tr>"
@@ -459,43 +494,13 @@ func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.D
 		_, _ = fmt.Fprintf(w, "</table>\n")
 	}
 
-	log.Println("registreraFastTransaktionHTML Update date...")
-	log.Println("registreraFastTransaktionHTML switch " + toUtf8(HurOfta))
-	// Update repeating transaction
-	var newDatum string
-	switch toUtf8(HurOfta) {
-	case "Varannan vecka":
-		newDatum = IncrDate(toUtf8(Datum), 2, 0)
-	case "1":
-		fallthrough
-	case "Varje månad":
-		newDatum = IncrDate(toUtf8(Datum), 0, 1)
-	case "2":
-		fallthrough
-	case "Varannan månad":
-		newDatum = IncrDate(toUtf8(Datum), 0, 2)
-	case "3":
-		fallthrough
-	case "Varje kvartal":
-		newDatum = IncrDate(toUtf8(Datum), 0, 3)
-	case "6":
-		fallthrough
-	case "Varje halvår":
-		newDatum = IncrDate(toUtf8(Datum), 0, 6)
-	case "12":
-		fallthrough
-	case "Varje år":
-		newDatum = IncrDate(toUtf8(Datum), 0, 12)
-	default:
-		log.Fatal("Okänd periodicitet: " + toUtf8(HurOfta))
-
-	}
 	log.Println("registreraFastTransaktionHTML nytt datum " + newDatum)
 	sqlStatement := `UPDATE Överföringar SET Datum = ? WHERE Löpnr = ?`
 	_, err = db.Exec(sqlStatement, newDatum, transid)
 	if err != nil {
 		log.Println("registreraFastTransaktionHTML Update error: ", err)
-		panic(err)
+		_, _ = fmt.Fprintf(w, "Kunde inte flytta fram datumet: %s<p>\n", template.HTMLEscapeString(err.Error()))
+		return
 	}
 
 	_, _ = fmt.Fprintf(w, "<p>\n")

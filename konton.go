@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/shopspring/decimal" // MIT License
@@ -78,11 +77,11 @@ func printKonton(w http.ResponseWriter, db *sql.DB, data AccountListData) {
 			KontoNummer: toUtf8(KontoNummer),
 			Benämning:   toUtf8(Benämning),
 			Saldo: func() decimal.Decimal {
-				d, _ := decimal.NewFromString(toUtf8(Saldo))
+				d, _ := decimal.NewFromString(SanitizeAmountb(Saldo))
 				return d
 			}(),
 			StartSaldo: func() decimal.Decimal {
-				d, _ := decimal.NewFromString(toUtf8(StartSaldo))
+				d, _ := decimal.NewFromString(SanitizeAmountb(StartSaldo))
 				return d
 			}(),
 			StartManad:     toUtf8(StartManad),
@@ -236,13 +235,8 @@ func addKonto(Benamning string, StartSaldo decimal.Decimal, StartManad string, d
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	var startSaldo = "Not Possible"
-	//StartMan, _ := strconv.Atoi(StartManad)
-	if JetDBSupport {
-		startSaldo = strings.ReplaceAll(StartSaldo.String(), ".", ",")
-	} else {
-		startSaldo = StartSaldo.String()
-	}
+	// Decimal comma only for mdb files that need it (see AmountStr2DBStr)
+	startSaldo := AmountDec2DBStr(StartSaldo)
 
 	if month, err := strconv.Atoi(StartManad); err == nil {
 		StartManad = int2man(month)
@@ -259,7 +253,7 @@ func addKonto(Benamning string, StartSaldo decimal.Decimal, StartManad string, d
 func addKontow(Benamning string, StartSaldo string, StartManad string, db *sql.DB) string {
 	fmt.Println("addKontow namn: ", Benamning)
 
-	startSaldo, err := decimal.NewFromString(StartSaldo)
+	startSaldo, err := decimal.NewFromString(SanitizeAmount(StartSaldo))
 	if err != nil {
 		log.Print(err)
 		startSaldo = decimal.NewFromInt(0)
@@ -276,7 +270,7 @@ func updateKonto(lopnr int, Benamning string, StartSaldo string, StartManad stri
 	defer cancel()
 
 	_, err := db.ExecContext(ctx,
-		`UPDATE Konton SET Benämning = ?, StartSaldo = ?, StartManad = ? WHERE (Löpnr=?)`, Benamning, strings.ReplaceAll(StartSaldo, ".", ","), StartManad, lopnr)
+		`UPDATE Konton SET Benämning = ?, StartSaldo = ?, StartManad = ? WHERE (Löpnr=?)`, Benamning, AmountStr2DBStr(SanitizeAmount(StartSaldo)), StartManad, lopnr)
 
 	if err != nil {
 		log.Fatal(err)
@@ -439,8 +433,8 @@ func hämtaKonto(db *sql.DB, lopnr int) konto {
 
 	retkonto.KontoNummer = toUtf8(KontoNummer)
 	retkonto.Benämning = toUtf8(Benämning)
-	retkonto.Saldo, _ = decimal.NewFromString(toUtf8(Saldo))
-	retkonto.StartSaldo, _ = decimal.NewFromString(toUtf8(StartSaldo))
+	retkonto.Saldo, _ = decimal.NewFromString(SanitizeAmountb(Saldo))
+	retkonto.StartSaldo, _ = decimal.NewFromString(SanitizeAmountb(StartSaldo))
 	retkonto.StartManad = toUtf8(StartManad)
 	retkonto.SaldoArsskifte = toUtf8(SaldoArsskifte)
 	retkonto.ArsskifteManad = toUtf8(ArsskifteManad)
@@ -466,8 +460,7 @@ func saldoKonto(db *sql.DB, accName string, endDate string) decimal.Decimal {
 		`select startsaldo
   from konton
   where benämning = ?`, accName).Scan(&rawStart)
-	res2 := toUtf8(rawStart)
-	startSaldo, _ := decimal.NewFromString(res2)
+	startSaldo, _ := decimal.NewFromString(SanitizeAmountb(rawStart))
 	currSaldo := startSaldo
 	//fmt.Println("saldoKonto: startsaldo ", currSaldo)
 
@@ -538,8 +531,7 @@ func saldonKonto(db *sql.DB, accName string, endDate string) (decimal.Decimal, d
 		`select startsaldo
   from konton
   where benämning = ?`, accName).Scan(&rawStart)
-	res2 := toUtf8(rawStart)
-	startSaldo, _ := decimal.NewFromString(res2)
+	startSaldo, _ := decimal.NewFromString(SanitizeAmountb(rawStart))
 	currSaldo := startSaldo
 	totSaldo := currSaldo
 	//fmt.Println("saldoKonto: startsaldo ", currSaldo)
