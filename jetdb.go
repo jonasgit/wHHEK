@@ -31,6 +31,19 @@ func openJetDB(filename string, ro bool) *sql.DB {
 	currentDatabase = "NONE"
 	dbtype = 0
 
+	db, err := connectJetDB(filename, ro)
+	if err != nil {
+		log.Fatal(err)
+		return nil
+	}
+	currentDatabase = filename
+	dbtype = 1
+	return db
+}
+
+// connectJetDB opens an mdb file without touching the global database state
+// (used by openJetDB and by the unit tests).
+func connectJetDB(filename string, ro bool) (*sql.DB, error) {
 	readonlyCommand := ""
 	if ro {
 		readonlyCommand = "READONLY;"
@@ -50,12 +63,9 @@ func openJetDB(filename string, ro bool) *sql.DB {
 		// "Provider=Microsoft.Jet.OLEDB.4.0
 		// https://www.connectionstrings.com/access/
 		// https://docs.microsoft.com/en-us/office/client-developer/access/desktop-database-reference/microsoft-ole-db-provider-for-microsoft-jet
-		log.Fatal(err)
-		return nil
+		return nil, err
 	}
-	currentDatabase = filename
-	dbtype = 1
-	return db
+	return db, nil
 }
 
 //go:embed TOMDB.MDB

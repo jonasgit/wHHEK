@@ -2,52 +2,16 @@
 package main
 
 import (
-	"database/sql"
-	"os"
-	"path/filepath"
 	"strconv"
 	"testing"
 
 	"github.com/shopspring/decimal" // MIT License
 )
 
-func transaktionInit(t *testing.T, filnamn string) *sql.DB {
-	t.Helper()
-	dir := t.TempDir()
-	if JetDBSupport {
-		filename := filepath.Join(dir, "got"+filnamn+".mdb")
-		t.Log("Jet Supported.")
-		SkapaTomMDB(t, filename)
-		dbConn := openJetDB(filename, false)
-		if dbConn == nil {
-			t.Fatal("Ingen databas.")
-		}
-		t.Cleanup(func() { _ = dbConn.Close() })
-		return dbConn
-	}
-	filename := filepath.Join(dir, "got"+filnamn+".db")
-	t.Log("Jet NOT Supported.")
-	if FileExists(filename) {
-		if err := os.Remove(filename); err != nil {
-			t.Fatalf("remove test db: %v", err)
-		}
-	}
-	dbConn, err := sql.Open("sqlite3", filename)
-	if err != nil {
-		t.Fatalf("sqlite open: %v", err)
-	}
-	if dbConn == nil {
-		t.Fatal("Ingen databas.")
-	}
-	InitiateDB(dbConn)
-	t.Cleanup(func() { _ = dbConn.Close() })
-	return dbConn
-}
-
 func TestTransaktionTomDB1(t *testing.T) {
 	t.Parallel()
 	t.Log("TestTransaktionTomDB1")
-	db := transaktionInit(t, "trt")
+	db := newTestDB(t, "trt")
 
 	// Denna testen
 	antal := antalTransaktioner(db)
@@ -63,7 +27,7 @@ func TestTransaktionTomDB1(t *testing.T) {
 func TestTransaktionDB1(t *testing.T) {
 	t.Parallel()
 	t.Log("TestTransaktionDB1")
-	db := transaktionInit(t, "tr1")
+	db := newTestDB(t, "tr1")
 
 	// Denna testen
 	// Kontrollera att vi utgår från startsaldo 0.00
@@ -127,7 +91,7 @@ func TestTransaktionDB1(t *testing.T) {
 func TestTransaktionDB2(t *testing.T) {
 	t.Parallel()
 	t.Log("TestTransaktionDB2")
-	db := transaktionInit(t, "tr2")
+	db := newTestDB(t, "tr2")
 
 	// Denna testen
 	// Gör insättning 0,10kr 9 ggr och kontrollerar att resultatet blir 0,90kr
@@ -216,7 +180,7 @@ func TestTransaktionDB2(t *testing.T) {
 func TestTransaktionDB3(t *testing.T) {
 	t.Parallel()
 	t.Log("TestTransaktionDB3")
-	db := transaktionInit(t, "tr3")
+	db := newTestDB(t, "tr3")
 
 	// Denna testen
 	// Kontrollera att vi utgår från startsaldo 0.00
@@ -317,7 +281,7 @@ func TestTransaktionDB3(t *testing.T) {
 func TestTransaktionDB4(t *testing.T) {
 	t.Parallel()
 	t.Log("TestTransaktionDB4")
-	db := transaktionInit(t, "tr4")
+	db := newTestDB(t, "tr4")
 
 	// Denna testen
 	// Kontrollera att vi utgår från startsaldo 0.00
@@ -408,7 +372,7 @@ func TestTransaktionDB4(t *testing.T) {
 func TestTransaktionDB5(t *testing.T) {
 	t.Parallel()
 	t.Log("TestTransaktionDB5")
-	db := transaktionInit(t, "tr5")
+	db := newTestDB(t, "tr5")
 
 	// Denna testen
 	// Kommentar klarar citat-tecken
@@ -460,7 +424,7 @@ func TestTransaktionDB5(t *testing.T) {
 func TestTransaktionDB6(t *testing.T) {
 	t.Parallel()
 	t.Log("TestTransaktionDB6")
-	db := transaktionInit(t, "tr6")
+	db := newTestDB(t, "tr6")
 
 	// Denna testen
 	// Kontrollera att vi utgår från startsaldo 0.00
@@ -510,7 +474,7 @@ func TestTransaktionDB6(t *testing.T) {
 func TestTransaktionDB7(t *testing.T) {
 	t.Parallel()
 	t.Log("TestTransaktionDB7")
-	db := transaktionInit(t, "tr7")
+	db := newTestDB(t, "tr7")
 
 	// Denna testen
 	// Kontrollera att vi utgår från startsaldo 0.00

@@ -3,33 +3,12 @@
 package main
 
 import (
-	"database/sql"
 	"testing"
 )
 
-func budgetInit(t *testing.T, filnamn string) *sql.DB {
-	// Förberedelser
-	if JetDBSupport {
-		t.Log("Jet Supported.")
-		var filename = "got" + filnamn + ".mdb"
-		SkapaTomMDB(t, filename)
-		db = openJetDB(filename, false)
-	} else {
-		t.Log("Jet NOT Supported.")
-		var filename = "got" + filnamn + ".db"
-		SkapaTomDB(filename)
-		db = openSqlite(filename)
-	}
-
-	if db == nil {
-		t.Fatal("Ingen databas.")
-	}
-
-	return db
-}
-
 func TestBudgetTomMDB1(t *testing.T) {
-	budgetInit(t, "bdg1")
+	t.Parallel()
+	db := newTestDB(t, "bdg1")
 	if db == nil {
 		t.Fatal("Ingen databas.")
 	}
@@ -91,5 +70,4 @@ func TestBudgetTomMDB1(t *testing.T) {
 			t.Error("Budgetpost stämmer inte överens:", typdata[i*2], s[0], typdata[i*2+1], s[1])
 		}
 	}
-	closeDB()
 }

@@ -3,33 +3,13 @@
 package main
 
 import (
-	"database/sql"
 	"strconv"
 	"testing"
 )
 
-func platserInit(t *testing.T, filnamn string) *sql.DB {
-	// Förberedelser
-	if JetDBSupport {
-		t.Log("Jet Supported.")
-		var filename = "got" + filnamn + ".mdb"
-		SkapaTomMDB(t, filename)
-		db = openJetDB(filename, false)
-	} else {
-		t.Log("Jet NOT Supported.")
-		var filename = "got" + filnamn + ".db"
-		SkapaTomDB(filename)
-		db = openSqlite(filename)
-	}
-
-	if db == nil {
-		t.Fatal("Ingen databas.")
-	}
-	return db
-}
-
 func TestPlatserTomDB1(t *testing.T) {
-	db = platserInit(t, "pl1")
+	t.Parallel()
+	db := newTestDB(t, "pl1")
 
 	// Denna testen
 	antal := antalPlatser(db)
@@ -39,11 +19,11 @@ func TestPlatserTomDB1(t *testing.T) {
 	} else {
 		t.Log("Antal platser ok.")
 	}
-	closeDB()
 }
 
 func TestPlatserDB1(t *testing.T) {
-	db = platserInit(t, "pl2")
+	t.Parallel()
+	db := newTestDB(t, "pl2")
 
 	// Denna testen
 	_ = skapaPlats(db, "Platsnamnet", "12345-7", false, "")
@@ -55,11 +35,11 @@ func TestPlatserDB1(t *testing.T) {
 	} else {
 		t.Log("Antal platser ok.")
 	}
-	closeDB()
 }
 
 func TestPlatserDB2(t *testing.T) {
-	db = platserInit(t, "pl3")
+	t.Parallel()
+	db := newTestDB(t, "pl3")
 
 	// Denna testen
 	_ = skapaPlats(db, "Platsnamn1", "12345-7", false, "")
@@ -74,11 +54,11 @@ func TestPlatserDB2(t *testing.T) {
 	} else {
 		t.Log("Antal platser ok.")
 	}
-	closeDB()
 }
 
 func TestPlatserDB3(t *testing.T) {
-	db = platserInit(t, "pl4")
+	t.Parallel()
+	db := newTestDB(t, "pl4")
 
 	// Denna testen
 	namn := "Tom € Räksmörgås"
@@ -127,11 +107,11 @@ func TestPlatserDB3(t *testing.T) {
 		t.Log("Test kontokort ok.")
 	}
 
-	closeDB()
 }
 
 func TestPlatserDB4(t *testing.T) {
-	db = platserInit(t, "pl5")
+	t.Parallel()
+	db := newTestDB(t, "pl5")
 
 	// Denna testen
 	namn := "Tom € Räksmörgås"
@@ -148,7 +128,6 @@ func TestPlatserDB4(t *testing.T) {
 		t.Log("Antal platser ok.")
 	}
 
-	closeDB()
 }
 
 // TODO: skapaplats borde validera gironummer.

@@ -1,40 +1,18 @@
 package main
 
 import (
-	"database/sql"
 	"strconv"
 	"testing"
 
 	"github.com/shopspring/decimal" // MIT License
 )
 
-func kontonInit(t *testing.T, filnamn string) *sql.DB {
-	// Förberedelser
-
-	if JetDBSupport {
-		filename := "got" + filnamn + ".mdb"
-		t.Log("Jet Supported.")
-
-		SkapaTomMDB(t, filename)
-		db = openJetDB(filename, false)
-	} else {
-		filename := "got" + filnamn + ".db"
-		t.Log("Jet NOT Supported.")
-		SkapaTomDB(filename)
-		db = openSqlite(filename)
-	}
-
-	if db == nil {
-		t.Fatal("Ingen databas.")
-	}
-	return db
-}
-
 func TestKontoTomDB1(t *testing.T) {
-	db := kontonInit(t, "kon1")
+	t.Parallel()
+	db := newTestDB(t, "kon1")
 
 	// Denna testen
-	antal := antalKonton()
+	antal := antalKonton(db)
 
 	if antal != 1 {
 		t.Error("Antal konton != (1).")
@@ -72,11 +50,11 @@ func TestKontoTomDB1(t *testing.T) {
 	} else {
 		t.Log("Test skiftesmånad ok.")
 	}
-	closeDB()
 }
 
 func TestKontoDB1(t *testing.T) {
-	db := kontonInit(t, "kon2")
+	t.Parallel()
+	db := newTestDB(t, "kon2")
 
 	// Denna testen
 	startsaldo, err := decimal.NewFromString("0.0")
@@ -85,18 +63,18 @@ func TestKontoDB1(t *testing.T) {
 	}
 	addKonto("Kontonamn1", startsaldo, "jan", db)
 
-	antal := antalKonton()
+	antal := antalKonton(db)
 
 	if antal != 2 {
 		t.Error("Antal konton != (1+1).")
 	} else {
 		t.Log("Antal konton ok.")
 	}
-	closeDB()
 }
 
 func TestKontoDB2(t *testing.T) {
-	db := kontonInit(t, "kon3")
+	t.Parallel()
+	db := newTestDB(t, "kon3")
 
 	// Denna testen
 	startsaldo, err := decimal.NewFromString("0.0")
@@ -116,18 +94,18 @@ func TestKontoDB2(t *testing.T) {
 	addKonto("Kontonamn3", startsaldo, "jul", db)
 	addKonto("Kontonamn4", startsaldo, "dec", db)
 
-	antal := antalKonton()
+	antal := antalKonton(db)
 
 	if antal != 5 {
 		t.Error("Antal konton != (1+4).")
 	} else {
 		t.Log("Antal konton ok.")
 	}
-	closeDB()
 }
 
 func TestKontoDB3(t *testing.T) {
-	db := kontonInit(t, "kon4")
+	t.Parallel()
+	db := newTestDB(t, "kon4")
 
 	// Denna testen
 	namn := "Tom € Räksmörgås"
@@ -167,11 +145,11 @@ func TestKontoDB3(t *testing.T) {
 		t.Log("Test skiftesmånad ok.")
 	}
 
-	closeDB()
 }
 
 func TestKontoDB4(t *testing.T) {
-	db := kontonInit(t, "kon5")
+	t.Parallel()
+	db := newTestDB(t, "kon5")
 
 	// Denna testen
 	namn := "Tom € Räksmörgås"
@@ -199,7 +177,6 @@ func TestKontoDB4(t *testing.T) {
 		t.Log("Test id 1 ok.")
 	}
 
-	closeDB()
 }
 
 // TODO: test startmånad = "foo" should fail

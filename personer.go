@@ -346,7 +346,7 @@ func antalPersoner(db *sql.DB) int {
 	return antal
 }
 
-func hämtaPerson(lopnr int) person {
+func hämtaPerson(db *sql.DB, lopnr int) person {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

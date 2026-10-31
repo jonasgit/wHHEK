@@ -10,6 +10,7 @@ import (
 )
 
 func TestSaniAmount(t *testing.T) {
+	t.Parallel()
 	var amount string
 	amount = SanitizeAmount("1,30")
 	if amount == "1.30" {
@@ -117,6 +118,7 @@ func TestSaniAmount(t *testing.T) {
 
 // generic test for decimal
 func TestDec1(t *testing.T) {
+	t.Parallel()
 	var n = decimal.NewFromInt(0)
 	incr, _ := decimal.NewFromString(".01")
 
@@ -137,6 +139,7 @@ func TestDec1(t *testing.T) {
 }
 
 func TestDec2Str(t *testing.T) {
+	t.Parallel()
 	var n = decimal.NewFromInt(0)
 	amount := Dec2Str(n)
 	expected := "0,00"

@@ -3,34 +3,13 @@
 package main
 
 import (
-	"database/sql"
 	"strconv"
 	"testing"
 )
 
-func personerInit(t *testing.T, filnamn string) *sql.DB {
-	// Förberedelser
-	if JetDBSupport {
-		var filename = "got" + filnamn + ".mdb"
-		t.Log("Jet Supported.")
-
-		SkapaTomMDB(t, filename)
-		db = openJetDB(filename, false)
-	} else {
-		var filename = "got" + filnamn + ".db"
-		t.Log("Jet NOT Supported.")
-		SkapaTomDB(filename)
-		db = openSqlite(filename)
-	}
-
-	if db == nil {
-		t.Fatal("Ingen databas.")
-	}
-	return db
-}
-
 func TestPersonTomDB1(t *testing.T) {
-	db = personerInit(t, "prs1")
+	t.Parallel()
+	db := newTestDB(t, "prs1")
 
 	// Denna testen
 	antal := antalPersoner(db)
@@ -43,7 +22,7 @@ func TestPersonTomDB1(t *testing.T) {
 	namn := "Gemensamt"
 	birth := 0
 	sex := "Gemensamt"
-	person := hämtaPerson(1)
+	person := hämtaPerson(db, 1)
 
 	if person.namn != namn {
 		t.Error("Personnamn '" + namn + "' != '" + person.namn + "'.")
@@ -60,11 +39,11 @@ func TestPersonTomDB1(t *testing.T) {
 	} else {
 		t.Log("Test kön ok.")
 	}
-	closeDB()
 }
 
 func TestPersonDB1(t *testing.T) {
-	db = personerInit(t, "prs2")
+	t.Parallel()
+	db := newTestDB(t, "prs2")
 
 	// Denna testen
 	_ = skapaPerson(db, "Namn Person", 1994, "Man")
@@ -76,11 +55,11 @@ func TestPersonDB1(t *testing.T) {
 	} else {
 		t.Log("Antal personer ok.")
 	}
-	closeDB()
 }
 
 func TestPersonDB2(t *testing.T) {
-	db = personerInit(t, "prs3")
+	t.Parallel()
+	db := newTestDB(t, "prs3")
 
 	// Denna testen
 	_ = skapaPerson(db, "Namn Person", 1994, "Man")
@@ -95,11 +74,11 @@ func TestPersonDB2(t *testing.T) {
 	} else {
 		t.Log("Antal personer ok.")
 	}
-	closeDB()
 }
 
 func TestPersonDB3(t *testing.T) {
-	db = personerInit(t, "prs4")
+	t.Parallel()
+	db := newTestDB(t, "prs4")
 
 	// Denna testen
 	namn := "Tom € Räksmörgås"
@@ -107,7 +86,7 @@ func TestPersonDB3(t *testing.T) {
 	sex := "Man"
 	_ = skapaPerson(db, namn, birth, sex)
 
-	person := hämtaPerson(2)
+	person := hämtaPerson(db, 2)
 
 	if person.namn != namn {
 		t.Error("Personnamn '" + namn + "' != '" + person.namn + "'.")
@@ -130,7 +109,7 @@ func TestPersonDB3(t *testing.T) {
 	sex = "Kvinna"
 	_ = skapaPerson(db, namn, birth, sex)
 
-	person = hämtaPerson(3)
+	person = hämtaPerson(db, 3)
 
 	if person.namn != namn {
 		t.Error("Personnamn '" + namn + "' != '" + person.namn + "'.")
@@ -147,7 +126,6 @@ func TestPersonDB3(t *testing.T) {
 	} else {
 		t.Log("Test kön ok.")
 	}
-	closeDB()
 }
 
 // TODO: test birth < 1900 should fail

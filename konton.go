@@ -386,7 +386,7 @@ func getAccNames() []string {
 	return names
 }
 
-func antalKonton() int {
+func antalKonton(db *sql.DB) int {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

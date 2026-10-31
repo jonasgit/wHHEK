@@ -3,37 +3,15 @@
 package main
 
 import (
-	"database/sql"
 	"testing"
 	"time"
 
 	"github.com/shopspring/decimal" // MIT License
 )
 
-func fasttransaktionInit(t *testing.T, filnamn string) *sql.DB {
-	// Förberedelser
-
-	if JetDBSupport {
-		var filename = "got" + filnamn + ".mdb"
-		t.Log("Jet Supported.")
-
-		SkapaTomMDB(t, filename)
-		db = openJetDB(filename, false)
-	} else {
-		var filename = "got" + filnamn + ".db"
-		t.Log("Jet NOT Supported.")
-		SkapaTomDB(filename)
-		db = openSqlite(filename)
-	}
-
-	if db == nil {
-		t.Fatal("Ingen databas.")
-	}
-	return db
-}
-
 func TestFastTransaktionTomDB1(t *testing.T) {
-	db = fasttransaktionInit(t, "ftrt1")
+	t.Parallel()
+	db := newTestDB(t, "ftrt1")
 
 	// Denna testen
 	antal := antalFastaTransaktioner(db)
@@ -44,7 +22,6 @@ func TestFastTransaktionTomDB1(t *testing.T) {
 		t.Log("Antal fasta transaktioner ok (0).")
 	}
 
-	closeDB()
 }
 
 func compareDates(t *testing.T, t1 time.Time, t2 time.Time) bool {
@@ -72,8 +49,9 @@ func compareDates(t *testing.T, t1 time.Time, t2 time.Time) bool {
 }
 
 func TestFastTransaktionTomDB2(t *testing.T) {
+	t.Parallel()
 	// Förbered test
-	db = fasttransaktionInit(t, "ftrt2")
+	db := newTestDB(t, "ftrt2")
 	_ = skapaPlats(db, "Mack", "", false, "")
 
 	antal := antalTransaktioner(db)
@@ -156,12 +134,12 @@ func TestFastTransaktionTomDB2(t *testing.T) {
 		t.Error("Förväntat saldo -3,00 != ", totSaldo, expSaldo)
 	}
 
-	closeDB()
 }
 
 func TestFastTransaktionTomDB3(t *testing.T) {
+	t.Parallel()
 	// Förbered test
-	db = fasttransaktionInit(t, "ftrt3")
+	db := newTestDB(t, "ftrt3")
 	_ = skapaPlats(db, "Mack", "", false, "")
 
 	antal := antalTransaktioner(db)
@@ -243,5 +221,4 @@ func TestFastTransaktionTomDB3(t *testing.T) {
 		t.Error("Förväntat saldo -3,00 != ", totSaldo, expSaldo)
 	}
 
-	closeDB()
 }
