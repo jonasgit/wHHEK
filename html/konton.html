@@ -17,6 +17,55 @@
 <h1>{{.CurrDBName}}</h1>
 <h2>Konton</h2>
 
+{{if .Message}}
+<p>{{.Message}}</p>
+{{end}}
+
+{{if .ShowEditForm}}
+<h3>Redigera konto</h3>
+<form method="POST" action="/konton">
+    <label for="Benamning">Benämning:</label>
+    <input type="text" id="Benamning" name="Benamning" value="{{.EditKonto.Benamning}}">
+
+    <label for="Saldo" hidden>Saldo:</label>
+    <input type="text" id="Saldo" name="Saldo" value="{{.EditKonto.Saldo}}" hidden>
+
+    <label for="StartSaldo">StartSaldo:</label>
+    <input type="text" id="StartSaldo" name="StartSaldo" value="{{.EditKonto.StartSaldo}}">
+
+    <label for="StartManad">StartMånad:</label>
+    <input type="text" id="StartManad" name="StartManad" value="{{.EditKonto.StartManad}}">
+
+    <label for="SaldoArsskifte" hidden>Saldo Årsskifte:</label>
+    <input type="text" id="SaldoArsskifte" name="SaldoArsskifte" value="{{.EditKonto.SaldoArsskifte}}" hidden>
+
+    <label for="ArsskifteManad" hidden>Årsskiftesmanad:</label>
+    <input type="text" id="ArsskifteManad" name="ArsskifteManad" value="{{.EditKonto.ArsskifteManad}}" hidden>
+
+    <input type="hidden" id="lopnr" name="lopnr" value="{{.EditKonto.Lopnr}}">
+    <input type="hidden" id="action" name="action" value="update">
+    <input type="submit" value="Uppdatera">
+</form>
+{{end}}
+
+{{if .ShowAddForm}}
+<h3>Lägg till konto</h3>
+<form method="POST" action="/konton">
+    <label for="Benamning">Benämning:</label>
+    <input type="text" id="Benamning" name="Benamning" value="">
+    <label for="StartSaldo">Startsaldo:</label>
+    <input type="text" id="StartSaldo" name="StartSaldo" value="">
+    <label for="StartManad">Startmånad:</label>
+    <select id="StartManad" name="StartManad" required>
+        {{range .Months}}
+        <option value="{{.}}"{{if eq . $.CurrentMonth}} selected{{end}}>{{.}}</option>
+        {{end}}
+    </select>
+    <input type="hidden" id="action" name="action" value="add">
+    <input type="submit" value="Nytt konto">
+</form>
+{{end}}
+
 {{/* Konton list using account_list template */}}
 {{template "account_list" .}}
 

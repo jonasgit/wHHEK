@@ -27,13 +27,32 @@ type konto struct {
 	Löpnr          int             // autoinc Primary Key
 }
 
-// AccountListData holds the data for account list template
+// AccountListData holds the data for the konton page template
 type AccountListData struct {
-	Accounts   []konto
-	CurrDBName string
+	Accounts     []konto
+	CurrDBName   string
+	Message      string        // status message shown under the heading
+	ShowAddForm  bool          // show the "Lägg till konto" form
+	ShowEditForm bool          // show the "Redigera konto" form
+	EditKonto    editKontoData // account being edited
+	Months       []int         // choices for Startmånad in the add form
+	CurrentMonth int           // preselected Startmånad in the add form
 }
 
-func printKonton(w http.ResponseWriter, db *sql.DB) {
+// editKontoData holds the fields of the "Redigera konto" form
+type editKontoData struct {
+	Benamning      string
+	Saldo          string
+	StartSaldo     string
+	StartManad     string
+	SaldoArsskifte string
+	ArsskifteManad string
+	Lopnr          int
+}
+
+// printKonton renders the konton page. data holds the page state (message, forms);
+// the account list and database name are filled in here.
+func printKonton(w http.ResponseWriter, db *sql.DB, data AccountListData) {
 	res, err := db.Query("SELECT KontoNummer,Benämning,Saldo,StartSaldo,StartManad,Löpnr,SaldoArsskifte,ArsskifteManad FROM Konton")
 
 	if err != nil {
@@ -84,10 +103,8 @@ func printKonton(w http.ResponseWriter, db *sql.DB) {
 		log.Fatal(err)
 	}
 
-	data := AccountListData{
-		Accounts:   accounts,
-		CurrDBName: currentDatabase,
-	}
+	data.Accounts = accounts
+	data.CurrDBName = currentDatabase
 
 	err = tmpl.Execute(w, data)
 	if err != nil {
@@ -95,9 +112,7 @@ func printKonton(w http.ResponseWriter, db *sql.DB) {
 	}
 }
 
-// Removed printKontonFooter since it's now handled by the template
-
-func raderaKonto(w http.ResponseWriter, lopnr int, db *sql.DB) {
+func raderaKonto(lopnr int, db *sql.DB) string {
 	fmt.Println("raderaKonto lopnr: ", lopnr)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -109,11 +124,12 @@ func raderaKonto(w http.ResponseWriter, lopnr int, db *sql.DB) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, _ = fmt.Fprintf(w, "Konto med löpnr %d raderat.<br>", lopnr)
+	return fmt.Sprintf("Konto med löpnr %d raderat.", lopnr)
 }
 
-func editformKonto(w http.ResponseWriter, lopnr int, db *sql.DB) {
-	fmt.Println("editformKonto lopnr: ", lopnr)
+// hämtaEditKonto fetches the account to show in the "Redigera konto" form.
+func hämtaEditKonto(lopnr int, db *sql.DB) (editKontoData, error) {
+	fmt.Println("hämtaEditKonto lopnr: ", lopnr)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -131,20 +147,11 @@ func editformKonto(w http.ResponseWriter, lopnr int, db *sql.DB) {
 		`SELECT KontoNummer,Benämning,Saldo,StartSaldo,StartManad,SaldoArsskifte,ArsskifteManad FROM Konton WHERE (Löpnr=?)`, lopnr).Scan(&KontoNummer, &Benämning, &Saldo, &StartSaldo, &StartManad, &SaldoArsskifte, &ArsskifteManad)
 	if err != nil {
 		log.Printf("Error fetching account for editing: %v", err)
-		http.Error(w, "Konto hittades inte.", http.StatusNotFound)
-		return
+		return editKontoData{}, err
 	}
 
-	// 2. Prepare data structure for the template
-	data := struct {
-		Benamning      string
-		Saldo          string
-		StartSaldo     string
-		StartManad     string
-		SaldoArsskifte string
-		ArsskifteManad string
-		Lopnr          int
-	}{
+	// 2. Prepare data for the template
+	return editKontoData{
 		Benamning:      toUtf8(Benämning),
 		Saldo:          toUtf8(Saldo),
 		StartSaldo:     toUtf8(StartSaldo),
@@ -152,23 +159,7 @@ func editformKonto(w http.ResponseWriter, lopnr int, db *sql.DB) {
 		SaldoArsskifte: toUtf8(SaldoArsskifte),
 		ArsskifteManad: toUtf8(ArsskifteManad),
 		Lopnr:          lopnr,
-	}
-
-	// 3. Parse the edit template (Assuming 'htmlTemplates' is accessible and contains the parsed templates)
-	tmpl, err := template.ParseFS(htmlTemplates, "html/edit_konto.html") // Adjust this path based on how you load templates
-	if err != nil {
-		log.Printf("Error parsing edit template: %v", err)
-		http.Error(w, "Kunde inte ladda formuläret.", http.StatusInternalServerError)
-		return
-	}
-
-	// 4. Execute the template and write to ResponseWriter
-	err = tmpl.Execute(w, data)
-	if err != nil {
-		log.Printf("Error executing edit template: %v", err)
-		http.Error(w, "Kunde inte rendera formuläret.", http.StatusInternalServerError)
-		return
-	}
+	}, nil
 }
 
 func month2Int(month time.Month) int {
@@ -201,35 +192,11 @@ func month2Int(month time.Month) int {
 	return -1
 }
 
-func addformKonto(w http.ResponseWriter) {
-	fmt.Println("addformKonto ")
-
-	currentTime := time.Now()
-	currentMonth := currentTime.Month()
-	currentMonthInt := month2Int(currentMonth)
-
-	_, _ = fmt.Fprintf(w, "Lägg till konto<br>")
-	_, _ = fmt.Fprintf(w, "<form method=\"POST\" action=\"/konton\">")
-
-	_, _ = fmt.Fprintf(w, "<label for=\"Benamning\">Benämning:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"Benamning\" name=\"Benamning\" value=\"%s\">", "")
-	_, _ = fmt.Fprintf(w, "<label for=\"StartSaldo\">Startsaldo:</label>")
-	_, _ = fmt.Fprintf(w, "<input type=\"text\" id=\"StartSaldo\" name=\"StartSaldo\" value=\"%s\">", "")
-	_, _ = fmt.Fprintf(w, "<label for=\"StartManad\">Startmånad:</label>")
-	_, _ = fmt.Fprintf(w, "<select id=\"StartManad\" name=\"StartManad\" required>\n")
-	for month := 1; month < 13; month++ {
-		_, _ = fmt.Fprintf(w, "<option value=\"%d\"", month)
-		if month == currentMonthInt {
-			_, _ = fmt.Fprintf(w, " selected ")
-		}
-		_, _ = fmt.Fprintf(w, ">%d</option>\n", month)
-	}
-	_, _ = fmt.Fprintf(w, "</select>\n")
-
-	_, _ = fmt.Fprintf(w, "<input type=\"hidden\" id=\"action\" name=\"action\" value=\"add\">")
-	_, _ = fmt.Fprintf(w, "<input type=\"submit\" value=\"Nytt konto\">")
-	_, _ = fmt.Fprintf(w, "</form>\n")
-	_, _ = fmt.Fprintf(w, "<p>\n")
+// addformData sets up the "Lägg till konto" form, with the current month preselected.
+func addformData(data *AccountListData) {
+	data.ShowAddForm = true
+	data.Months = []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
+	data.CurrentMonth = month2Int(time.Now().Month())
 }
 
 func int2man(month int) string {
@@ -289,7 +256,7 @@ func addKonto(Benamning string, StartSaldo decimal.Decimal, StartManad string, d
 	}
 }
 
-func addKontow(w http.ResponseWriter, Benamning string, StartSaldo string, StartManad string, db *sql.DB) {
+func addKontow(Benamning string, StartSaldo string, StartManad string, db *sql.DB) string {
 	fmt.Println("addKontow namn: ", Benamning)
 
 	startSaldo, err := decimal.NewFromString(StartSaldo)
@@ -299,10 +266,10 @@ func addKontow(w http.ResponseWriter, Benamning string, StartSaldo string, Start
 	}
 	addKonto(Benamning, startSaldo, StartManad, db)
 
-	_, _ = fmt.Fprintf(w, "Konto %s tillagd.<br>", Benamning)
+	return fmt.Sprintf("Konto %s tillagd.", Benamning)
 }
 
-func updateKonto(w http.ResponseWriter, lopnr int, Benamning string, StartSaldo string, StartManad string, db *sql.DB) {
+func updateKonto(lopnr int, Benamning string, StartSaldo string, StartManad string, db *sql.DB) string {
 	fmt.Println("updateKonto lopnr: ", lopnr)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -314,7 +281,7 @@ func updateKonto(w http.ResponseWriter, lopnr int, Benamning string, StartSaldo 
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, _ = fmt.Fprintf(w, "Konto %s uppdaterad.<br>", Benamning)
+	return fmt.Sprintf("Konto %s uppdaterad.", Benamning)
 }
 
 func updateKontoSaldo(db *sql.DB, Benamning string, Saldo decimal.Decimal) {
@@ -348,11 +315,15 @@ func hanterakonton(w http.ResponseWriter, req *http.Request) {
 		lopnr, _ = strconv.Atoi(req.FormValue("lopnr"))
 	}
 
+	// Nothing is written to w until the whole page is rendered by printKonton,
+	// so messages and forms end up in the right place inside the page.
+	var data AccountListData
+
 	switch formaction {
 	case "radera":
-		raderaKonto(w, lopnr, db)
+		data.Message = raderaKonto(lopnr, db)
 	case "addform":
-		addformKonto(w)
+		addformData(&data)
 	case "add":
 		var Benamning = ""
 		if len(req.FormValue("Benamning")) > 0 {
@@ -366,9 +337,15 @@ func hanterakonton(w http.ResponseWriter, req *http.Request) {
 		if len(req.FormValue("StartManad")) > 0 {
 			StartManad = req.FormValue("StartManad")
 		}
-		addKontow(w, Benamning, StartSaldo, StartManad, db)
+		data.Message = addKontow(Benamning, StartSaldo, StartManad, db)
 	case "editform":
-		editformKonto(w, lopnr, db)
+		editKonto, err := hämtaEditKonto(lopnr, db)
+		if err != nil {
+			data.Message = "Konto hittades inte."
+		} else {
+			data.ShowEditForm = true
+			data.EditKonto = editKonto
+		}
 	case "update":
 		var Benamning = ""
 		if len(req.FormValue("Benamning")) > 0 {
@@ -382,13 +359,13 @@ func hanterakonton(w http.ResponseWriter, req *http.Request) {
 		if len(req.FormValue("StartManad")) > 0 {
 			StartManad = req.FormValue("StartManad")
 		}
-		updateKonto(w, lopnr, Benamning, StartSaldo, StartManad, db)
+		data.Message = updateKonto(lopnr, Benamning, StartSaldo, StartManad, db)
 	default:
 		fmt.Println("Okänd action: ", formaction)
 	}
 
-	// Render the main konton page with forms
-	printKonton(w, db)
+	// Render the main konton page with message and forms
+	printKonton(w, db, data)
 }
 
 func getAccNames() []string {
