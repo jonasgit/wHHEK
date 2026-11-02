@@ -101,6 +101,10 @@ func TestBudgetUppdateraDecimal(t *testing.T) {
 		t.Errorf("årssumma: förväntade %s, fick %s", want, got)
 	}
 
+	if JetDBSupport && dbdecimaldot {
+		return // Med decimalpunkt i Windows tolkar Access '50,25' som 5025. Gamla kommatecken fanns bara i SQLite.
+	}
+
 	// Så sparade updateBudget tidigare belopp i SQLite: ska läsas utan krasch.
 	if _, err := db.Exec("UPDATE Budget SET Mar = '50,25' WHERE Löpnr = ?", lopnr); err != nil {
 		t.Fatal(err)

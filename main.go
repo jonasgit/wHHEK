@@ -1379,6 +1379,8 @@ func comps(w http.ResponseWriter, req *http.Request) {
 
 func main() {
 	helpPtr := flag.Bool("help", false, "Skriv ut hjälptext.")
+	llmPortPtr := flag.Int("llmport", llmDefaultPort, "Port för LLM-servern på localhost, som används av sidan Chat.")
+	llmContextPtr := flag.Int("llmcontext", llmDefaultContextPercent, "Kontextlängd för LLM-modellen, i procent av modellens största (1-100). Gäller LM Studio.")
 
 	flag.Parse()
 
@@ -1386,6 +1388,14 @@ func main() {
 		flag.Usage()
 		os.Exit(1)
 	}
+
+	if err := llmCheckOptions(*llmPortPtr, *llmContextPtr); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		flag.Usage()
+		os.Exit(2)
+	}
+	llmBaseURL = llmURLForPort(*llmPortPtr)
+	llmContextPercent = *llmContextPtr
 
 	dbdecimaldot = !detectdbdec()
 	log.Println("Setting dbdecimaldot: ", dbdecimaldot)
@@ -1427,6 +1437,8 @@ func main() {
 	http.HandleFunc("/help1", help1)
 	http.HandleFunc("/faq1", faq1)
 	http.HandleFunc("/components", comps)
+	http.HandleFunc("/chat", chat)
+	http.HandleFunc("/chatask", chatAsk)
 	http.HandleFunc("/", root)
 
 	//ip, _ := externalIP()

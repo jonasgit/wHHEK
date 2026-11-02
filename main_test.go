@@ -10,6 +10,8 @@ func TestMain(m *testing.M) {
 	// parallel, so the global dbtype is set once here instead of by each test.
 	// It controls decimal comma and Windows-1252 conversion for Jet/mdb.
 	if JetDBSupport {
+		// Samma kontroll som i main(): Access tolkar decimaltecknet efter Windows språkinställning.
+		dbdecimaldot = !detectdbdec()
 		dbtype = 1
 	}
 	os.Exit(m.Run())

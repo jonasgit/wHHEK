@@ -210,6 +210,9 @@ func TestKontoNyttSvensktBelopp(t *testing.T) {
 
 func TestKontoLäserGammaltKommatecken(t *testing.T) {
 	t.Parallel()
+	if JetDBSupport && dbdecimaldot {
+		t.Skip("Med decimalpunkt i Windows tolkar Access '123,45' som 12345. Gamla kommatecken fanns bara i SQLite.")
+	}
 	db := newTestDB(t, "kon8")
 	// Så sparade updateKonto tidigare startsaldo i SQLite.
 	if _, err := db.Exec("UPDATE Konton SET StartSaldo = '123,45' WHERE Löpnr = 1"); err != nil {

@@ -1,0 +1,113 @@
+<!-- //-*- coding: utf-8 -*-  -->
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <title>Chat</title>
+  <!-- Load htmx -->
+  <script src="/htmx.js"></script>
+  <style>
+    #question { width: 80% }
+    .chat_question { font-weight: bold; margin-top: 1em }
+    .chat_result { border-collapse: collapse; margin-top: 0.5em }
+    .chat_result th, .chat_result td { border: 1px solid black; padding: 0.2em 0.5em }
+    .chat_sql { white-space: pre-wrap }
+    .chat_error { color: #b00000 }
+    .chat_notice { font-style: italic }
+  </style>
+</head>
+<body>
+  <h1>Chat</h1>
+
+  {{if .ServerError}}
+  {{template "chat_server_error" .}}
+  <p><a href="chat">Försök igen</a></p>
+  {{else if .NoDatabase}}
+  <p class="chat_error">Ingen databas är öppen. Chat ställer frågor mot databasen, så öppna en databas först.</p>
+  <p><a href="/">Öppna databas</a></p>
+  {{else}}
+  <p>Modell: {{.Model}}{{if .ContextTokens}}, kontextlängd {{.ContextTokens}} tokens{{end}}</p>
+  {{if .ContextWarning}}
+  <p class="chat_error">{{.ContextWarning}}. Chatten fungerar ändå. Nytt försök görs när programmet startas om.</p>
+  {{end}}
+
+  <div id="chatlog"></div>
+
+  <form hx-post="/chatask" hx-target="#chatlog" hx-swap="beforeend"
+        hx-disabled-elt="find button" hx-indicator="#chat_working" autocomplete="off">
+    <input type="hidden" id="chat_history" name="history" value="">
+    <p><label for="question">Fråga:</label></p>
+    {{template "chat_question_box" false}}
+    <button type="submit">Skicka</button>
+    <span id="chat_working" class="htmx-indicator">Väntar på svar...</span>
+  </form>
+  <p><a href="chat">Rensa historik</a></p>
+  {{end}}
+
+  <p><a href="summary">Översikt</a></p>
+</body>
+</html>
+
+{{define "chat_question_box"}}<input type="text" id="question" name="question" autocomplete="off" required autofocus{{if .}} hx-swap-oob="true"{{end}}>{{end}}
+
+{{define "chat_first_attempt"}}
+{{if .FirstSQL}}
+<details><summary>Visa första försöket</summary>
+  <p>Fel: {{.FirstError}}</p>
+  <pre class="chat_sql">{{.FirstSQL}}</pre>
+</details>
+{{end}}
+{{end}}
+
+{{define "chat_server_error"}}
+<div class="chat_error">
+  <p><strong>Kan inte använda LLM-servern på {{.ServerURL}}.</strong></p>
+  <p>Fel: {{.ServerError}}</p>
+</div>
+<p>Chat kräver en LLM-server på den här datorn:</p>
+<ul>
+  <li>Den ska lyssna på {{.ServerURL}}. Starta programmet med <code>-llmport</code> om servern använder en annan port.</li>
+  <li>Den ska ha ett API som följer OpenAI: <code>GET /v1/models</code> och <code>POST /v1/chat/completions</code>.</li>
+  <li>Den ska ha minst en chattmodell. En inbäddningsmodell räcker inte.</li>
+</ul>
+<p>Exempel på sådana servrar är LM Studio (ladda en modell och starta servern) och llama.cpp (<code>llama-server -m modell.gguf</code>).</p>
+{{end}}
+
+{{define "chat_reply"}}
+{{if .Message}}
+<p class="chat_error">{{.Message}}</p>
+{{else}}
+<div class="chat_question">{{.Question}}</div>
+{{if .ServerError}}
+{{template "chat_server_error" .}}
+{{else if .Problem}}
+<p class="chat_error">{{.Problem}}</p>
+{{if .SQL}}<pre class="chat_sql">{{.SQL}}</pre>{{end}}
+{{template "chat_first_attempt" .}}
+{{else}}
+{{if .Result.Rows}}
+<table class="chat_result">
+  <tr>{{range .Result.Columns}}<th>{{.}}</th>{{end}}</tr>
+  {{range .Result.Rows}}<tr>{{range .}}<td>{{.}}</td>{{end}}</tr>
+  {{end}}
+</table>
+{{if .Result.Cut}}
+<p class="chat_notice">Det finns fler rader. Bara de första {{len .Result.Rows}} visas.</p>
+{{end}}
+{{else}}
+<p>Inga rader hittades.</p>
+{{end}}
+{{if .FirstSQL}}
+<p class="chat_notice">Modellens första SQL-fråga gick inte att köra, så den fick felet och ett nytt försök. Resultatet ovan kommer från det andra försöket.</p>
+{{end}}
+<details><summary>Visa SQL</summary><pre class="chat_sql">{{.SQL}}</pre></details>
+{{template "chat_first_attempt" .}}
+{{if .Dropped}}
+<p class="chat_notice">Samtalet har blivit långt, så modellen har glömt de äldsta frågorna. Antal frågor som modellen minns: {{.Remembered}}.</p>
+{{end}}
+<!-- Töm inmatningsrutan och spara samtalet. Vid fel står frågan kvar så att den kan skickas igen. -->
+{{template "chat_question_box" true}}
+<input type="hidden" id="chat_history" name="history" value="{{.History}}" hx-swap-oob="true">
+{{end}}
+{{end}}
+{{end}}
