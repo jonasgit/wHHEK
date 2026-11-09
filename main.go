@@ -519,11 +519,9 @@ func opendb(w http.ResponseWriter, req *http.Request) {
 	filename := sanitizeFilename(req.FormValue("fname"))
 
 	if strings.HasSuffix(strings.ToLower(filename), ".mdb") {
-		//fmt.Fprintf(w, "Trying to open Access/Jet<br>\n")
 		nopwDb = openJetDB(filename, false)
 	} else {
 		if strings.HasSuffix(strings.ToLower(filename), ".db") {
-			//fmt.Fprintf(w, "Trying to open sqlite3<br>\n")
 			nopwDb = openSqlite(filename)
 		} else {
 			t, _ := template.New("main14.html").ParseFS(htmlTemplates, "html/main14.html")

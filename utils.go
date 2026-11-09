@@ -3,6 +3,9 @@
 package main
 
 import (
+	"html/template"
+	"io"
+	"log"
 	"math"
 	"runtime"
 	"strings"
@@ -12,6 +15,15 @@ import (
 
 	"github.com/shopspring/decimal" // MIT License
 )
+
+var messageTemplate = template.Must(template.ParseFS(htmlTemplates, "html/message.html"))
+
+// writeMessage skriver ut msg som ett eget stycke. Texten HTML-escapas.
+func writeMessage(w io.Writer, msg string) {
+	if err := messageTemplate.ExecuteTemplate(w, "message", msg); err != nil {
+		log.Println("writeMessage:", err)
+	}
+}
 
 // SanitizeAmount Remove any non-digit
 // allow only one decimal character ","

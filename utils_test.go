@@ -4,6 +4,7 @@ package main
 
 import (
 	_ "embed"
+	"strings"
 	"testing"
 
 	"github.com/shopspring/decimal" // MIT License
@@ -302,5 +303,13 @@ func TestDec2StrStoraBelopp(t *testing.T) {
 	}
 	if got, want := Dec2StrAxis(decimal.RequireFromString("1234567890.4")), "1 234 567 890"; got != want {
 		t.Errorf("Dec2StrAxis = %q, förväntade %q", got, want)
+	}
+}
+
+func TestWriteMessage(t *testing.T) {
+	var b strings.Builder
+	writeMessage(&b, "ogiltigt belopp '<1>'")
+	if got, want := b.String(), "<p>ogiltigt belopp &#39;&lt;1&gt;&#39;</p>\n"; got != want {
+		t.Errorf("writeMessage = %q, förväntade %q", got, want)
 	}
 }

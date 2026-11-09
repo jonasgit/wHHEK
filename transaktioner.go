@@ -584,8 +584,7 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 	amount, err := decimal.NewFromString(amountstr)
 	if err != nil {
 		log.Println("addtransaction: ogiltigt belopp ", req.FormValue("amount"), err)
-		_, _ = fmt.Fprintf(w, "<p>Transaktionen sparades inte: ogiltigt belopp '%s'.</p>\n",
-			template.HTMLEscapeString(req.FormValue("amount")))
+		writeMessage(w, fmt.Sprintf("Transaktionen sparades inte: ogiltigt belopp '%s'.", req.FormValue("amount")))
 		return
 	}
 

@@ -6,7 +6,6 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -97,7 +96,7 @@ func editfastovfHTML(w http.ResponseWriter, req *http.Request) {
 	_ = t.Execute(w, data)
 
 	if msg := r_e_fastovf(req, db); msg != "" {
-		_, _ = fmt.Fprintf(w, "<p>%s</p>\n", template.HTMLEscapeString(msg))
+		writeMessage(w, msg)
 	}
 	editfastovf(w, req, db)
 

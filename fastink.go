@@ -6,7 +6,6 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -97,7 +96,7 @@ func editfastinkHTML(w http.ResponseWriter, req *http.Request) {
 	_ = t.Execute(w, data)
 
 	if msg := r_e_fastink(req, db); msg != "" {
-		_, _ = fmt.Fprintf(w, "<p>%s</p>\n", template.HTMLEscapeString(msg))
+		writeMessage(w, msg)
 	}
 	editfastink(w, req, db)
 
