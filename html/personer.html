@@ -1,0 +1,44 @@
+{{define "personer_header"}}<html>
+<head>
+<style>
+table,th,td { border: 1px solid black }
+</style>
+</head>
+<body class="person-page">
+<h1 id="title">{{.}}</h1>
+<h2>Personer</h2>
+{{end}}
+
+{{define "personer_msg"}}{{.}}<br>{{end}}
+
+{{define "person_editform"}}Redigera person<br>
+<form method="POST" action="/personer">
+<label for="namn">Namn:</label>
+<input type="text" id="namn" name="namn" value="{{.Namn}}">
+<label for="birth">Födelsedag:</label>
+<input type="text" id="birth" name="birth" value="{{.Birth}}">
+<label for="sex">Kön:</label>
+<input type="text" id="sex" name="sex" value="{{.Sex}}">
+<input type="hidden" id="lopnr" name="lopnr" value="{{.Lopnr}}">
+<input type="hidden" id="action" name="action" value="update">
+<input type="submit" value="Uppdatera">
+</form>
+<p>
+{{end}}
+
+{{define "person_addform"}}Lägg till person<br>
+<form method="POST" action="/personer">
+<label for="namn">Namn:</label>
+<input type="text" id="namn" name="namn" value="">
+<label for="birth">Födelseår:</label>
+<input type="text" id="birth" name="birth" value="">
+<label for="sex">Kön:</label>
+<select name="sex" id="sex" required>
+<option value="Kvinna">Kvinna</option>
+<option value="Man">Man</option>
+</select>
+<input type="hidden" id="action" name="action" value="add">
+<input type="submit" value="Ny person">
+</form>
+<p>
+{{end}}
