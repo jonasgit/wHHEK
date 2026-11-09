@@ -15,6 +15,7 @@ import (
 
 // SanitizeAmount Remove any non-digit
 // allow only one decimal character ","
+// allow "-" only as a leading sign, before any digit
 // set to "0" if empty string
 func SanitizeAmount(amount string) string {
 	//fmt.Println("Sanitize IN:" + amount)
@@ -28,7 +29,7 @@ func SanitizeAmount(amount string) string {
 		if char == '.' {
 			newamount.WriteString(string(char))
 		}
-		if char == '-' {
+		if char == '-' && newamount.Len() == 0 {
 			newamount.WriteString(string(char))
 		}
 	}
@@ -135,15 +136,15 @@ func Dec2Str(summa decimal.Decimal) string {
 	for len(decs) < 3 {
 		decs += "0"
 	}
-	// dela upp heltal med mellanslag
-	if len(ints) > 6 {
-		len := len(ints)
-		ints = ints[0:len-6] + " " + ints[len-6:len-3] + " " + ints[len-3:len]
-	} else if len(ints) > 3 {
-		len := len(ints)
-		ints = ints[0:len-3] + " " + ints[len-3:len]
+	// dela upp heltal med mellanslag i grupper om tre siffror
+	var grouped strings.Builder
+	for i, digit := range ints {
+		if i > 0 && (len(ints)-i)%3 == 0 {
+			grouped.WriteByte(' ')
+		}
+		grouped.WriteRune(digit)
 	}
-	return sign + ints + decs
+	return sign + grouped.String() + decs
 }
 
 // Dec2StrAxis formats an amount for chart axis ticks using Swedish thousands

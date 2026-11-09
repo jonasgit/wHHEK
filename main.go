@@ -281,8 +281,19 @@ func headers(w http.ResponseWriter, req *http.Request) {
 }
 
 func GetCountPendingÖverföringar(db *sql.DB, currDate string) int {
+	res, err := db.Query(`SELECT Datum FROM Överföringar`)
+	if err != nil {
+		log.Println("GetCountPendingÖverföringar: ", err)
+		return 0
+	}
+	defer res.Close()
 	var cnt int
-	_ = db.QueryRow(`select count(*) from Överföringar WHERE Datum <= ?`, currDate).Scan(&cnt)
+	var Datum []byte // size 10
+	for res.Next() {
+		if err := res.Scan(&Datum); err == nil && fixedIsDue(toUtf8(Datum), currDate) {
+			cnt++
+		}
+	}
 	return cnt
 }
 

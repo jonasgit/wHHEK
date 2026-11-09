@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -582,7 +583,10 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 	amountstr = SanitizeAmount(amountstr)
 	amount, err := decimal.NewFromString(amountstr)
 	if err != nil {
-		log.Println("OK: addtransaction, trasig/saknar amount ", amountstr, err)
+		log.Println("addtransaction: ogiltigt belopp ", req.FormValue("amount"), err)
+		_, _ = fmt.Fprintf(w, "<p>Transaktionen sparades inte: ogiltigt belopp '%s'.</p>\n",
+			template.HTMLEscapeString(req.FormValue("amount")))
+		return
 	}
 
 	text := req.FormValue("text")

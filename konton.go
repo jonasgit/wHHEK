@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/shopspring/decimal" // MIT License
@@ -198,56 +199,64 @@ func addformData(data *AccountListData) {
 	data.CurrentMonth = month2Int(time.Now().Month())
 }
 
-func int2man(month int) string {
+func int2man(month int) (string, error) {
 	switch month {
 	case 1:
-		return "Jan"
+		return "Jan", nil
 	case 2:
-		return "Feb"
+		return "Feb", nil
 	case 3:
-		return "Mar"
+		return "Mar", nil
 	case 4:
-		return "Apr"
+		return "Apr", nil
 	case 5:
-		return "Maj"
+		return "Maj", nil
 	case 6:
-		return "Jun"
+		return "Jun", nil
 	case 7:
-		return "Jul"
+		return "Jul", nil
 	case 8:
-		return "Aug"
+		return "Aug", nil
 	case 9:
-		return "Sep"
+		return "Sep", nil
 	case 10:
-		return "Okt"
+		return "Okt", nil
 	case 11:
-		return "Nov"
+		return "Nov", nil
 	case 12:
-		return "Dec"
+		return "Dec", nil
 	}
-
-	// Fail HARD!
-	log.Fatal("int2man: unknown month " + strconv.Itoa(month))
-	return "???"
+	return "", fmt.Errorf("okänd månad %d (ska vara 1-12)", month)
 }
 
-func addKonto(Benamning string, StartSaldo decimal.Decimal, StartManad string, db *sql.DB) {
+// normalizeStartManad gör om ett månadsnummer från formuläret till månadens namn.
+// Annan text sparas som den är.
+func normalizeStartManad(StartManad string) (string, error) {
+	if month, err := strconv.Atoi(strings.TrimSpace(StartManad)); err == nil {
+		return int2man(month)
+	}
+	return StartManad, nil
+}
+
+func addKonto(Benamning string, StartSaldo decimal.Decimal, StartManad string, db *sql.DB) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	// Decimal comma only for mdb files that need it (see AmountStr2DBStr)
 	startSaldo := AmountDec2DBStr(StartSaldo)
 
-	if month, err := strconv.Atoi(StartManad); err == nil {
-		StartManad = int2man(month)
+	StartManad, err := normalizeStartManad(StartManad)
+	if err != nil {
+		return err
 	}
 
-	_, err := db.ExecContext(ctx,
+	_, err = db.ExecContext(ctx,
 		`INSERT INTO Konton(KontoNummer,Benämning,Saldo,StartSaldo,SaldoArsskifte,StartManad,ArsskifteManad) VALUES (?, ?, ?, ?, ?, ?, ?)`, 0, Benamning, startSaldo, startSaldo, startSaldo, StartManad, StartManad)
 
 	if err != nil {
 		log.Fatal(err)
 	}
+	return nil
 }
 
 func addKontow(Benamning string, StartSaldo string, StartManad string, db *sql.DB) string {
@@ -258,7 +267,9 @@ func addKontow(Benamning string, StartSaldo string, StartManad string, db *sql.D
 		log.Print(err)
 		startSaldo = decimal.NewFromInt(0)
 	}
-	addKonto(Benamning, startSaldo, StartManad, db)
+	if err := addKonto(Benamning, startSaldo, StartManad, db); err != nil {
+		return fmt.Sprintf("Konto %s lades inte till: %v.", Benamning, err)
+	}
 
 	return fmt.Sprintf("Konto %s tillagd.", Benamning)
 }
@@ -266,10 +277,15 @@ func addKontow(Benamning string, StartSaldo string, StartManad string, db *sql.D
 func updateKonto(lopnr int, Benamning string, StartSaldo string, StartManad string, db *sql.DB) string {
 	fmt.Println("updateKonto lopnr: ", lopnr)
 
+	StartManad, err := normalizeStartManad(StartManad)
+	if err != nil {
+		return fmt.Sprintf("Konto %s uppdaterades inte: %v.", Benamning, err)
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	_, err := db.ExecContext(ctx,
+	_, err = db.ExecContext(ctx,
 		`UPDATE Konton SET Benämning = ?, StartSaldo = ?, StartManad = ? WHERE (Löpnr=?)`, Benamning, AmountStr2DBStr(SanitizeAmount(StartSaldo)), StartManad, lopnr)
 
 	if err != nil {

@@ -3,6 +3,8 @@
 package main
 
 import (
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -305,5 +307,50 @@ func TestUpdateFastUtgNormaliserar(t *testing.T) {
 	_ = db.QueryRow("SELECT HurOfta FROM Överföringar WHERE Löpnr = 1").Scan(&hurofta)
 	if hurofta != "Varje kvartal" {
 		t.Errorf("ogiltig ändring ska inte sparas, fick %q", hurofta)
+	}
+}
+
+func TestFixedIsDue(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		datum string
+		want  bool
+	}{
+		{"2026-11-09", true},
+		{"2026-11-10", false},
+		{"2026-9-01", true}, // som text är "2026-9-01" > "2026-11-09"
+		{"2026-1-5", true},
+		{"2027-1-5", false},
+		{"---", true}, // ogiltigt: visas så att det kan rättas
+	} {
+		if got := fixedIsDue(tc.datum, "2026-11-09"); got != tc.want {
+			t.Errorf("fixedIsDue(%q) = %v, förväntade %v", tc.datum, got, tc.want)
+		}
+	}
+}
+
+// Gamla rader med datum som 2021-9-01 ska räknas och visas som att de ska registreras.
+func TestFastTransaktionGammaltDatumVisas(t *testing.T) {
+	t.Parallel()
+	db := newTestDB(t, "ftrold")
+	_ = skapaPlats(db, "Mack", "", false, "")
+	if err := skapaFastUtgift(db, "Bil", "Plånboken", "Gemensamt", "Mack", decimal.NewFromInt(1), "2021-9-01", "Varje månad"); err != nil {
+		t.Fatal(err)
+	}
+	if err := skapaFastUtgift(db, "Bil", "Plånboken", "Gemensamt", "Mack", decimal.NewFromInt(2), "2999-1-01", "Varje månad"); err != nil {
+		t.Fatal(err)
+	}
+	if n := GetCountPendingÖverföringar(db, "2021-11-30"); n != 1 {
+		t.Errorf("förväntade 1 att registrera, fick %d", n)
+	}
+
+	rec := httptest.NewRecorder()
+	showFastaTransaktioner(rec, db, false)
+	body := rec.Body.String()
+	if !strings.Contains(body, "2021-9-01") {
+		t.Errorf("transaktionen med datum 2021-9-01 visas inte: %q", body)
+	}
+	if strings.Contains(body, "2999-1-01") {
+		t.Errorf("transaktion i framtiden visas: %q", body)
 	}
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/shopspring/decimal" // MIT License
@@ -224,5 +225,26 @@ func TestKontoLäserGammaltKommatecken(t *testing.T) {
 	}
 	if s := saldoKonto(db, "Plånboken", ""); !s.Equal(want) {
 		t.Errorf("förväntade saldo %s, fick %s", want, s)
+	}
+}
+
+// En startmånad utanför 1-12 stängde tidigare av hela programmet (log.Fatal).
+func TestKontoOgiltigStartmånad(t *testing.T) {
+	t.Parallel()
+	db := newTestDB(t, "kon9")
+	före := antalKonton(db)
+	if msg := addKontow("Sparkonto", "100", "13", db); !strings.Contains(msg, "inte") {
+		t.Errorf("förväntade felmeddelande, fick %q", msg)
+	}
+	if n := antalKonton(db); n != före {
+		t.Errorf("konto med ogiltig månad lades till: %d konton, förväntade %d", n, före)
+	}
+
+	if msg := updateKonto(1, "Plånboken", "0", "0", db); !strings.Contains(msg, "inte") {
+		t.Errorf("förväntade felmeddelande, fick %q", msg)
+	}
+	updateKonto(1, "Plånboken", "0", "3", db)
+	if k := hämtaKonto(db, 1); k.StartManad != "Mar" {
+		t.Errorf("startmånad: förväntade Mar, fick %q", k.StartManad)
 	}
 }

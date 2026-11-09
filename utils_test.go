@@ -261,3 +261,46 @@ func TestDec2Str(t *testing.T) {
 		t.Error("T1 failed: " + amount + " " + expected)
 	}
 }
+
+// Ett minustecken räknas bara som tecken före första siffran, annars blir
+// beloppet ogiltigt och sparades tidigare som 0.
+func TestSanitizeAmountMinus(t *testing.T) {
+	t.Parallel()
+	for in, want := range map[string]string{
+		"-1,30":   "-1.30",
+		"- 100":   "-100",
+		"1-000":   "1000",
+		"100 kr-": "100",
+		"--5":     "-5",
+	} {
+		got := SanitizeAmount(in)
+		if got != want {
+			t.Errorf("SanitizeAmount(%q) = %q, förväntade %q", in, got, want)
+		}
+		if _, err := decimal.NewFromString(got); err != nil {
+			t.Errorf("SanitizeAmount(%q) = %q går inte att tolka: %v", in, got, err)
+		}
+	}
+}
+
+// Belopp på en miljard eller mer fick tidigare bara två mellanslag.
+func TestDec2StrStoraBelopp(t *testing.T) {
+	t.Parallel()
+	for in, want := range map[string]string{
+		"0":                "0,00",
+		"999":              "999,00",
+		"1000":             "1 000,00",
+		"999999":           "999 999,00",
+		"1000000":          "1 000 000,00",
+		"1234567890":       "1 234 567 890,00",
+		"-1234567890.5":    "-1 234 567 890,50",
+		"12345678901234.1": "12 345 678 901 234,10",
+	} {
+		if got := Dec2Str(decimal.RequireFromString(in)); got != want {
+			t.Errorf("Dec2Str(%s) = %q, förväntade %q", in, got, want)
+		}
+	}
+	if got, want := Dec2StrAxis(decimal.RequireFromString("1234567890.4")), "1 234 567 890"; got != want {
+		t.Errorf("Dec2StrAxis = %q, förväntade %q", got, want)
+	}
+}

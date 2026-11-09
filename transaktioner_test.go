@@ -2,7 +2,11 @@
 package main
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/shopspring/decimal" // MIT License
@@ -561,3 +565,36 @@ func TestTransaktionDB7(t *testing.T) {
 	}
 	fmt.Println(n)
 */
+
+func postAddTransaction(t *testing.T, amount string) string {
+	t.Helper()
+	form := url.Values{"transtyp": {"Uttag"}, "fromacc": {"Plånboken"}, "date": {"2026-11-09"},
+		"who": {"Gemensamt"}, "amount": {amount}, "text": {""}}
+	req := httptest.NewRequest(http.MethodPost, "/hnewtrans", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+	addtransaction(rec, req)
+	return rec.Body.String()
+}
+
+// addtransaction använder den globala db: inte parallell.
+func TestAddTransactionOgiltigtBelopp(t *testing.T) {
+	keepGlobals(t)
+	db = newTestDB(t, "trinv")
+
+	body := postAddTransaction(t, "-")
+	if !strings.Contains(body, "sparades inte") {
+		t.Errorf("förväntade felmeddelande, fick %q", body)
+	}
+	if n := antalTransaktioner(db); n != 0 {
+		t.Errorf("ogiltigt belopp sparades: %d transaktioner", n)
+	}
+
+	postAddTransaction(t, "1-000")
+	if n := antalTransaktioner(db); n != 1 {
+		t.Fatalf("förväntade 1 transaktion, fick %d", n)
+	}
+	if got, want := hämtaTransaktion(db, 1).amount, decimal.NewFromInt(1000); !got.Equal(want) {
+		t.Errorf("belopp: förväntade %s, fick %s", want, got)
+	}
+}

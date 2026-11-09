@@ -122,6 +122,22 @@ func normalizeFixed(datum string, hurofta string) (string, string, error) {
 	return t.Format("2006-01-02"), period, nil
 }
 
+// fixedIsDue säger om en fast transaktion med datum datum ska registreras senast
+// currDate (ÅÅÅÅ-MM-DD). Datumen jämförs som datum, så att även gamla rader som
+// 2026-9-01 kommer med. Ett ogiltigt datum räknas som att det ska registreras, så att
+// transaktionen visas och kan rättas.
+func fixedIsDue(datum string, currDate string) bool {
+	d, err := parseFixedDate(datum)
+	if err != nil {
+		return true
+	}
+	c, err := parseFixedDate(currDate)
+	if err != nil {
+		return false
+	}
+	return !d.After(c)
+}
+
 func BeginningOfMonth(date time.Time) time.Time {
 	return date.AddDate(0, 0, -date.Day()+1)
 }
@@ -165,11 +181,9 @@ func showFastaTransaktioner(w http.ResponseWriter, db *sql.DB, showedit bool) {
 	if antal > 0 || showedit {
 		var res *sql.Rows
 		var err error
-		if showedit {
-			res, err = db.Query("SELECT FrånKonto,TillKonto,Belopp,Datum,HurOfta,Vad,Vem,Löpnr,Kontrollnr,TillDatum,Rakning FROM Överföringar ")
-		} else {
-			res, err = db.Query("SELECT FrånKonto,TillKonto,Belopp,Datum,HurOfta,Vad,Vem,Löpnr,Kontrollnr,TillDatum,Rakning FROM Överföringar WHERE Datum <= ?", currDate)
-		}
+		// Vilka som ska registreras avgörs i fixedIsDue, inte i SQL, eftersom datum
+		// som 2026-9-01 inte går att jämföra som text.
+		res, err = db.Query("SELECT FrånKonto,TillKonto,Belopp,Datum,HurOfta,Vad,Vem,Löpnr,Kontrollnr,TillDatum,Rakning FROM Överföringar ")
 
 		if err != nil {
 			log.Fatal(err)
@@ -192,6 +206,9 @@ func showFastaTransaktioner(w http.ResponseWriter, db *sql.DB, showedit bool) {
 
 		for res.Next() {
 			_ = res.Scan(&FrånKonto, &TillKonto, &Belopp, &Datum, &HurOfta, &Vad, &Vem, &Löpnr, &Kontrollnr, &TillDatum, &Rakning)
+			if !showedit && !fixedIsDue(toUtf8(Datum), currDate) {
+				continue
+			}
 
 			transaktion.Löpnr = toUtf8(Löpnr)
 			transaktion.FranKonto = toUtf8(FrånKonto)
