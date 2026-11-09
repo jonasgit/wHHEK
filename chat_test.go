@@ -1524,3 +1524,20 @@ func TestChatAskOutlivesServerTimeouts(t *testing.T) {
 		t.Errorf("svaret kom inte fram:\n%s", body)
 	}
 }
+
+// Sidan ska visas direkt med en väntesymbol, utan att kontakta LLM-servern.
+func TestChatShellShowsWorking(t *testing.T) {
+	t.Parallel()
+	rec := httptest.NewRecorder()
+	chat(rec, httptest.NewRequest(http.MethodGet, "/chat", nil))
+	body := rec.Body.String()
+
+	for _, want := range []string{`hx-get="/chatpage"`, `src="/img/bars.svg"`, "<html"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("sidan saknar %q:\n%s", want, body)
+		}
+	}
+	if strings.Contains(body, `id="question"`) {
+		t.Error("inmatningsrutan ska hämtas från /chatpage")
+	}
+}

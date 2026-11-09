@@ -1449,6 +1449,7 @@ func main() {
 	http.HandleFunc("/faq1", faq1)
 	http.HandleFunc("/components", comps)
 	http.HandleFunc("/chat", chat)
+	http.HandleFunc("/chatpage", chatPage)
 	http.HandleFunc("/chatask", chatAsk)
 	http.HandleFunc("/", root)
 

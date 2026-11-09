@@ -556,6 +556,15 @@ func chatAllowSlowReply(w http.ResponseWriter) {
 	}
 }
 
+// chat visar sidan direkt med en väntesymbol. Innehållet hämtas sedan från
+// /chatpage, som kan behöva vänta på LLM-servern.
+func chat(w http.ResponseWriter, req *http.Request) {
+	log.Println("Func chat")
+	if err := chatTemplates.ExecuteTemplate(w, "chat.html", nil); err != nil {
+		log.Println("While serving HTTP chat: ", err)
+	}
+}
+
 func serveChat(w http.ResponseWriter, req *http.Request, baseURL string, database *chatDatabase) {
 	// Att ladda om modellen kan ta längre tid än webbserverns tidsgräns.
 	chatAllowSlowReply(w)
@@ -572,8 +581,8 @@ func serveChat(w http.ResponseWriter, req *http.Request, baseURL string, databas
 		}
 	}
 
-	if err := chatTemplates.ExecuteTemplate(w, "chat.html", data); err != nil {
-		log.Println("While serving HTTP chat: ", err)
+	if err := chatTemplates.ExecuteTemplate(w, "chat_page", data); err != nil {
+		log.Println("While serving HTTP chatpage: ", err)
 	}
 }
 
@@ -619,8 +628,8 @@ func serveChatAsk(w http.ResponseWriter, req *http.Request, baseURL string, data
 	}
 }
 
-func chat(w http.ResponseWriter, req *http.Request) {
-	log.Println("Func chat")
+func chatPage(w http.ResponseWriter, req *http.Request) {
+	log.Println("Func chatPage")
 	serveChat(w, req, llmBaseURL, chatCurrentDatabase())
 }
 

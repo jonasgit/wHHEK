@@ -19,6 +19,16 @@
 <body>
   <h1>Chat</h1>
 
+  <!-- Innehållet hämtas separat eftersom det kan ta lång tid att kontakta LLM-servern. -->
+  <div hx-get="/chatpage" hx-trigger="load">
+    <img class="htmx-indicator" width="150" src="/img/bars.svg" alt="Kontaktar LLM-servern"/>
+  </div>
+
+  <p><a href="summary">Översikt</a></p>
+</body>
+</html>
+
+{{define "chat_page"}}
   {{if .ServerError}}
   {{template "chat_server_error" .}}
   <p><a href="chat">Försök igen</a></p>
@@ -44,9 +54,7 @@
   <p><a href="chat">Rensa historik</a></p>
   {{end}}
 
-  <p><a href="summary">Översikt</a></p>
-</body>
-</html>
+{{end}}
 
 {{define "chat_question_box"}}<input type="text" id="question" name="question" autocomplete="off" required autofocus{{if .}} hx-swap-oob="true"{{end}}>{{end}}
 
