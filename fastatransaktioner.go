@@ -262,7 +262,6 @@ func addfixedtransaction(w http.ResponseWriter, req *http.Request, db *sql.DB) {
 		transid := req.FormValue("transid")
 		transidnum, _ := strconv.Atoi(transid)
 		registreraFastTransaktionHTML(w, transidnum, db)
-		_, _ = fmt.Fprintf(w, "<p>\n")
 	}
 	log.Println("addfixedtransaction slut")
 }
@@ -311,20 +310,6 @@ func registreraFastTransaktion(db *sql.DB, transid int) error {
 	if err != nil {
 		log.Println("OK: registreraFastTransaktion, trasig/saknar amount ", amountstr, err)
 	}
-
-	sqlStmt := ""
-	sqlStmt += "<tr><td>" + toUtf8(Löpnr) + "</td>"
-	sqlStmt += "<td>" + toUtf8(FrånKonto) + "</td>"
-	sqlStmt += "<td>" + toUtf8(TillKonto) + "</td>"
-	sqlStmt += "<td>" + amount.String() + "</td>"
-	sqlStmt += "<td>" + toUtf8(Datum) + "</td>"
-	sqlStmt += "<td>" + toUtf8(HurOfta) + "</td>"
-	sqlStmt += "<td>" + toUtf8(Vad) + "</td>"
-	sqlStmt += "<td>" + toUtf8(Vem) + "</td>"
-	sqlStmt += "<td>" + toUtf8(Kontrollnr) + "</td>"
-	sqlStmt += "<td>" + toUtf8(TillDatum) + "</td>"
-	sqlStmt += "<td>" + toUtf8(Rakning) + "</td>"
-	sqlStmt += "</tr>\n"
 
 	_ = res.Close()
 
@@ -375,14 +360,33 @@ func registreraFastTransaktion(db *sql.DB, transid int) error {
 	return err
 }
 
+//go:embed html/fasta_registrera.html
+var htmlfastaregistrera string
+
+var fastaRegistreraTmpl = template.Must(template.New("FastaRegistrera").Parse(htmlfastaregistrera))
+
+type FastaRegistreraData struct {
+	TransID   int
+	NoDB      bool
+	Fast      *transType // nil om transaktionen inte kunde läsas ut
+	NextErr   string
+	Typ       string // "Överföring", "Insättning" eller "Fast Utgift" när registrering gjorts
+	RegDatum  string
+	UpdateErr string
+}
+
 func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.DB) {
 	log.Println("registreraFastTransaktionHTML start")
-	_, _ = fmt.Fprintf(w, "%s", "Läser ut fast transaktion#"+strconv.Itoa(transid))
+	data := FastaRegistreraData{TransID: transid}
+	defer func() {
+		if err := fastaRegistreraTmpl.Execute(w, data); err != nil {
+			log.Println("registreraFastTransaktionHTML template:", err)
+		}
+	}()
 	if db == nil {
-		_, _ = fmt.Fprintf(w, "registreraFastTransaktion: No database open<p>\n")
+		data.NoDB = true
 		return
 	}
-	_, _ = fmt.Fprintf(w, "<p>\n")
 	// Retrieve repeating transaction
 	var res *sql.Rows
 	res, err := db.Query("SELECT FrånKonto,TillKonto,Belopp,Datum,HurOfta,Vad,Vem,Löpnr,Kontrollnr,TillDatum,Rakning FROM Överföringar WHERE Löpnr = ?", transid)
@@ -404,32 +408,29 @@ func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.D
 	var TillDatum []byte  // size 10
 	var Rakning []byte    // size 1
 
-	_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Löpnr</th><th>Frånkonto</th><th>Tillkonto/Plats</th><th>Belopp</th><th>Datum</th><th>Hur Ofta</th><th>Vad</th><th>Vem</th><th>Kontrollnr</th><th>Till datum</th><th>Räkning</th><th>Agera</th>\n")
 	res.Next()
 	err = res.Scan(&FrånKonto, &TillKonto, &Belopp, &Datum, &HurOfta, &Vad, &Vem, &Löpnr, &Kontrollnr, &TillDatum, &Rakning)
+	res.Close()
 	if err != nil {
 		log.Println("registreraFastTransaktion: SCAN ERROR")
 		log.Println(err)
 		log.Println("registreraFastTransaktion: Bail out")
-		_, _ = fmt.Fprintf(w, "<tr>Bail out</tr>\n")
 		return
 	}
 
-	sqlStmt := ""
-	sqlStmt += "<tr><td>" + toUtf8(Löpnr) + "</td>"
-	sqlStmt += "<td>" + toUtf8(FrånKonto) + "</td>"
-	sqlStmt += "<td>" + toUtf8(TillKonto) + "</td>"
-	sqlStmt += "<td>" + toUtf8(Belopp) + "</td>"
-	sqlStmt += "<td>" + toUtf8(Datum) + "</td>"
-	sqlStmt += "<td>" + toUtf8(HurOfta) + "</td>"
-	sqlStmt += "<td>" + toUtf8(Vad) + "</td>"
-	sqlStmt += "<td>" + toUtf8(Vem) + "</td>"
-	sqlStmt += "<td>" + toUtf8(Kontrollnr) + "</td>"
-	sqlStmt += "<td>" + toUtf8(TillDatum) + "</td>"
-	sqlStmt += "<td>" + toUtf8(Rakning) + "</td>"
-	sqlStmt += "</tr>\n"
-	_, _ = fmt.Fprintf(w, "%s", sqlStmt)
-	_, _ = fmt.Fprintf(w, "</table>\n")
+	data.Fast = &transType{
+		Löpnr:      toUtf8(Löpnr),
+		FranKonto:  toUtf8(FrånKonto),
+		TillKonto:  toUtf8(TillKonto),
+		Belopp:     toUtf8(Belopp),
+		Datum:      toUtf8(Datum),
+		HurOfta:    toUtf8(HurOfta),
+		Vad:        toUtf8(Vad),
+		Vem:        toUtf8(Vem),
+		Kontrollnr: toUtf8(Kontrollnr),
+		TillDatum:  toUtf8(TillDatum),
+		Rakning:    toUtf8(Rakning),
+	}
 
 	amountstr := SanitizeAmountb(Belopp)
 	amount, err := decimal.NewFromString(amountstr)
@@ -437,14 +438,11 @@ func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.D
 		log.Println("OK: registreraFastTransaktionHTML, trasig/saknar amount ", amountstr, err)
 	}
 
-	res.Close()
-
 	// Next date first: if date or period is invalid nothing is registered.
 	newDatum, err := nextFixedDate(toUtf8(Datum), toUtf8(HurOfta))
 	if err != nil {
 		log.Println("registreraFastTransaktionHTML:", err)
-		_, _ = fmt.Fprintf(w, "Kan inte registrera: %s. Rätta den fasta transaktionen först.<p>\n",
-			template.HTMLEscapeString(err.Error()))
+		data.NextErr = err.Error()
 		return
 	}
 
@@ -452,63 +450,24 @@ func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.D
 	// saved as e.g. 2021-1-31, so the transactions sort correctly.
 	regDate, _ := parseFixedDate(toUtf8(Datum))
 	regDatum := regDate.Format("2006-01-02")
+	data.RegDatum = regDatum
 
 	// Register transaction
 	if toUtf8(Vad) == "---" {
 		// Fasta överföringar
-		_, _ = fmt.Fprintf(w, "Registrerar Överföring...<br> ")
+		data.Typ = "Överföring"
 		log.Println("registreraFastTransaktionHTML Registrerar Överföring...")
-
 		addTransaktionÖverföring(db, toUtf8(FrånKonto), toUtf8(TillKonto), regDatum, toUtf8(Vem), amount, "Fast transaktion wHHEK")
-
-		_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Frånkonto</th><th>Tillkonto</th><th>Typ</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
-		sqlStmt := "<tr>"
-		sqlStmt += "<td>" + toUtf8(FrånKonto) + "</td>"
-		sqlStmt += "<td>" + toUtf8(TillKonto) + "</td>"
-		sqlStmt += "<td>" + "Överföring" + "</td>"
-		sqlStmt += "<td>" + regDatum + "</td>"
-		sqlStmt += "<td>" + toUtf8(Vem) + "</td>"
-		sqlStmt += "<td>" + toUtf8(Belopp) + "</td>"
-		sqlStmt += "</tr>"
-		_, _ = fmt.Fprintf(w, "%s", sqlStmt)
-		_, _ = fmt.Fprintf(w, "</table>\n")
 	} else if toUtf8(FrånKonto) == "---" {
 		// Fasta inkomster
-		_, _ = fmt.Fprintf(w, "Registrerar Insättning...<br> ")
+		data.Typ = "Insättning"
 		log.Println("registreraFastTransaktionHTML Insättning...")
-
 		addTransaktionInsättning(db, toUtf8(TillKonto), regDatum, toUtf8(Vad), toUtf8(Vem), amount, "Fast transaktion wHHEK")
-
-		_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Konto</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
-		sqlStmt := "<tr>"
-		sqlStmt += "<td>" + toUtf8(TillKonto) + "</td>"
-		sqlStmt += "<td>" + "Insättning" + "</td>"
-		sqlStmt += "<td>" + toUtf8(Vad) + "</td>"
-		sqlStmt += "<td>" + regDatum + "</td>"
-		sqlStmt += "<td>" + toUtf8(Vem) + "</td>"
-		sqlStmt += "<td>" + toUtf8(Belopp) + "</td>"
-		sqlStmt += "</tr>"
-		_, _ = fmt.Fprintf(w, "%s", sqlStmt)
-		_, _ = fmt.Fprintf(w, "</table>\n")
 	} else {
 		// Fasta utgifter
-		_, _ = fmt.Fprintf(w, "Registrerar Fast Utgift...<br> ")
+		data.Typ = "Fast Utgift"
 		log.Println("registreraFastTransaktionHTML Fast Utgift...")
-
 		addTransaktionInköp(db, toUtf8(FrånKonto), toUtf8(TillKonto), regDatum, toUtf8(Vad), toUtf8(Vem), amount, "Fast transaktion wHHEK", true)
-
-		_, _ = fmt.Fprintf(w, "<table style=\"width:100%%\"><tr><th>Frånkonto</th><th>Plats</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>\n")
-		sqlStmt := "<tr>"
-		sqlStmt += "<td>" + toUtf8(FrånKonto) + "</td>"
-		sqlStmt += "<td>" + toUtf8(TillKonto) + "</td>"
-		sqlStmt += "<td>" + "Fast Utgift" + "</td>"
-		sqlStmt += "<td>" + toUtf8(Vad) + "</td>"
-		sqlStmt += "<td>" + regDatum + "</td>"
-		sqlStmt += "<td>" + toUtf8(Vem) + "</td>"
-		sqlStmt += "<td>" + toUtf8(Belopp) + "</td>"
-		sqlStmt += "</tr>"
-		_, _ = fmt.Fprintf(w, "%s", sqlStmt)
-		_, _ = fmt.Fprintf(w, "</table>\n")
 	}
 
 	log.Println("registreraFastTransaktionHTML nytt datum " + newDatum)
@@ -516,13 +475,14 @@ func registreraFastTransaktionHTML(w http.ResponseWriter, transid int, db *sql.D
 	_, err = db.Exec(sqlStatement, newDatum, transid)
 	if err != nil {
 		log.Println("registreraFastTransaktionHTML Update error: ", err)
-		_, _ = fmt.Fprintf(w, "Kunde inte flytta fram datumet: %s<p>\n", template.HTMLEscapeString(err.Error()))
+		data.UpdateErr = err.Error()
 		return
 	}
-
-	_, _ = fmt.Fprintf(w, "<p>\n")
 	log.Println("registreraFastTransaktionHTML slut")
 }
+
+//go:embed html/fasta_footer.html
+var htmlfastafooter string
 
 //go:embed html/fasta4.html
 var htmlfasta4 string
@@ -549,9 +509,7 @@ func fixedtransactionHTML(w http.ResponseWriter, req *http.Request) {
 
 	showFastaTransaktioner(w, db, false)
 
-	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
-	_, _ = fmt.Fprintf(w, "</body>\n")
-	_, _ = fmt.Fprintf(w, "</html>\n")
+	_, _ = fmt.Fprint(w, htmlfastafooter)
 	log.Println("fixedtransactionHTML slut")
 }
 
@@ -643,9 +601,7 @@ func editfixedtransactionHTML(w http.ResponseWriter, req *http.Request) {
 
 	showFastaTransaktioner(w, db, true)
 
-	_, _ = fmt.Fprintf(w, "<a href=\"summary\">Översikt</a>\n")
-	_, _ = fmt.Fprintf(w, "</body>\n")
-	_, _ = fmt.Fprintf(w, "</html>\n")
+	_, _ = fmt.Fprint(w, htmlfastafooter)
 	log.Println("fixedtransactionHTML slut")
 }
 

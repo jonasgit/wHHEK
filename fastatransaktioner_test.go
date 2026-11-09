@@ -354,3 +354,37 @@ func TestFastTransaktionGammaltDatumVisas(t *testing.T) {
 		t.Errorf("transaktion i framtiden visas: %q", body)
 	}
 }
+
+// Registreringssidan renderas från html/fasta_registrera.html.
+func TestRegistreraFastTransaktionHTML(t *testing.T) {
+	t.Parallel()
+	db := newTestDB(t, "ftrhtml")
+	_ = skapaPlats(db, "Mack", "", false, "")
+	_ = skapaFastUtgift(db, "Bil", "Plånboken", "Gemensamt", "Mack <&>", decimal.NewFromInt(1), "2021-1-31", "Varje månad")
+	_ = skapaFastUtgift(db, "Bil", "Plånboken", "Gemensamt", "Mack", decimal.NewFromInt(2), "2021-01-31", "Varje månad")
+	if _, err := db.Exec("UPDATE Överföringar SET HurOfta = 'Månadsvis' WHERE Löpnr = 2"); err != nil {
+		t.Fatal(err)
+	}
+
+	rec := httptest.NewRecorder()
+	registreraFastTransaktionHTML(rec, 1, db)
+	body := rec.Body.String()
+	for _, want := range []string{"Läser ut fast transaktion#1", "Registrerar Fast Utgift...", "<td>2021-01-31</td>", "<td>Fast Utgift</td>", "Mack &lt;&amp;&gt;"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("saknar %q i %q", want, body)
+		}
+	}
+
+	rec = httptest.NewRecorder()
+	registreraFastTransaktionHTML(rec, 2, db)
+	body = rec.Body.String()
+	if !strings.Contains(body, "Kan inte registrera: okänd periodicitet") || strings.Contains(body, "Registrerar") {
+		t.Errorf("fel utskrift för okänd periodicitet: %q", body)
+	}
+
+	rec = httptest.NewRecorder()
+	registreraFastTransaktionHTML(rec, 1, nil)
+	if body := rec.Body.String(); !strings.Contains(body, "No database open") {
+		t.Errorf("fel utskrift utan databas: %q", body)
+	}
+}

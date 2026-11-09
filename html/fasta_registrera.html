@@ -1,0 +1,29 @@
+<!-- //-*- coding: utf-8 -*- -->
+Läser ut fast transaktion#{{.TransID}}
+{{- if .NoDB}}registreraFastTransaktion: No database open<p>
+{{else}}<p>
+<table style="width:100%"><tr><th>Löpnr</th><th>Frånkonto</th><th>Tillkonto/Plats</th><th>Belopp</th><th>Datum</th><th>Hur Ofta</th><th>Vad</th><th>Vem</th><th>Kontrollnr</th><th>Till datum</th><th>Räkning</th><th>Agera</th>
+{{- with .Fast}}
+<tr><td>{{.Löpnr}}</td><td>{{.FranKonto}}</td><td>{{.TillKonto}}</td><td>{{.Belopp}}</td><td>{{.Datum}}</td><td>{{.HurOfta}}</td><td>{{.Vad}}</td><td>{{.Vem}}</td><td>{{.Kontrollnr}}</td><td>{{.TillDatum}}</td><td>{{.Rakning}}</td></tr>
+{{- else}}
+<tr><td>Bail out</td></tr>
+{{- end}}
+</table>
+{{if .NextErr}}Kan inte registrera: {{.NextErr}}. Rätta den fasta transaktionen först.<p>
+{{else if .Typ}}{{with .Fast}}
+{{- if eq $.Typ "Överföring"}}Registrerar Överföring...<br>
+<table style="width:100%"><tr><th>Frånkonto</th><th>Tillkonto</th><th>Typ</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>
+<tr><td>{{.FranKonto}}</td><td>{{.TillKonto}}</td><td>Överföring</td><td>{{$.RegDatum}}</td><td>{{.Vem}}</td><td>{{.Belopp}}</td></tr>
+</table>
+{{- else if eq $.Typ "Insättning"}}Registrerar Insättning...<br>
+<table style="width:100%"><tr><th>Konto</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>
+<tr><td>{{.TillKonto}}</td><td>Insättning</td><td>{{.Vad}}</td><td>{{$.RegDatum}}</td><td>{{.Vem}}</td><td>{{.Belopp}}</td></tr>
+</table>
+{{- else}}Registrerar Fast Utgift...<br>
+<table style="width:100%"><tr><th>Frånkonto</th><th>Plats</th><th>Typ</th><th>Vad</th><th>Datum</th><th>Vem</th><th>Belopp</th><th>Text</th>
+<tr><td>{{.FranKonto}}</td><td>{{.TillKonto}}</td><td>Fast Utgift</td><td>{{.Vad}}</td><td>{{$.RegDatum}}</td><td>{{.Vem}}</td><td>{{.Belopp}}</td></tr>
+</table>
+{{- end}}
+{{if $.UpdateErr}}Kunde inte flytta fram datumet: {{$.UpdateErr}}<p>
+{{else}}<p>
+{{end}}{{end}}{{end}}{{end}}<p>
