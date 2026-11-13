@@ -4,6 +4,7 @@ REM Kör tester         : ./make.bat test
 REM Kör tester pratsamt: ./make.bat test verbose
 REM Bygg för användning: ./make.bat release
 REM Bygg för utveckling: ./make.bat
+REM Städa              : ./make.bat clean
 
 SET ARG1=%1
 SET ARG2=%2
@@ -60,6 +61,9 @@ IF "%ARG1%"=="release" (
 )
 
 ECHO Bygger...
+
+REM go-sqlite3 kräver cgo (behövs även för 386 på en 64-bitarsmaskin)
+SET CGO_ENABLED=1
 
 IF "%ARG1%"=="test" (
   @echo on
