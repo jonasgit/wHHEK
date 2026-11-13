@@ -23,13 +23,6 @@ DEL wHHEK.exe wHHEK_x86.exe wHHEK_x64.exe
 IF "%ARG1%"=="setup" (
   ECHO Hämtar beroenden...
   go mod tidy
-REM  go get github.com/alexbrainman/odbc
-REM  go get github.com/mattn/go-sqlite3
-REM  go get golang.org/x/text/encoding/charmap
-REM  go get github.com/shopspring/decimal
-REM  go get github.com/extrame/xls
-REM  go get github.com/xuri/excelize/v2
-REM  go get github.com/pkg/browser
   ECHO Klar.
   EXIT
 )
@@ -73,8 +66,8 @@ IF "%ARG1%"=="test" (
   @echo on
   SET GOARCH=386
   go %BUILDCMD% %LINKCMD% -o wHHEK_x86.exe
-  SET GOARCH=amd64
-  go %BUILDCMD% %LINKCMD% -o wHHEK_x64.exe
+REM  SET GOARCH=amd64
+REM  go %BUILDCMD% %LINKCMD% -o wHHEK_x64.exe
   @echo off
 )
 
