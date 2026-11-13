@@ -192,6 +192,9 @@ var httpShutdownOnce sync.Once
 //go:embed html/*.html
 var htmlTemplates embed.FS
 
+// mainTemplates innehåller alla mallar för huvudsidan m.m. (html/main.html).
+var mainTemplates = template.Must(template.ParseFS(htmlTemplates, "html/main.html"))
+
 func hello(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func hello")
 
@@ -310,11 +313,10 @@ func checkÖverföringar(w http.ResponseWriter, db *sql.DB) {
 	currDate := currentTime.Format("2006-01-02")
 	antal := GetCountPendingÖverföringar(db, currDate)
 	if antal > 0 {
-		t, _ := template.New("main4.html").ParseFS(htmlTemplates, "html/main4.html")
 		data := Main4Data{
 			Antal: antal,
 		}
-		err := t.Execute(w, data)
+		err := mainTemplates.ExecuteTemplate(w, "main4", data)
 		if err != nil {
 			log.Println("While serving HTTP main4: ", err)
 		}
@@ -329,12 +331,10 @@ func checkÖverföringar(w http.ResponseWriter, db *sql.DB) {
 	currDate = lastOfMonth.Format("2006-01-02")
 	antal = GetCountPendingÖverföringar(db, currDate)
 	if antal > 0 {
-		t, _ := template.New("main5.html").ParseFS(htmlTemplates, "html/main5.html")
-
 		data := Main5Data{
 			Antal: antal,
 		}
-		err := t.Execute(w, data)
+		err := mainTemplates.ExecuteTemplate(w, "main5", data)
 		if err != nil {
 			log.Println("While serving HTTP main5: ", err)
 		}
@@ -350,17 +350,15 @@ func printSummaryHead(w http.ResponseWriter) {
 	currentTime := time.Now()
 	currDate := currentTime.Format("2006-01-02")
 
-	t, _ := template.New("main1.html").ParseFS(htmlTemplates, "html/main1.html")
 	data := Main1Data{
 		CurrDBName: currentDatabase,
 		CurrDate:   currDate,
 	}
-	_ = t.Execute(w, data)
+	_ = mainTemplates.ExecuteTemplate(w, "main1", data)
 }
 
 func printAccounts(w http.ResponseWriter) {
-	t, _ := template.New("main6.html").ParseFS(htmlTemplates, "html/main6.html")
-	err := t.Execute(w, t)
+	err := mainTemplates.ExecuteTemplate(w, "main6", nil)
 	if err != nil {
 		log.Println("While serving HTTP main6: ", err)
 	}
@@ -455,12 +453,11 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 		kontonDolda = append(kontonDolda, konto)
 	}
 
-	t, _ := template.New("main11.html").ParseFS(htmlTemplates, "html/main11.html")
 	data := Main11Data{
 		Konton:    kontonDolda,
 		DoldaNamn: doldaNamn,
 	}
-	err = t.Execute(w, data)
+	err = mainTemplates.ExecuteTemplate(w, "main11", data)
 	if err != nil {
 		log.Println("While serving HTTP main11: ", err)
 	}
@@ -474,8 +471,7 @@ func checkpwd(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func checkpwd")
 
 	if nopwDb == nil {
-		t, _ := template.New("main12.html").ParseFS(htmlTemplates, "html/main12.html")
-		err := t.Execute(w, nil)
+		err := mainTemplates.ExecuteTemplate(w, "main12", nil)
 		if err != nil {
 			log.Println("While serving HTTP main12: ", err)
 		}
@@ -489,8 +485,7 @@ func checkpwd(w http.ResponseWriter, req *http.Request) {
 			nopwDb = nil
 			showsummary(w)
 		} else {
-			t, _ := template.New("main13.html").ParseFS(htmlTemplates, "html/main13.html")
-			err := t.Execute(w, nil)
+			err := mainTemplates.ExecuteTemplate(w, "main13", nil)
 			if err != nil {
 				log.Println("While serving HTTP main13: ", err)
 			}
@@ -499,8 +494,7 @@ func checkpwd(w http.ResponseWriter, req *http.Request) {
 }
 
 func showsummary(w http.ResponseWriter) {
-	t, _ := template.New("main3.html").ParseFS(htmlTemplates, "html/main3.html")
-	err := t.Execute(w, t)
+	err := mainTemplates.ExecuteTemplate(w, "main3", nil)
 	if err != nil {
 		log.Println("While serving HTTP main3: ", err)
 	}
@@ -524,11 +518,10 @@ func opendb(w http.ResponseWriter, req *http.Request) {
 		if strings.HasSuffix(strings.ToLower(filename), ".db") {
 			nopwDb = openSqlite(filename)
 		} else {
-			t, _ := template.New("main14.html").ParseFS(htmlTemplates, "html/main14.html")
 			data := Main14Data{
 				Filnamn: filename,
 			}
-			err := t.Execute(w, data)
+			err := mainTemplates.ExecuteTemplate(w, "main14", data)
 			if err != nil {
 				log.Println("While serving HTTP main14: ", err)
 			}
@@ -536,16 +529,14 @@ func opendb(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if nopwDb == nil {
-		t, _ := template.New("main15.html").ParseFS(htmlTemplates, "html/main15.html")
-		err := t.Execute(w, nil)
+		err := mainTemplates.ExecuteTemplate(w, "main15", nil)
 		if err != nil {
 			log.Println("While serving HTTP main15: ", err)
 		}
 	} else {
 		pwd := getdbpw(nopwDb)
 		if pwd != " " {
-			t, _ := template.New("main16.html").ParseFS(htmlTemplates, "html/main16.html")
-			err := t.Execute(w, nil)
+			err := mainTemplates.ExecuteTemplate(w, "main16", nil)
 			if err != nil {
 				log.Println("While serving HTTP main16: ", err)
 			}
@@ -571,16 +562,14 @@ func closeDB() {
 func closedb(w http.ResponseWriter, req *http.Request) {
 	closeDB()
 
-	t, _ := template.New("main3.html").ParseFS(htmlTemplates, "html/main3.html")
-	err := t.Execute(w, t)
+	err := mainTemplates.ExecuteTemplate(w, "main3", nil)
 	if err != nil {
 		log.Println("While serving HTTP main3: ", err)
 	}
 }
 
 func quitapp(w http.ResponseWriter, req *http.Request) {
-	t, _ := template.New("main8.html").ParseFS(htmlTemplates, "html/main8.html")
-	err := t.Execute(w, t)
+	err := mainTemplates.ExecuteTemplate(w, "main8", nil)
 	if err != nil {
 		log.Println("While serving HTTP main8: ", err)
 	}
@@ -627,11 +616,10 @@ func createdb(w http.ResponseWriter, req *http.Request) {
 	if (len([]rune(filename)) < 1) ||
 		(strings.ContainsAny(filename, "\\/|:<>.\"'`\x00")) {
 
-		t, _ := template.New("main9.html").ParseFS(htmlTemplates, "html/main9.html")
 		data := Main9Data{
 			Filnamn: filename,
 		}
-		err := t.Execute(w, data)
+		err := mainTemplates.ExecuteTemplate(w, "main9", data)
 		if err != nil {
 			log.Println("While serving HTTP main9: ", err)
 		}
@@ -639,11 +627,10 @@ func createdb(w http.ResponseWriter, req *http.Request) {
 	}
 
 	SkapaTomDB(filename + ".db")
-	t, _ := template.New("main10.html").ParseFS(htmlTemplates, "html/main10.html")
 	data := Main10Data{
 		Filnamn: filename,
 	}
-	err = t.Execute(w, data)
+	err = mainTemplates.ExecuteTemplate(w, "main10", data)
 	if err != nil {
 		log.Println("While serving HTTP main10: ", err)
 	}
@@ -659,8 +646,7 @@ func generateSummary(w http.ResponseWriter, req *http.Request) {
 	printSummaryHead(w)
 	if db != nil {
 		checkÖverföringar(w, db)
-		t, _ := template.New("main2.html").ParseFS(htmlTemplates, "html/main2.html")
-		err := t.Execute(w, t)
+		err := mainTemplates.ExecuteTemplate(w, "main2", nil)
 		if err != nil {
 			log.Println("While serving HTTP main2: ", err)
 		}
@@ -1109,7 +1095,6 @@ order by datum,löpnr`, endDate, accName, accName)
 		"Juli", "Augusti", "September", "Oktober", "November", "December"}
 	chartTitle := fmt.Sprintf("Saldo per dag - %s %d", monthNames[accMonth], accYear)
 
-	t, _ := template.New("main20.html").ParseFS(htmlTemplates, "html/main20.html")
 	data := Main20Data{
 		Filename:     currentDatabase,
 		AccName:      accName,
@@ -1127,7 +1112,7 @@ order by datum,löpnr`, endDate, accName, accName)
 		MaxSaldo:     Dec2Str(maxSaldo),
 		ChartTitle:   chartTitle,
 	}
-	err = t.Execute(w, data)
+	err = mainTemplates.ExecuteTemplate(w, "main20", data)
 	if err != nil {
 		log.Println("While serving HTTP main20: ", err)
 	}
@@ -1163,11 +1148,10 @@ type Main18Data struct {
 }
 
 func monthly(w http.ResponseWriter, req *http.Request) {
-	t, _ := template.New("main17.html").ParseFS(htmlTemplates, "html/main17.html")
 	data := Main17Data{
 		NoDB: db == nil,
 	}
-	err := t.Execute(w, data)
+	err := mainTemplates.ExecuteTemplate(w, "main17", data)
 	if err != nil {
 		log.Println("While serving HTTP main17: ", err)
 	}
@@ -1259,7 +1243,6 @@ func monthly(w http.ResponseWriter, req *http.Request) {
 			prevYear = prevYear - 1
 		}
 
-		t, _ := template.New("main18.html").ParseFS(htmlTemplates, "html/main18.html")
 		data := Main18Data{
 			Konton:      konton,
 			Years:       years,
@@ -1270,14 +1253,13 @@ func monthly(w http.ResponseWriter, req *http.Request) {
 			PrevYear:    strconv.Itoa(prevYear),
 			PrevMonth:   strconv.Itoa(prevMonth),
 		}
-		err = t.Execute(w, data)
+		err = mainTemplates.ExecuteTemplate(w, "main18", data)
 		if err != nil {
 			log.Println("While serving HTTP main18: ", err)
 		}
 	}
 
-	t, _ = template.New("main19.html").ParseFS(htmlTemplates, "html/main19.html")
-	err = t.Execute(w, nil)
+	err = mainTemplates.ExecuteTemplate(w, "main19", nil)
 	if err != nil {
 		log.Println("While serving HTTP main19: ", err)
 	}

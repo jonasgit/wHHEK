@@ -1,0 +1,508 @@
+{{define "main1"}}<!-- //-*- coding: utf-8 -*-  -->
+<html lang="sv">
+<head>
+<title>wHHEK</title>
+<!-- Load htmx -->
+<script src="/htmx.js"></script>
+
+<style>
+table,th,td { border: 1px solid black ; text-align: center }
+</style>
+</head>
+<body>
+
+<h1>Databasnamn: {{.CurrDBName}}</h1>
+
+Dagens datum: {{.CurrDate}}<p>
+{{end}}
+{{define "main2"}}<!-- //-*- coding: utf-8 -*-  -->
+<table style="width:100%"><tr><td>
+      <p><a href="monthly">Månads kontoutdrag</a></p>
+      <p><a href="transactions">Transaktionslista</a></p>
+      <p><a href="platser">Platser</a></p>
+      <p><a href="personer">Personer</a></p>
+      <p><a href="konton">Konton</a></p>
+      <p><a href="budget">Budget</a></p>
+      <p><a href="yresult">Årsresultat</a></p>
+      <p><a href="y3result">3årsresultat</a></p>
+      <p><a href="y10result">10årsresultat</a></p>
+      <p><a href="ybr">Årsstatus</a></p>
+      <p><a href="newtrans">Ny transaktion</a></p>
+      <p><a href="fixedtrans">Hantera fasta transaktioner/överföringar</a></p>
+      <p><a href="editfixedtrans">Redigera fasta transaktioner/överföringar</a></p>
+      <p><a href="editfastutg">Redigera fasta utgifter</a></p>
+      <p><a href="editfastink">Redigera fasta inkomster</a></p>
+      <p><a href="editfastovf">Redigera fasta överföringar</a></p>
+      <p><a href="acccmp">Avstämning mot nerladdat kontoutdrag</a></p>
+      <p><a href="passwd">Lösenordshantering</a></p>
+      <p><a href="close">Stäng databas</a></p>
+      <p><a href="quit">Avsluta program</a></p>
+      <p><a href="help1">Hjälp</a></p>
+      <p><a href="faq1">FAQ</a></p>
+      <p><a href="components">Komponenter</a></p>
+      <p><a href="chat">Chat</a></p>
+    </td>
+    <td>
+{{end}}
+{{define "main3"}}<!-- //-*- coding: utf-8 -*-  -->
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <title>HTML Meta Tag</title>
+  <meta http-equiv="refresh" content="0; url = /summary"/>
+</head>
+
+<body>
+<p>Arbetar...</p>
+</body>
+</html>
+{{end}}
+{{define "main4"}}<!-- //-*- coding: utf-8 -*-  -->
+<p>{{.Antal}} fasta transaktioner tills idag väntar på att hanteras.
+  Gå till <a href="fixedtrans">Fasta transaktioner</a>.<p>
+  
+{{end}}
+{{define "main5"}}<!-- //-*- coding: utf-8 -*-  -->
+<p>{{.Antal}} fasta transaktioner till hela denna månaden väntar på att hanteras.
+  Gå till <a href="fixedtrans">Fasta transaktioner</a>.<p>
+{{end}}
+{{define "main6"}}<!-- //-*- coding: utf-8 -*-  -->
+<div hx-get="/r/main/accounts" hx-trigger="load">
+  <img class="htmx-indicator" width="150" src="/img/bars.svg" alt="Laddar data"/>
+</div>
+{{end}}
+{{define "main8"}}<!-- //-*- coding: utf-8 -*-  -->
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <title>HTML Meta Tag</title>
+</head>
+
+<body>
+<p>Avslutar. Hej då!</p>
+</body>
+</html>
+{{end}}
+{{define "main9"}}<!-- //-*- coding: utf-8 -*-  -->
+<html lang="sv">
+<body>
+Felaktigt filnamn(2): {{.Filnamn}}<br>
+</body>
+</html>
+{{end}}
+{{define "main10"}}<!-- //-*- coding: utf-8 -*-  -->
+<html lang="sv">
+<body>
+Databas skapad: {{.Filnamn}}<p>
+  <a href="/">Tillbaka</a>
+<p>
+</body>
+</html>
+{{end}}
+{{define "main11"}}<!-- -*- coding: utf-8 -*- -->
+<div style="font-family: Arial, sans-serif; padding: 20px;">
+  <h2 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">Kontosaldon</h2>
+  <table style="width:100%; border-collapse: collapse; margin-top: 20px;">
+    <thead>
+      <tr style="background-color: #f4f4f4;">
+        <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">Kontonamn</th>
+        <th style="padding: 12px; border: 1px solid #ddd;">Saldo enligt databas</th>
+        <th style="padding: 12px; border: 1px solid #ddd;">Saldo uträknat för idag</th>
+        <th style="padding: 12px; border: 1px solid #ddd;">Saldo uträknat totalt</th>
+      </tr>
+    </thead>
+    <tbody>
+  {{range .Konton}}
+  <tr
+    {{if .Hidden}}
+    id="HiddenRow" style="display: none;"
+    {{else}}
+    style="background-color: {{if .IsEven}}#f9f9f9{{else}}#ffffff{{end}};"
+    {{end}}
+    > 
+
+    <td style="padding: 12px; text-align: right; border: 1px solid #ddd;">{{.Name}}</td>
+
+    {{/* Check if all three balances are present and equal */}}
+    {{if and (eq .DbSaldo .DaySaldo) (eq .DbSaldo .TotSaldo)}}
+        <td colspan="3" style="padding: 12px; border: 1px solid #ddd;">{{.DbSaldo}}</td>
+    {{/* Check if DbSaldo equals DaySaldo, and both are present */}}
+
+    {{else if eq .DbSaldo .DaySaldo}}
+        <td colspan="2" style="padding: 12px; border: 1px solid #ddd;">{{.DbSaldo}}</td>
+
+    {{else if eq .DaySaldo .TotSaldo}}
+        <td style="padding: 12px; border: 1px solid #ddd;">{{.DbSaldo}}</td>
+        <td colspan="2" style="padding: 12px; border: 1px solid #ddd;">{{.TotSaldo}}</td>
+
+   {{else}}
+    {{/* Default case: display all three */}}
+        <td style="padding: 12px; border: 1px solid #ddd;">{{.DbSaldo}}</td>
+        <td style="padding: 12px; border: 1px solid #ddd;">{{.DaySaldo}}</td>
+        <td style="padding: 12px; border: 1px solid #ddd;">{{.TotSaldo}}</td>
+    {{end}}
+          
+  </tr>
+  {{end}}
+    </tbody>
+</table>
+</div>
+
+<p style="margin-top: 20px; padding: 10px; background-color: #eef; border-left: 4px solid #333;">
+  Dolda konton:
+  {{range .DoldaNamn}}
+  {{ . }},
+  {{end}}
+</p>
+{{end}}
+{{define "main12"}}<!-- -*- coding: utf-8 -*- -->
+Ingen databas.
+{{end}}
+{{define "main13"}}<!-- -*- coding: utf-8 -*- -->
+Fel lösenord.
+{{end}}
+{{define "main14"}}<!-- //-*- coding: utf-8 -*-  -->
+<html lang="sv">
+<body>
+Felaktigt filnamn: {{.Filnamn}}<br>
+<a href="/">Tillbaka</a>
+</body>
+</html>
+{{end}}
+{{define "main15"}}<!-- -*- coding: utf-8 -*- -->
+<html lang="sv">
+<body>
+
+Fel vid öppning av databas<p>
+</body>
+</html>
+{{end}}
+{{define "main16"}}<!-- -*- coding: utf-8 -*- -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Lösenordsskyddad</title>
+  </head>
+  
+  <body>
+    <p>Databasen är lösenordsskyddad. Skriv in lösenordet:</p>
+    <form method="POST" action="/pwd">
+      <label for="pwd">Password:</label>
+      <input type="password" id="pwd" name="pwd">
+      <input type="submit" value="Använd">
+    </form>
+    
+  </body>
+</html>
+{{end}}
+{{define "main17"}}<!-- -*- coding: utf-8 -*- -->
+<html>
+  <head>
+    <style>
+      table,th,td { border: 1px solid black }
+    </style>
+  </head>
+  
+  <body>
+    {{ if .NoDB }}
+    Monthly: No database open<p>
+      {{ end }}
+      
+{{end}}
+{{define "main18"}}<!-- -*- coding: utf-8 -*- -->
+<form method="POST" action="/monthly">
+  <select id="accName" name="accName">
+    
+    {{range .Konton}}
+    <option value="{{.Name}}"
+	    {{if .Selected}}
+	    selected
+	    {{end}}
+	    >{{.Name}}</option>
+    {{end}}
+  </select>
+  
+  <select id="accYear" name="accYear">
+    {{range .Years}}
+    <option value="{{.Name}}"
+	    {{if .Selected}}
+	    selected
+	    {{end}}
+	    >{{.Name}}</option>
+    {{end}}
+  </select>
+  
+  <select id="accMonth" name="accMonth">
+    {{range .Months}}
+    <option value="{{.Name}}"
+	    {{if .Selected}}
+	    selected
+	    {{end}}
+	    >{{.Name}}</option>
+    {{end}}
+  </select>
+  
+  <input type="submit" value="Visa">
+</form>
+
+<form method="POST" action="/monthly">
+  <input type="hidden" id="accName" name="accName" value="{{.SelectKonto}}">
+  <input type="hidden" id="accYear" name="accYear" value="{{.NextYear}}">
+  <input type="hidden" id="accMonth" name="accMonth" value="{{.NextMonth}}">
+  <input type="submit" value="Nästa månad">
+</form>
+<form method="POST" action="/monthly">
+  <input type="hidden" id="accName" name="accName" value="{{.SelectKonto}}">
+  <input type="hidden" id="accYear" name="accYear" value="{{.PrevYear}}">
+  <input type="hidden" id="accMonth" name="accMonth" value="{{.PrevMonth}}">
+  <input type="submit" value="Föregående månad">
+</form>
+{{end}}
+{{define "main19"}}<!-- -*- coding: utf-8 -*- -->
+<a href="summary">Översikt</a>
+</body>
+</html>
+{{end}}
+{{define "main20"}}<!-- -*- coding: utf-8 -*- -->
+<h1>{{.Filename}}</h1>
+Kontonamn: {{.AccName}}<br>
+År: {{.Year}}<br>
+Månad: {{.Month}}<br>
+<p>
+  <table style="width:100%">
+    <tr>
+      <th>Löpnr</th>
+      <th>Frånkonto</th>
+      <th>Tillkonto</th>
+      <th>Typ</th>
+      <th>Vad</th>
+      <th>Datum</th>
+      <th>Vem</th>
+      <th>Belopp</th>
+      <th>Saldo</th>
+      <th>Text</th>
+      <th id="FixedCol" style="display: none;">Fast överföring</th>
+    </tr>
+    {{range .Transactions}}
+    <tr>
+      <td>{{.Löpnr}}</td>
+      <td>{{.AccName}}</td>
+      <td>{{.Dest}}</td>
+      <td>{{.Typ}}</td>
+      <td>{{.Vad}}</td>
+      <td>{{.Datum}}</td>
+      <td>{{.Vem}}</td>
+      <td align="right"><nobr>{{.Belopp}}</nobr></td>
+      <td align="right"><nobr>{{.Saldo}}</nobr></td>
+      <td>{{.Text}}</td>
+      <td id="FixedCol" style="display: none;">{{.Fixed}}</td>
+    </tr>
+    {{end}}
+  </table>
+  <p align="right">Saldo {{.SaldoDatum}}:
+    <nobr>{{.SlutSaldo}}</nobr>
+  </p>
+  <p><strong>Diagram:</strong></p>
+  
+  <style>
+    .chart-container {
+      width: 100%;
+      margin: 20px 0;
+    }
+    .chart-svg {
+      width: 100%;
+      height: auto;
+      border: 1px solid #ddd;
+      background-color: #fafafa;
+    }
+    .bar-positive {
+      fill: #2196F3;
+      stroke: #1565C0;
+      stroke-width: 1;
+      transition: opacity 0.2s;
+    }
+    .bar-negative {
+      fill: url(#diagonalHatch);
+      stroke: #E65100;
+      stroke-width: 1;
+      transition: opacity 0.2s;
+    }
+    .bar-positive:hover, .bar-negative:hover {
+      opacity: 0.7;
+      cursor: pointer;
+    }
+    .grid-line {
+      stroke: #e0e0e0;
+      stroke-width: 1;
+      stroke-dasharray: 2,2;
+    }
+    .grid-line-zero {
+      stroke: #000000;
+      stroke-width: 2;
+      stroke-dasharray: none;
+    }
+    .axis-label {
+      font-family: Arial, sans-serif;
+      font-size: 11px;
+      fill: #333;
+    }
+    .axis-label-x {
+      text-anchor: middle;
+    }
+    .axis-label-y {
+      text-anchor: end;
+    }
+    .axis-title {
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      font-weight: bold;
+      fill: #333;
+    }
+    .chart-title {
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      font-weight: bold;
+      fill: #1a1a1a;
+      text-anchor: middle;
+    }
+    .tooltip {
+      position: absolute;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: Arial, sans-serif;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 1000;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tooltip.visible {
+      opacity: 1;
+    }
+    .legend {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    .legend-item {
+      display: inline-block;
+      margin-right: 20px;
+    }
+    .legend-color {
+      display: inline-block;
+      width: 20px;
+      height: 12px;
+      margin-right: 5px;
+      vertical-align: middle;
+      border: 1px solid #333;
+    }
+  </style>
+  
+  <div class="chart-container">
+    <div id="tooltip" class="tooltip"></div>
+    <svg class="chart-svg" viewBox="0 0 900 600" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Saldo diagram för {{.AccName}}">
+      <title>{{.ChartTitle}}</title>
+      
+      <!-- Chart title -->
+      <text x="450" y="25" class="chart-title">{{.ChartTitle}}</text>
+      
+      <!-- Pattern definition for negative bars (diagonal stripes for accessibility) -->
+      <defs>
+        <pattern id="diagonalHatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+          <rect width="8" height="8" fill="#FF9800"/>
+          <path d="M 0,0 L 8,8" stroke="#E65100" stroke-width="1.5"/>
+        </pattern>
+      </defs>
+      
+      <!-- Grid lines -->
+      {{range .GridLines}}
+      <line x1="{{.X1}}" y1="{{.Y1}}" x2="{{.X2}}" y2="{{.Y2}}" 
+            class="{{if .IsZero}}grid-line-zero{{else}}grid-line{{end}}" />
+      {{end}}
+      
+      <!-- Bars with color coding and tooltips -->
+      {{range .MonthValues}}
+      <rect x="{{.X}}" y="{{.Y}}" width="{{.Width}}" height="{{.Height}}" 
+            class="{{if eq .IsPositive "true"}}bar-positive{{else}}bar-negative{{end}}"
+            data-day="{{.Day}}"
+            data-saldo="{{.Saldo}}"
+            aria-label="Dag {{.Day}}: Saldo {{.Saldo}}"
+            tabindex="0"
+            onmouseenter="showTooltip(event, '{{.Day}}', '{{.Saldo}}')"
+            onmouseleave="hideTooltip()"
+            onfocus="showTooltip(event, '{{.Day}}', '{{.Saldo}}')"
+            onblur="hideTooltip()" />
+      {{end}}
+      
+      <!-- Zero line (already in grid lines, but kept for compatibility) -->
+      <line x1="60" y1="{{.ZeroLine}}" x2="840" y2="{{.ZeroLine}}" 
+            class="grid-line-zero" />
+      
+      <!-- Axis labels -->
+      {{range .AxisLabels}}
+      <text x="{{.X}}" y="{{.Y}}" 
+            class="axis-label {{if .IsXAxis}}axis-label-x{{else}}axis-label-y{{end}}">
+        {{.Text}}
+      </text>
+      {{end}}
+      
+      <!-- X-axis title -->
+      <text x="450" y="580" class="axis-title" text-anchor="middle">Dag</text>
+      
+      <!-- Y-axis title -->
+      <!-- <text x="5" y="300" class="axis-title" text-anchor="middle" transform="rotate(-90, 5, 300)">Saldo</text> -->
+      
+      Sorry, your browser does not support inline SVG.
+    </svg>
+    
+    <!-- Legend -->
+    <div class="legend">
+      <div class="legend-item">
+        <span class="legend-color" style="background-color: #2196F3;"></span>
+        <span>Positivt saldo</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color" style="background-color: #FF9800; background-image: repeating-linear-gradient(45deg, transparent, transparent 2px, #E65100 2px, #E65100 4px);"></span>
+        <span>Negativt saldo</span>
+      </div>
+      <div class="legend-item">
+        <span>Min: {{.MinSaldo}}</span>
+      </div>
+      <div class="legend-item">
+        <span>Max: {{.MaxSaldo}}</span>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    function showTooltip(event, day, saldo) {
+      const tooltip = document.getElementById('tooltip');
+      tooltip.textContent = `Dag ${day}: ${saldo}`;
+      tooltip.classList.add('visible');
+      
+      const rect = event.target.getBoundingClientRect();
+      const container = event.target.closest('.chart-container');
+      const containerRect = container.getBoundingClientRect();
+      
+      tooltip.style.left = (rect.left - containerRect.left + rect.width / 2) + 'px';
+      tooltip.style.top = (rect.top - containerRect.top - 35) + 'px';
+      
+      // Adjust if tooltip goes off screen
+      const tooltipRect = tooltip.getBoundingClientRect();
+      if (tooltipRect.left < containerRect.left) {
+        tooltip.style.left = '0px';
+      }
+      if (tooltipRect.right > containerRect.right) {
+        tooltip.style.left = (containerRect.width - tooltipRect.width) + 'px';
+      }
+    }
+    
+    function hideTooltip() {
+      const tooltip = document.getElementById('tooltip');
+      tooltip.classList.remove('visible');
+    }
+  </script>
+{{end}}
