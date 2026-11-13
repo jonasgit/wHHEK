@@ -56,21 +56,24 @@ fi
 
 echo Bygger...
 
+# go-sqlite3 kräver cgo
 if [[ "$1" = "test" ]]
 then
     set -x
-    go $BUILDCMD $LINKCMD
+    GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CC=gcc go $BUILDCMD $LINKCMD
     set +x
 else
-    echo Build native
+    echo Build linux amd64
     set -x
-    go $BUILDCMD $LINKCMD
+    GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CC=gcc go $BUILDCMD $LINKCMD -o wHHEK
+    set +x
+    echo Build win64
+    set -x
+    GOOS=windows GOARCH=amd64 CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc go $BUILDCMD $LINKCMD -o wHHEK_x64.exe
     set +x
     echo Build win32
-    export GOOS="windows"
-    export GOARCH="386"
     set -x
-    go $BUILDCMD $LINKCMD -o wHHEK_x86.exe
+    GOOS=windows GOARCH=386 CGO_ENABLED=1 CC=i686-w64-mingw32-gcc go $BUILDCMD $LINKCMD -o wHHEK_x86.exe
     set +x
 fi
 
