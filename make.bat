@@ -73,8 +73,8 @@ IF "%ARG1%"=="test" (
   @echo on
   SET GOARCH=386
   go %BUILDCMD% %LINKCMD% -o wHHEK_x86.exe
-  SET GOARCH=amd64
-  go %BUILDCMD% %LINKCMD% -o wHHEK_x64.exe
+REM  SET GOARCH=amd64
+REM  go %BUILDCMD% %LINKCMD% -o wHHEK_x64.exe
   @echo off
 )
 
