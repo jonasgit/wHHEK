@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/alexbrainman/odbc v0.0.0-20250601004241-49e6b2bc0cf0
 	github.com/extrame/xls v0.0.1
-	github.com/mattn/go-sqlite3 v1.14.52
+	github.com/mattn/go-sqlite3 v1.14.53
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/shopspring/decimal v1.6.0
 	github.com/xuri/excelize/v2 v2.11.1
