@@ -19,6 +19,7 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
 	"log"
@@ -525,16 +526,33 @@ func main() {
 		}
 	}
 
-	dbtx, err := db.Begin()
-	if err != nil {
-		log.Fatal(err)
+	// Jet (Access-ODBC) klarar inte en transaktion med tiotusentals rader
+	// (MaxLocksPerFile är 9500 som standard) och kraschar då i drivrutinen,
+	// så där committas i mindre omgångar.
+	batchSize := len(g.txs) + 1
+	if JetDBSupport {
+		batchSize = 1000
 	}
-	for _, tx := range g.txs {
+	var dbtx *sql.Tx
+	for i, tx := range g.txs {
+		if i%batchSize == 0 {
+			if dbtx != nil {
+				if err := dbtx.Commit(); err != nil {
+					log.Fatal(err)
+				}
+			}
+			var err error
+			if dbtx, err = db.Begin(); err != nil {
+				log.Fatal(err)
+			}
+		}
 		addTransaktionSQL(dbtx, tx.typ, tx.from, tx.to, tx.date.Format(dateFmt), tx.what, tx.who,
 			decimal.New(tx.ore, -2), tx.text)
 	}
-	if err := dbtx.Commit(); err != nil {
-		log.Fatal(err)
+	if dbtx != nil {
+		if err := dbtx.Commit(); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	for _, acc := range []string{demoLon, demoSpar, demoPlanbo} {
