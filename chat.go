@@ -62,6 +62,9 @@ var (
 	// avrundar uppåt, till exempel 43253 till 43264, och utan det här skulle modellen
 	// laddas om vid varje sidvisning och fråga.
 	llmContextSettled = map[string]int{}
+	// llmContextInfoError minns det senast loggade felet per server, så att samma fel
+	// inte loggas vid varje sidvisning och fråga.
+	llmContextInfoError = map[string]string{}
 )
 
 func llmURLForPort(port int) string {
@@ -153,7 +156,7 @@ func llmSnippet(body []byte) string {
 	if len(body) > maxLen {
 		body = body[:maxLen]
 	}
-	return strings.ToValidUTF8(string(body), "")
+	return strings.TrimSpace(strings.ToValidUTF8(string(body), ""))
 }
 
 // llmFindModel kontrollerar att LLM-servern svarar och returnerar den första
@@ -214,6 +217,10 @@ func llmModelInfo(ctx context.Context, baseURL, model string) (int, []llmInstanc
 	}
 	defer resp.Body.Close()
 
+	// Servrar utan LM Studios API, t.ex. llama.cpp och Ollama, har inte adressen.
+	if resp.StatusCode == http.StatusNotFound {
+		return 0, nil, nil
+	}
 	body, err := llmReadBody(resp)
 	if err != nil {
 		return 0, nil, err
@@ -277,9 +284,13 @@ func llmEnsureContextPercent(ctx context.Context, baseURL, model string, percent
 	defer cancel()
 	maxContext, instances, err := llmModelInfo(infoCtx, baseURL, model)
 	if err != nil {
-		log.Println("chat: kan inte läsa modellens kontextlängd: ", err)
+		if llmContextInfoError[baseURL] != err.Error() {
+			llmContextInfoError[baseURL] = err.Error()
+			log.Println("chat: kan inte läsa modellens kontextlängd: ", err)
+		}
 		return 0, nil
 	}
+	delete(llmContextInfoError, baseURL)
 	target := maxContext * percent / 100
 	if target <= 0 {
 		return 0, nil
@@ -551,7 +562,8 @@ func chatAskAndRun(ctx context.Context, baseURL, model string, database *chatDat
 // en språkmodell.
 func chatAllowSlowReply(w http.ResponseWriter) {
 	deadline := time.Now().Add(llmAnswerTimeout + llmCheckTimeout + 10*time.Second)
-	if err := http.NewResponseController(w).SetWriteDeadline(deadline); err != nil {
+	// ErrNotSupported kommer bara från httptest.ResponseRecorder i testerna.
+	if err := http.NewResponseController(w).SetWriteDeadline(deadline); err != nil && !errors.Is(err, http.ErrNotSupported) {
 		log.Println("chat: kunde inte förlänga skrivgränsen: ", err)
 	}
 }
