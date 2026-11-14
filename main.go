@@ -195,6 +195,27 @@ var htmlTemplates embed.FS
 // mainTemplates innehåller alla mallar för huvudsidan m.m. (html/main.html).
 var mainTemplates = template.Must(template.ParseFS(htmlTemplates, "html/main.html"))
 
+// renderMain kör mallen name från html/main.html och loggar eventuella fel.
+func renderMain(w http.ResponseWriter, name string, data any) {
+	if err := mainTemplates.ExecuteTemplate(w, name, data); err != nil {
+		log.Println("While serving HTTP "+name+": ", err)
+	}
+}
+
+// MessageData används av mallen "message".
+type MessageData struct {
+	Text    string
+	Filnamn string
+	Para    bool // avsluta med <p> i stället för <br>
+	Back    bool // visa länk tillbaka till startsidan
+}
+
+// StatusData används av mallen "status".
+type StatusData struct {
+	Text    string
+	Refresh bool // skicka vidare till /summary
+}
+
 func hello(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func hello")
 
@@ -300,68 +321,25 @@ func GetCountPendingÖverföringar(db *sql.DB, currDate string) int {
 	return cnt
 }
 
-type Main4Data struct {
-	Antal int
-}
-
-type Main5Data struct {
-	Antal int
-}
-
-func checkÖverföringar(w http.ResponseWriter, db *sql.DB) {
-	currentTime := time.Now()
-	currDate := currentTime.Format("2006-01-02")
-	antal := GetCountPendingÖverföringar(db, currDate)
-	if antal > 0 {
-		data := Main4Data{
-			Antal: antal,
-		}
-		err := mainTemplates.ExecuteTemplate(w, "main4", data)
-		if err != nil {
-			log.Println("While serving HTTP main4: ", err)
-		}
-	}
-
+// pendingÖverföringar returnerar antal väntande fasta transaktioner till idag
+// respektive till slutet av innevarande månad.
+func pendingÖverföringar(db *sql.DB) (toToday, toMonthEnd int) {
 	now := time.Now()
-	currentYear, currentMonth, _ := now.Date()
-	currentLocation := now.Location()
+	toToday = GetCountPendingÖverföringar(db, now.Format("2006-01-02"))
 
-	firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, currentLocation)
+	currentYear, currentMonth, _ := now.Date()
+	firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, now.Location())
 	lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
-	currDate = lastOfMonth.Format("2006-01-02")
-	antal = GetCountPendingÖverföringar(db, currDate)
-	if antal > 0 {
-		data := Main5Data{
-			Antal: antal,
-		}
-		err := mainTemplates.ExecuteTemplate(w, "main5", data)
-		if err != nil {
-			log.Println("While serving HTTP main5: ", err)
-		}
-	}
+	toMonthEnd = GetCountPendingÖverföringar(db, lastOfMonth.Format("2006-01-02"))
+	return toToday, toMonthEnd
 }
 
-type Main1Data struct {
+type SummaryData struct {
 	CurrDBName string
 	CurrDate   string
-}
-
-func printSummaryHead(w http.ResponseWriter) {
-	currentTime := time.Now()
-	currDate := currentTime.Format("2006-01-02")
-
-	data := Main1Data{
-		CurrDBName: currentDatabase,
-		CurrDate:   currDate,
-	}
-	_ = mainTemplates.ExecuteTemplate(w, "main1", data)
-}
-
-func printAccounts(w http.ResponseWriter) {
-	err := mainTemplates.ExecuteTemplate(w, "main6", nil)
-	if err != nil {
-		log.Println("While serving HTTP main6: ", err)
-	}
+	HasDB      bool
+	Pending4   int
+	Pending5   int
 }
 
 type sumType struct {
@@ -373,7 +351,7 @@ type sumType struct {
 	IsEven   bool
 }
 
-type Main11Data struct {
+type AccountsData struct {
 	Konton    []sumType
 	DoldaNamn []string
 }
@@ -453,14 +431,11 @@ func printSummaryTable(w http.ResponseWriter, db *sql.DB) {
 		kontonDolda = append(kontonDolda, konto)
 	}
 
-	data := Main11Data{
+	data := AccountsData{
 		Konton:    kontonDolda,
 		DoldaNamn: doldaNamn,
 	}
-	err = mainTemplates.ExecuteTemplate(w, "main11", data)
-	if err != nil {
-		log.Println("While serving HTTP main11: ", err)
-	}
+	renderMain(w, "accounts", data)
 	if DEBUG_ON {
 		endtime := time.Now()
 		log.Println("Duration for print summary: ", endtime.Sub(duration_start))
@@ -471,10 +446,7 @@ func checkpwd(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func checkpwd")
 
 	if nopwDb == nil {
-		err := mainTemplates.ExecuteTemplate(w, "main12", nil)
-		if err != nil {
-			log.Println("While serving HTTP main12: ", err)
-		}
+		renderMain(w, "message", MessageData{Text: "Ingen databas."})
 	} else {
 		pwd := getdbpw(nopwDb)
 		formpwd := req.FormValue("pwd")
@@ -485,23 +457,13 @@ func checkpwd(w http.ResponseWriter, req *http.Request) {
 			nopwDb = nil
 			showsummary(w)
 		} else {
-			err := mainTemplates.ExecuteTemplate(w, "main13", nil)
-			if err != nil {
-				log.Println("While serving HTTP main13: ", err)
-			}
+			renderMain(w, "message", MessageData{Text: "Fel lösenord."})
 		}
 	}
 }
 
 func showsummary(w http.ResponseWriter) {
-	err := mainTemplates.ExecuteTemplate(w, "main3", nil)
-	if err != nil {
-		log.Println("While serving HTTP main3: ", err)
-	}
-}
-
-type Main14Data struct {
-	Filnamn string
+	renderMain(w, "status", StatusData{Text: "Arbetar...", Refresh: true})
 }
 
 func opendb(w http.ResponseWriter, req *http.Request) {
@@ -518,28 +480,16 @@ func opendb(w http.ResponseWriter, req *http.Request) {
 		if strings.HasSuffix(strings.ToLower(filename), ".db") {
 			nopwDb = openSqlite(filename)
 		} else {
-			data := Main14Data{
-				Filnamn: filename,
-			}
-			err := mainTemplates.ExecuteTemplate(w, "main14", data)
-			if err != nil {
-				log.Println("While serving HTTP main14: ", err)
-			}
+			renderMain(w, "message", MessageData{Text: "Felaktigt filnamn: ", Filnamn: filename, Back: true})
 		}
 	}
 
 	if nopwDb == nil {
-		err := mainTemplates.ExecuteTemplate(w, "main15", nil)
-		if err != nil {
-			log.Println("While serving HTTP main15: ", err)
-		}
+		renderMain(w, "message", MessageData{Text: "Fel vid öppning av databas", Para: true})
 	} else {
 		pwd := getdbpw(nopwDb)
 		if pwd != " " {
-			err := mainTemplates.ExecuteTemplate(w, "main16", nil)
-			if err != nil {
-				log.Println("While serving HTTP main16: ", err)
-			}
+			renderMain(w, "password", nil)
 		} else {
 			db = nopwDb
 			nopwDb = nil
@@ -562,17 +512,11 @@ func closeDB() {
 func closedb(w http.ResponseWriter, req *http.Request) {
 	closeDB()
 
-	err := mainTemplates.ExecuteTemplate(w, "main3", nil)
-	if err != nil {
-		log.Println("While serving HTTP main3: ", err)
-	}
+	renderMain(w, "status", StatusData{Text: "Arbetar...", Refresh: true})
 }
 
 func quitapp(w http.ResponseWriter, req *http.Request) {
-	err := mainTemplates.ExecuteTemplate(w, "main8", nil)
-	if err != nil {
-		log.Println("While serving HTTP main8: ", err)
-	}
+	renderMain(w, "status", StatusData{Text: "Avslutar. Hej då!"})
 
 	if db != nil {
 		closeDB()
@@ -597,14 +541,6 @@ func quitapp(w http.ResponseWriter, req *http.Request) {
 	})
 }
 
-type Main9Data struct {
-	Filnamn string
-}
-
-type Main10Data struct {
-	Filnamn string
-}
-
 func createdb(w http.ResponseWriter, req *http.Request) {
 	err := req.ParseForm()
 	if err != nil {
@@ -616,53 +552,26 @@ func createdb(w http.ResponseWriter, req *http.Request) {
 	if (len([]rune(filename)) < 1) ||
 		(strings.ContainsAny(filename, "\\/|:<>.\"'`\x00")) {
 
-		data := Main9Data{
-			Filnamn: filename,
-		}
-		err := mainTemplates.ExecuteTemplate(w, "main9", data)
-		if err != nil {
-			log.Println("While serving HTTP main9: ", err)
-		}
+		renderMain(w, "message", MessageData{Text: "Felaktigt filnamn(2): ", Filnamn: filename})
 		return
 	}
 
 	SkapaTomDB(filename + ".db")
-	data := Main10Data{
-		Filnamn: filename,
-	}
-	err = mainTemplates.ExecuteTemplate(w, "main10", data)
-	if err != nil {
-		log.Println("While serving HTTP main10: ", err)
-	}
-}
-
-type SummaryFooterData struct {
-	HasDB bool
+	renderMain(w, "message", MessageData{Text: "Databas skapad: ", Filnamn: filename, Para: true, Back: true})
 }
 
 func generateSummary(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func generateSummary")
 
-	printSummaryHead(w)
+	data := SummaryData{
+		CurrDBName: currentDatabase,
+		CurrDate:   time.Now().Format("2006-01-02"),
+		HasDB:      db != nil,
+	}
 	if db != nil {
-		checkÖverföringar(w, db)
-		err := mainTemplates.ExecuteTemplate(w, "main2", nil)
-		if err != nil {
-			log.Println("While serving HTTP main2: ", err)
-		}
-
-		printAccounts(w)
+		data.Pending4, data.Pending5 = pendingÖverföringar(db)
 	}
-
-	// Print footer using template
-	t, _ := template.New("summary_footer.html").ParseFS(htmlTemplates, "html/summary_footer.html")
-	data := SummaryFooterData{
-		HasDB: db != nil,
-	}
-	err := t.Execute(w, data)
-	if err != nil {
-		log.Println("While serving HTTP summary_footer: ", err)
-	}
+	renderMain(w, "summary", data)
 }
 
 type TransactionType struct {
@@ -710,7 +619,7 @@ type TextType struct {
 	Text string
 }
 
-type Main20Data struct {
+type MonthlyReport struct {
 	Filename     string
 	AccName      string
 	Year         string
@@ -728,7 +637,8 @@ type Main20Data struct {
 	ChartTitle   string
 }
 
-func printMonthly(w http.ResponseWriter, db *sql.DB, accName string, accYear int, accMonth int) {
+// monthlyReport tar fram transaktioner och diagramdata för ett konto och en månad.
+func monthlyReport(db *sql.DB, accName string, accYear int, accMonth int) MonthlyReport {
 	var transactions []TransactionType
 	var monthValues []MonthValueType
 	var texts []TextType
@@ -1095,7 +1005,7 @@ order by datum,löpnr`, endDate, accName, accName)
 		"Juli", "Augusti", "September", "Oktober", "November", "December"}
 	chartTitle := fmt.Sprintf("Saldo per dag - %s %d", monthNames[accMonth], accYear)
 
-	data := Main20Data{
+	return MonthlyReport{
 		Filename:     currentDatabase,
 		AccName:      accName,
 		Year:         strconv.Itoa(accYear),
@@ -1112,15 +1022,13 @@ order by datum,löpnr`, endDate, accName, accName)
 		MaxSaldo:     Dec2Str(maxSaldo),
 		ChartTitle:   chartTitle,
 	}
-	err = mainTemplates.ExecuteTemplate(w, "main20", data)
-	if err != nil {
-		log.Println("While serving HTTP main20: ", err)
-	}
-
 }
 
-type Main17Data struct {
+// MonthlyData används av mallen "monthly".
+type MonthlyData struct {
 	NoDB bool
+	MonthlyReport
+	MonthlyNav
 }
 
 type kontoType struct {
@@ -1136,7 +1044,7 @@ type yearType struct {
 	Selected bool
 }
 
-type Main18Data struct {
+type MonthlyNav struct {
 	Konton      []kontoType
 	Years       []yearType
 	Months      []monthType
@@ -1148,15 +1056,11 @@ type Main18Data struct {
 }
 
 func monthly(w http.ResponseWriter, req *http.Request) {
-	data := Main17Data{
+	data := MonthlyData{
 		NoDB: db == nil,
 	}
-	err := mainTemplates.ExecuteTemplate(w, "main17", data)
-	if err != nil {
-		log.Println("While serving HTTP main17: ", err)
-	}
 
-	err = req.ParseForm()
+	err := req.ParseForm()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -1199,7 +1103,7 @@ func monthly(w http.ResponseWriter, req *http.Request) {
 		_ = db.QueryRow("SELECT MAX(Datum) FROM Transaktioner").Scan(&date)
 		lastYear, _ := strconv.Atoi(toUtf8(date)[0:4])
 
-		printMonthly(w, db, accName, accYear, accMonth)
+		data.MonthlyReport = monthlyReport(db, accName, accYear, accMonth)
 
 		kontolista := getAccNames()
 		var konton []kontoType
@@ -1243,7 +1147,7 @@ func monthly(w http.ResponseWriter, req *http.Request) {
 			prevYear = prevYear - 1
 		}
 
-		data := Main18Data{
+		data.MonthlyNav = MonthlyNav{
 			Konton:      konton,
 			Years:       years,
 			Months:      months,
@@ -1253,16 +1157,9 @@ func monthly(w http.ResponseWriter, req *http.Request) {
 			PrevYear:    strconv.Itoa(prevYear),
 			PrevMonth:   strconv.Itoa(prevMonth),
 		}
-		err = mainTemplates.ExecuteTemplate(w, "main18", data)
-		if err != nil {
-			log.Println("While serving HTTP main18: ", err)
-		}
 	}
 
-	err = mainTemplates.ExecuteTemplate(w, "main19", nil)
-	if err != nil {
-		log.Println("While serving HTTP main19: ", err)
-	}
+	renderMain(w, "monthly", data)
 }
 
 func externalIP() (string, error) {

@@ -1,5 +1,7 @@
-{{define "main1"}}<!-- //-*- coding: utf-8 -*-  -->
-<html lang="sv">
+{{/* -*- coding: utf-8 -*- */}}
+{{/* Huvudsidan (/summary). Pending4/Pending5 = antal väntande fasta
+     transaktioner till idag resp. till slutet av månaden. */}}
+{{define "summary"}}<html lang="sv">
 <head>
 <title>wHHEK</title>
 <!-- Load htmx -->
@@ -14,8 +16,14 @@ table,th,td { border: 1px solid black ; text-align: center }
 <h1>Databasnamn: {{.CurrDBName}}</h1>
 
 Dagens datum: {{.CurrDate}}<p>
+{{if .HasDB}}
+{{if .Pending4}}<p>{{.Pending4}} fasta transaktioner tills idag väntar på att hanteras.
+  Gå till <a href="fixedtrans">Fasta transaktioner</a>.<p>
+  
 {{end}}
-{{define "main2"}}<!-- //-*- coding: utf-8 -*-  -->
+{{if .Pending5}}<p>{{.Pending5}} fasta transaktioner till hela denna månaden väntar på att hanteras.
+  Gå till <a href="fixedtrans">Fasta transaktioner</a>.<p>
+{{end}}
 <table style="width:100%"><tr><td>
       <p><a href="monthly">Månads kontoutdrag</a></p>
       <p><a href="transactions">Transaktionslista</a></p>
@@ -43,64 +51,22 @@ Dagens datum: {{.CurrDate}}<p>
       <p><a href="chat">Chat</a></p>
     </td>
     <td>
-{{end}}
-{{define "main3"}}<!-- //-*- coding: utf-8 -*-  -->
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-  <title>HTML Meta Tag</title>
-  <meta http-equiv="refresh" content="0; url = /summary"/>
-</head>
-
-<body>
-<p>Arbetar...</p>
-</body>
-</html>
-{{end}}
-{{define "main4"}}<!-- //-*- coding: utf-8 -*-  -->
-<p>{{.Antal}} fasta transaktioner tills idag väntar på att hanteras.
-  Gå till <a href="fixedtrans">Fasta transaktioner</a>.<p>
-  
-{{end}}
-{{define "main5"}}<!-- //-*- coding: utf-8 -*-  -->
-<p>{{.Antal}} fasta transaktioner till hela denna månaden väntar på att hanteras.
-  Gå till <a href="fixedtrans">Fasta transaktioner</a>.<p>
-{{end}}
-{{define "main6"}}<!-- //-*- coding: utf-8 -*-  -->
 <div hx-get="/r/main/accounts" hx-trigger="load">
   <img class="htmx-indicator" width="150" src="/img/bars.svg" alt="Laddar data"/>
 </div>
 {{end}}
-{{define "main8"}}<!-- //-*- coding: utf-8 -*-  -->
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-  <title>HTML Meta Tag</title>
-</head>
+{{if .HasDB}}
+    </td></tr></table>
+{{else}}
+    <p>Ingen databas.</p>
+    <p><a href="/">Tillbaka</a>.</p>
+{{end}}
+</body>
+</html>
+{{end}}
 
-<body>
-<p>Avslutar. Hej då!</p>
-</body>
-</html>
-{{end}}
-{{define "main9"}}<!-- //-*- coding: utf-8 -*-  -->
-<html lang="sv">
-<body>
-Felaktigt filnamn(2): {{.Filnamn}}<br>
-</body>
-</html>
-{{end}}
-{{define "main10"}}<!-- //-*- coding: utf-8 -*-  -->
-<html lang="sv">
-<body>
-Databas skapad: {{.Filnamn}}<p>
-  <a href="/">Tillbaka</a>
-<p>
-</body>
-</html>
-{{end}}
-{{define "main11"}}<!-- -*- coding: utf-8 -*- -->
-<div style="font-family: Arial, sans-serif; padding: 20px;">
+{{/* Kontosaldon, hämtas via htmx från /r/main/accounts. */}}
+{{define "accounts"}}<div style="font-family: Arial, sans-serif; padding: 20px;">
   <h2 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">Kontosaldon</h2>
   <table style="width:100%; border-collapse: collapse; margin-top: 20px;">
     <thead>
@@ -155,30 +121,33 @@ Databas skapad: {{.Filnamn}}<p>
   {{end}}
 </p>
 {{end}}
-{{define "main12"}}<!-- -*- coding: utf-8 -*- -->
-Ingen databas.
-{{end}}
-{{define "main13"}}<!-- -*- coding: utf-8 -*- -->
-Fel lösenord.
-{{end}}
-{{define "main14"}}<!-- //-*- coding: utf-8 -*-  -->
-<html lang="sv">
-<body>
-Felaktigt filnamn: {{.Filnamn}}<br>
-<a href="/">Tillbaka</a>
-</body>
-</html>
-{{end}}
-{{define "main15"}}<!-- -*- coding: utf-8 -*- -->
-<html lang="sv">
-<body>
 
-Fel vid öppning av databas<p>
+{{/* Enkel statussida. Med .Refresh skickas webbläsaren vidare till /summary. */}}
+{{define "status"}}<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <title>HTML Meta Tag</title>
+{{if .Refresh}}  <meta http-equiv="refresh" content="0; url = /summary"/>
+{{end}}</head>
+
+<body>
+<p>{{.Text}}</p>
 </body>
 </html>
 {{end}}
-{{define "main16"}}<!-- -*- coding: utf-8 -*- -->
-<!DOCTYPE html>
+
+{{/* Kort meddelande: .Text följt av .Filnamn, avslutat med <p> (.Para) eller <br>,
+     och en länk tillbaka till startsidan om .Back. */}}
+{{define "message"}}<html lang="sv">
+<body>
+{{.Text}}{{.Filnamn}}{{if .Para}}<p>{{else}}<br>{{end}}
+{{if .Back}}<a href="/">Tillbaka</a>{{end}}
+</body>
+</html>
+{{end}}
+
+{{/* Lösenordsformulär för skyddad databas. */}}
+{{define "password"}}<!DOCTYPE html>
 <html>
   <head>
     <title>Lösenordsskyddad</title>
@@ -195,8 +164,9 @@ Fel vid öppning av databas<p>
   </body>
 </html>
 {{end}}
-{{define "main17"}}<!-- -*- coding: utf-8 -*- -->
-<html>
+
+{{/* Månadskontoutdrag (/monthly). */}}
+{{define "monthly"}}<html>
   <head>
     <style>
       table,th,td { border: 1px solid black }
@@ -206,64 +176,7 @@ Fel vid öppning av databas<p>
   <body>
     {{ if .NoDB }}
     Monthly: No database open<p>
-      {{ end }}
-      
-{{end}}
-{{define "main18"}}<!-- -*- coding: utf-8 -*- -->
-<form method="POST" action="/monthly">
-  <select id="accName" name="accName">
-    
-    {{range .Konton}}
-    <option value="{{.Name}}"
-	    {{if .Selected}}
-	    selected
-	    {{end}}
-	    >{{.Name}}</option>
-    {{end}}
-  </select>
-  
-  <select id="accYear" name="accYear">
-    {{range .Years}}
-    <option value="{{.Name}}"
-	    {{if .Selected}}
-	    selected
-	    {{end}}
-	    >{{.Name}}</option>
-    {{end}}
-  </select>
-  
-  <select id="accMonth" name="accMonth">
-    {{range .Months}}
-    <option value="{{.Name}}"
-	    {{if .Selected}}
-	    selected
-	    {{end}}
-	    >{{.Name}}</option>
-    {{end}}
-  </select>
-  
-  <input type="submit" value="Visa">
-</form>
-
-<form method="POST" action="/monthly">
-  <input type="hidden" id="accName" name="accName" value="{{.SelectKonto}}">
-  <input type="hidden" id="accYear" name="accYear" value="{{.NextYear}}">
-  <input type="hidden" id="accMonth" name="accMonth" value="{{.NextMonth}}">
-  <input type="submit" value="Nästa månad">
-</form>
-<form method="POST" action="/monthly">
-  <input type="hidden" id="accName" name="accName" value="{{.SelectKonto}}">
-  <input type="hidden" id="accYear" name="accYear" value="{{.PrevYear}}">
-  <input type="hidden" id="accMonth" name="accMonth" value="{{.PrevMonth}}">
-  <input type="submit" value="Föregående månad">
-</form>
-{{end}}
-{{define "main19"}}<!-- -*- coding: utf-8 -*- -->
-<a href="summary">Översikt</a>
-</body>
-</html>
-{{end}}
-{{define "main20"}}<!-- -*- coding: utf-8 -*- -->
+      {{ else }}
 <h1>{{.Filename}}</h1>
 Kontonamn: {{.AccName}}<br>
 År: {{.Year}}<br>
@@ -505,4 +418,55 @@ Månad: {{.Month}}<br>
       tooltip.classList.remove('visible');
     }
   </script>
+<form method="POST" action="/monthly">
+  <select id="accName" name="accName">
+    
+    {{range .Konton}}
+    <option value="{{.Name}}"
+	    {{if .Selected}}
+	    selected
+	    {{end}}
+	    >{{.Name}}</option>
+    {{end}}
+  </select>
+  
+  <select id="accYear" name="accYear">
+    {{range .Years}}
+    <option value="{{.Name}}"
+	    {{if .Selected}}
+	    selected
+	    {{end}}
+	    >{{.Name}}</option>
+    {{end}}
+  </select>
+  
+  <select id="accMonth" name="accMonth">
+    {{range .Months}}
+    <option value="{{.Name}}"
+	    {{if .Selected}}
+	    selected
+	    {{end}}
+	    >{{.Name}}</option>
+    {{end}}
+  </select>
+  
+  <input type="submit" value="Visa">
+</form>
+
+<form method="POST" action="/monthly">
+  <input type="hidden" id="accName" name="accName" value="{{.SelectKonto}}">
+  <input type="hidden" id="accYear" name="accYear" value="{{.NextYear}}">
+  <input type="hidden" id="accMonth" name="accMonth" value="{{.NextMonth}}">
+  <input type="submit" value="Nästa månad">
+</form>
+<form method="POST" action="/monthly">
+  <input type="hidden" id="accName" name="accName" value="{{.SelectKonto}}">
+  <input type="hidden" id="accYear" name="accYear" value="{{.PrevYear}}">
+  <input type="hidden" id="accMonth" name="accMonth" value="{{.PrevMonth}}">
+  <input type="submit" value="Föregående månad">
+</form>
+{{end}}
+<a href="summary">Översikt</a>
+</body>
+</html>
 {{end}}
