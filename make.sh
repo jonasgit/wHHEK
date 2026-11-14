@@ -9,7 +9,7 @@
 ARG1=$1
 ARG2=$2
 
-rm -f wHHEK wHHEK.exe wHHEK_x86.exe wHHEK_x64.exe
+rm -f wHHEK wHHEK.exe wHHEK_x86.exe wHHEK_x64.exe mkdemodb mkdemodb_x86.exe mkdemodb_x64.exe
 
 if [[ "$ARG1" = "setup" ]]
 then
@@ -57,6 +57,10 @@ else
     GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CC=gcc go "${BUILDCMD[@]}" "${LINKCMD[@]}" -o wHHEK
     GOOS=windows GOARCH=386 CGO_ENABLED=1 CC=i686-w64-mingw32-gcc go "${BUILDCMD[@]}" "${LINKCMD[@]}" -o wHHEK_x86.exe
     GOOS=windows GOARCH=amd64 CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc go "${BUILDCMD[@]}" "${LINKCMD[@]}" -o wHHEK_x64.exe
+    # Demodatabasgenerator (x86 skapar mdb, övriga sqlite)
+    GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CC=gcc go "${BUILDCMD[@]}" "${LINKCMD[@]}" -tags mkdemodb -o mkdemodb
+    GOOS=windows GOARCH=386 CGO_ENABLED=1 CC=i686-w64-mingw32-gcc go "${BUILDCMD[@]}" "${LINKCMD[@]}" -tags mkdemodb -o mkdemodb_x86.exe
+    GOOS=windows GOARCH=amd64 CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc go "${BUILDCMD[@]}" "${LINKCMD[@]}" -tags mkdemodb -o mkdemodb_x64.exe
     { set +x; } 2>/dev/null
 fi
 
