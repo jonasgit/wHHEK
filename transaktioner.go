@@ -471,7 +471,12 @@ func newtransaction(w http.ResponseWriter, req *http.Request) {
 	_ = tmpl2.Execute(w, data2)
 }
 
-func addTransaktionSQL(db *sql.DB, transtyp string, fromacc string, toacc string, date string, what string, who string, summa decimal.Decimal, text string) {
+// sqlExecer uppfylls av både *sql.DB och *sql.Tx.
+type sqlExecer interface {
+	Exec(query string, args ...any) (sql.Result, error)
+}
+
+func addTransaktionSQL(db sqlExecer, transtyp string, fromacc string, toacc string, date string, what string, who string, summa decimal.Decimal, text string) {
 	var amount = "NONE"
 
 	amount = AmountDec2DBStr(summa)

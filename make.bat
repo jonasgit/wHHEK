@@ -17,7 +17,7 @@ IF NOT "%GOOS%"=="windows" (
   EXIT
 )
 
-DEL wHHEK.exe wHHEK_x86.exe wHHEK_x64.exe
+DEL wHHEK.exe wHHEK_x86.exe wHHEK_x64.exe mkdemodb_x86.exe
 
 
 IF "%ARG1%"=="setup" (
@@ -73,6 +73,8 @@ IF "%ARG1%"=="test" (
   @echo on
   SET GOARCH=386
   go %BUILDCMD% %LINKCMD% -o wHHEK_x86.exe
+REM  mkdemodb byggd för 386 skapar mdb-filer
+  go %BUILDCMD% %LINKCMD% -tags mkdemodb -o mkdemodb_x86.exe
 REM  SET GOARCH=amd64
 REM  go %BUILDCMD% %LINKCMD% -o wHHEK_x64.exe
   @echo off
