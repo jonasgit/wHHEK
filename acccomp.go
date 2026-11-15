@@ -12,6 +12,7 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -657,6 +658,9 @@ type Acccomp1Data struct {
 	Filtyp []OptionData
 }
 
+// acccompFileTypes är filtyperna som printAvstämning kan läsa.
+var acccompFileTypes = []string{"morrowcsv", "swedbcsv", "resursxlsx", "revolutcsv", "eurocardxls", "okq8csv", "lunarcsv"}
+
 func compareaccount(w http.ResponseWriter, req *http.Request) {
 	file, fileMetaData, _ := req.FormFile("uploadfile")
 	if file != nil {
@@ -671,21 +675,26 @@ func compareaccount(w http.ResponseWriter, req *http.Request) {
 	err := req.ParseMultipartForm(32 << 20) // buffer 32MB
 	if err != nil {
 		log.Println("compareacc parseerr:", err, getCurrentFuncName())
-	} else {
-		log.Println("Uploaded filename:", fileMetaData.Filename)
-
-		if len(req.FormValue("kontonamn")) > 0 {
-			kontonamn = req.FormValue("kontonamn")
-			log.Println("Found kontonamn:", kontonamn)
+	} else if req.FormValue("kontonamn") != "" {
+		c := newFormCheck(req)
+		kontonamn = c.RequiredText("kontonamn", "Konto", maxLenKonto)
+		filtyp = c.OneOf("filtyp", "Filtyp", acccompFileTypes...)
+		if kontonamn != "" && !slices.Contains(getAccNames(), kontonamn) {
+			c.fail("Kontot '%s' finns inte", kontonamn)
 		}
-		if len(req.FormValue("filtyp")) > 0 {
-			filtyp = req.FormValue("filtyp")
-			log.Println("Found filtyp:", filtyp)
+		if file == nil {
+			c.fail("Ingen fil vald")
+		} else {
+			log.Println("Uploaded filename:", fileMetaData.Filename)
+		}
+		if err := c.Err(); err != nil {
+			writeMessage(w, "Kan inte stämma av: "+err.Error()+".")
+			return
 		}
 	}
 
 	if len(kontonamn) > 0 {
-		log.Println("Valt kontonamn: ", kontonamn)
+		log.Println("Valt kontonamn: ", kontonamn, " filtyp: ", filtyp)
 
 		printAvstämning(w, db, kontonamn, filtyp, file)
 	} else {

@@ -9,7 +9,6 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"strconv"
 )
 
 type Plats struct {
@@ -159,15 +158,18 @@ func hanteraplatser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	c := newFormCheck(req)
 	formaction := req.FormValue("action")
-	var lopnr = -1
-	if len(req.FormValue("lopnr")) > 0 {
-		lopnr, _ = strconv.Atoi(req.FormValue("lopnr"))
+	lopnr := c.Lopnr("lopnr")
+	if err := c.Err(); err == nil && lopnr < 0 && (formaction == "radera" || formaction == "update") {
+		c.fail("löpnr saknas")
 	}
 
 	switch formaction {
 	case "radera":
-		if err := raderaPlats(db, lopnr); err != nil {
+		if err := c.Err(); err != nil {
+			data.Message = fmt.Sprintf("Platsen raderades inte: %v.", err)
+		} else if err := raderaPlats(db, lopnr); err != nil {
 			data.Message = fmt.Sprintf("Fel vid radering av plats: %v", err)
 		} else {
 			data.Message = fmt.Sprintf("Plats med löpnr %d raderad.", lopnr)
@@ -176,12 +178,14 @@ func hanteraplatser(w http.ResponseWriter, req *http.Request) {
 	case "addform":
 		data.ShowAddForm = true
 	case "add":
-		namn := req.FormValue("namn")
-		gironum := req.FormValue("gironum")
-		acctype := req.FormValue("kontokort") == "on"
-		refacc := req.FormValue("refacc")
+		namn := c.RequiredText("namn", "Namn", maxLenPlatsNamn)
+		gironum := c.Text("gironum", "Gironummer", maxLenGironummer)
+		acctype := c.Bool("kontokort", "Kontokort")
+		refacc := c.Text("refacc", "Referenskonto", maxLenRefKonto)
 
-		if err := skapaPlats(db, namn, gironum, acctype, refacc); err != nil {
+		if err := c.Err(); err != nil {
+			data.Message = fmt.Sprintf("Platsen lades inte till: %v.", err)
+		} else if err := skapaPlats(db, namn, gironum, acctype, refacc); err != nil {
 			data.Message = fmt.Sprintf("Fel vid tillägg av plats: %v", err)
 		} else {
 			data.Message = fmt.Sprintf("Plats %s tillagd.", namn)
@@ -191,12 +195,14 @@ func hanteraplatser(w http.ResponseWriter, req *http.Request) {
 		data.ShowEditForm = true
 		data.EditPlats = hämtaPlats(db, lopnr)
 	case "update":
-		namn := req.FormValue("namn")
-		gironum := req.FormValue("gironum")
-		acctype := req.FormValue("type")
-		refacc := req.FormValue("refacc")
+		namn := c.RequiredText("namn", "Namn", maxLenPlatsNamn)
+		gironum := c.Text("gironum", "Gironummer", maxLenGironummer)
+		acctype := c.Text("type", "Typ", maxLenPlatsTyp)
+		refacc := c.Text("refacc", "Referenskonto", maxLenRefKonto)
 
-		if err := updatePlats(db, lopnr, namn, gironum, acctype, refacc); err != nil {
+		if err := c.Err(); err != nil {
+			data.Message = fmt.Sprintf("Platsen uppdaterades inte: %v.", err)
+		} else if err := updatePlats(db, lopnr, namn, gironum, acctype, refacc); err != nil {
 			data.Message = fmt.Sprintf("Fel vid uppdatering av plats: %v", err)
 		} else {
 			data.Message = fmt.Sprintf("Plats %s uppdaterad.", namn)

@@ -158,27 +158,19 @@ type Fasta6Data struct {
 
 func editfastutg(w http.ResponseWriter, req *http.Request, db *sql.DB) {
 	log.Println("editfastutg start")
-	err := req.ParseForm()
-	if err != nil {
-		log.Fatal(err)
+	if !parseFormOrFail(w, req) {
+		return
 	}
 
 	transtyp := req.FormValue("transtyp")
-	date := req.FormValue("date")
-	who := req.FormValue("who")
-	amount := req.FormValue("amount")
-	text := req.FormValue("text")
 	log.Println("Val: ", transtyp, getCurrentFuncName())
-	log.Println("Val: ", date)
-	log.Println("Val: ", who)
-	log.Println("Val: ", amount)
-	log.Println("Val: ", text)
 
 	if transtyp == "FastTrans" {
-		transid := req.FormValue("transid")
-		transidnum, _ := strconv.Atoi(transid)
-
-		var err error
+		transidnum, err := fixedTransID(req, "transid")
+		if err != nil {
+			writeMessage(w, "Ogiltig transaktion: "+err.Error()+".")
+			return
+		}
 
 		var FrånKonto []byte  // size 40
 		var TillKonto []byte  // size 40
@@ -197,7 +189,9 @@ func editfastutg(w http.ResponseWriter, req *http.Request, db *sql.DB) {
 		err = db.QueryRow("SELECT FrånKonto,TillKonto,Belopp,Datum,HurOfta,Vad,Vem,Löpnr,Kontrollnr,TillDatum,Rakning FROM Överföringar WHERE Löpnr = ?", transidnum).Scan(&FrånKonto, &TillKonto, &Belopp, &Datum, &HurOfta, &Vad, &Vem, &Löpnr, &Kontrollnr, &TillDatum, &Rakning)
 
 		if err != nil {
-			log.Fatal(err)
+			log.Println("Hittade inte fast transaktion ", transidnum, ": ", err)
+			writeMessage(w, "Den fasta transaktionen hittades inte.")
+			return
 		}
 
 		transaktion.Löpnr = toUtf8(Löpnr)
@@ -242,21 +236,20 @@ func editfastutg(w http.ResponseWriter, req *http.Request, db *sql.DB) {
 func r_e_fastutg(req *http.Request, db *sql.DB) string {
 	log.Println("Func r_e_fastutg")
 
-	err := req.ParseForm()
-	if err != nil {
-		log.Fatal(err)
+	if err := req.ParseForm(); err != nil {
+		return "Kunde inte läsa formulärdata."
 	}
 
 	formaction := req.FormValue("action")
-	var lopnr = -1
-	if len(req.FormValue("lopnr")) > 0 {
-		lopnr, _ = strconv.Atoi(req.FormValue("lopnr"))
-	}
+	lopnr, lopnrErr := fixedTransID(req, "lopnr")
 
 	switch formaction {
 	case "editform":
 		log.Println("editform not implemented")
 	case "update":
+		if lopnrErr != nil {
+			return "Ändringen sparades inte: " + lopnrErr.Error()
+		}
 		if err := updateFastUtgHTML(lopnr, req, db); err != nil {
 			return "Ändringen sparades inte: " + err.Error()
 		}
@@ -270,44 +263,12 @@ func r_e_fastutg(req *http.Request, db *sql.DB) string {
 func updateFastUtgHTML(lopnr int, req *http.Request, db *sql.DB) error {
 	log.Println("updateFastUtgHTML lopnr: ", lopnr)
 
-	var fromAcc = ""
-	if len(req.FormValue("fromAcc")) > 0 {
-		fromAcc = req.FormValue("fromAcc")
-	}
-	var toAcc = ""
-	if len(req.FormValue("toAcc")) > 0 {
-		toAcc = req.FormValue("toAcc")
-	}
-	var date = ""
-	if len(req.FormValue("date")) > 0 {
-		date = req.FormValue("date")
-	}
-	var hurofta = ""
-	if len(req.FormValue("hurofta")) > 0 {
-		hurofta = req.FormValue("hurofta")
-	}
-	var tilldatum = ""
-	if len(req.FormValue("tilldatum")) > 0 {
-		tilldatum = req.FormValue("tilldatum")
-	}
-	var what = ""
-	if len(req.FormValue("what")) > 0 {
-		what = req.FormValue("what")
-	}
-	var who = ""
-	if len(req.FormValue("who")) > 0 {
-		who = req.FormValue("who")
-	}
-	var amount = ""
-	if len(req.FormValue("amount")) > 0 {
-		amount = SanitizeAmount(req.FormValue("amount"))
-	}
-	var rakning = ""
-	if len(req.FormValue("rakning")) > 0 {
-		rakning = req.FormValue("rakning")
+	f, err := parseFixedForm(req)
+	if err != nil {
+		return err
 	}
 
-	err := updateFastUtgSQL(lopnr, db, fromAcc, toAcc, date, hurofta, tilldatum, what, who, amount, rakning)
+	err = updateFastUtgSQL(lopnr, db, f.fromAcc, f.toAcc, f.date, f.hurofta, f.tilldatum, f.what, f.who, f.amount, f.rakning)
 	if err != nil {
 		log.Println("Error updating fixed expense: ", err)
 		return err

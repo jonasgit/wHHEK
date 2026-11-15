@@ -6,10 +6,10 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"slices"
 	"strconv"
 	"time"
 
@@ -232,22 +232,29 @@ func htransactions(w http.ResponseWriter, req *http.Request) {
 	endDate := endDay.Format("2006-01-02")
 	endDate = endDate[0:8] + "01"
 
-	err := req.ParseForm()
-	if err != nil {
-		log.Fatal(err)
+	if !parseFormOrFail(w, req) {
+		return
 	}
 
-	if len(req.FormValue("startdate")) > 3 {
-		startDate = req.FormValue("startdate")
+	c := newFormCheck(req)
+	if d := c.Date("startdate", "Startdatum", false); d != "" {
+		startDate = d
 	}
-	if len(req.FormValue("enddate")) > 3 {
-		endDate = req.FormValue("enddate")
+	if d := c.Date("enddate", "Slutdatum", false); d != "" {
+		endDate = d
 	}
-	var kontoeller bool
-	if len(req.FormValue("kontoeller")) > 3 {
-		kontoeller = true
-	} else {
-		kontoeller = false
+	kontoeller := req.FormValue("kontoeller") != ""
+	comment := c.Text("comment", "Text", maxLenText)
+	fromacc := c.Text("fromacc", "Från konto", maxLenKonto)
+	toacc := c.Text("toacc", "Till konto", maxLenKonto)
+	place := c.Text("place", "Plats", maxLenPlatsNamn)
+	vad := c.Text("vad", "Vad", maxLenVad)
+	var minamount, maxamount string
+	if a, ok := c.Amount("minamount", "Minsta belopp", false); ok {
+		minamount = AmountDec2DBStr(a)
+	}
+	if a, ok := c.Amount("maxamount", "Största belopp", false); ok {
+		maxamount = AmountDec2DBStr(a)
 	}
 
 	if db == nil {
@@ -257,8 +264,10 @@ func htransactions(w http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			log.Println("While serving HTTP no_database: ", err)
 		}
+	} else if err := c.Err(); err != nil {
+		writeMessage(w, "Felaktig sökning: "+err.Error()+".")
 	} else {
-		printTransactions(w, db, startDate, endDate, req.FormValue("comment"), req.FormValue("fromacc"), kontoeller, req.FormValue("toacc"), req.FormValue("place"), req.FormValue("vad"), req.FormValue("minamount"), req.FormValue("maxamount"))
+		printTransactions(w, db, startDate, endDate, comment, fromacc, kontoeller, toacc, place, vad, minamount, maxamount)
 	}
 }
 
@@ -270,17 +279,19 @@ func handletransactions(w http.ResponseWriter, req *http.Request) {
 	endDate := endDay.Format("2006-01-02")
 	endDate = endDate[0:8] + "01"
 
-	err := req.ParseForm()
-	if err != nil {
-		log.Fatal(err)
+	if !parseFormOrFail(w, req) {
+		return
 	}
 
-	if len(req.FormValue("startdate")) > 3 {
-		startDate = req.FormValue("startdate")
+	// Ogiltiga värden ger standardvärdena.
+	c := newFormCheck(req)
+	if d := c.Date("startdate", "Startdatum", false); d != "" {
+		startDate = d
 	}
-	if len(req.FormValue("enddate")) > 3 {
-		endDate = req.FormValue("enddate")
+	if d := c.Date("enddate", "Slutdatum", false); d != "" {
+		endDate = d
 	}
+	comment := c.Text("comment", "Text", maxLenText)
 
 	if db == nil {
 		t := template.New("NoDatabase")
@@ -313,7 +324,7 @@ func handletransactions(w http.ResponseWriter, req *http.Request) {
 			DBLastDay:    kontoslutdatum.Format("2006-01-02"),
 			FormStartDay: startDate,
 			FormLastDay:  endDate,
-			FormComment:  req.FormValue("comment"),
+			FormComment:  comment,
 			Kontonamn:    append([]string{""}, getAccNames()...),
 			Platser:      append([]string{""}, getPlaceNames()...),
 			Vad:          trtypes,
@@ -346,20 +357,21 @@ func transactions(w http.ResponseWriter, req *http.Request) {
 		log.Println("While serving HTTP trans1: ", err)
 	}
 
-	err = req.ParseForm()
-	if err != nil {
-		log.Fatal(err)
+	if !parseFormOrFail(w, req) {
+		return
 	}
 
+	c := newFormCheck(req)
 	formaction := req.FormValue("action")
-	var lopnr = -1
-	if len(req.FormValue("lopnr")) > 0 {
-		lopnr, _ = strconv.Atoi(req.FormValue("lopnr"))
-	}
+	lopnr := c.Lopnr("lopnr")
 
 	switch formaction {
 	case "radera":
-		raderaTransaction(w, lopnr, db)
+		if err := c.Err(); err != nil || lopnr < 0 {
+			writeMessage(w, "Transaktionen raderades inte: ogiltigt löpnr.")
+		} else {
+			raderaTransaction(w, lopnr, db)
+		}
 	default:
 		log.Println("Okänd form action: ", formaction, getCurrentFuncName())
 	}
@@ -375,15 +387,16 @@ func transactions(w http.ResponseWriter, req *http.Request) {
 }
 
 func r_e_transaction(w http.ResponseWriter, req *http.Request) {
-	err := req.ParseForm()
-	if err != nil {
-		log.Fatal(err)
+	if !parseFormOrFail(w, req) {
+		return
 	}
 
+	c := newFormCheck(req)
 	formaction := req.FormValue("action")
-	var lopnr = -1
-	if len(req.FormValue("lopnr")) > 0 {
-		lopnr, _ = strconv.Atoi(req.FormValue("lopnr"))
+	lopnr := c.Lopnr("lopnr")
+	if err := c.Err(); err != nil || (lopnr < 0 && (formaction == "editform" || formaction == "update")) {
+		writeMessage(w, "Ogiltigt löpnr.")
+		return
 	}
 
 	switch formaction {
@@ -576,34 +589,50 @@ func addTransaktionÖverföring(db *sql.DB, fromacc string, toacc string, date s
 func addtransaction(w http.ResponseWriter, req *http.Request) {
 	//log.Println("addtransaction: start")
 
-	err := req.ParseForm()
-	if err != nil {
-		log.Fatal(err)
+	if !parseFormOrFail(w, req) {
+		return
 	}
-
-	transtyp := req.FormValue("transtyp")
-	date := req.FormValue("date")
-	who := req.FormValue("who")
-	amountstr := req.FormValue("amount")
-	amountstr = SanitizeAmount(amountstr)
-	amount, err := decimal.NewFromString(amountstr)
-	if err != nil {
-		log.Println("addtransaction: ogiltigt belopp ", req.FormValue("amount"), err)
-		writeMessage(w, fmt.Sprintf("Transaktionen sparades inte: ogiltigt belopp '%s'.", req.FormValue("amount")))
+	if db == nil {
+		writeMessage(w, "Transaktionen sparades inte: ingen databas är öppen.")
 		return
 	}
 
-	text := req.FormValue("text")
-	//log.Println("Val tt: ", transtyp)
-	//log.Println("Val d: ", date)
-	//log.Println("Val w: ", who)
-	//log.Println("Val a: ", amount)
-	//log.Println("Val t: ", text)
+	c := newFormCheck(req)
+	transtyp := c.OneOf("transtyp", "Transaktionstyp", "Inköp", "Insättning", "Uttag", "Överföring")
+	date := c.Date("date", "Datum", true)
+	who := c.RequiredText("who", "Vem", maxLenVem)
+	amount, _ := c.Amount("amount", "Belopp", true)
+	text := c.Text("text", "Text", maxLenText)
+
+	var fromacc, toacc, place, what string
+	switch transtyp {
+	case "Inköp":
+		fromacc = c.RequiredText("fromacc", "Från konto", maxLenKonto)
+		place = c.RequiredText("place", "Plats", maxLenPlatsNamn)
+		what = c.RequiredText("what", "Vad", maxLenVad)
+	case "Insättning":
+		toacc = c.RequiredText("toacc", "Till konto", maxLenKonto)
+		what = c.RequiredText("what", "Vad", maxLenVad)
+	case "Uttag":
+		fromacc = c.RequiredText("fromacc", "Från konto", maxLenKonto)
+	case "Överföring":
+		fromacc = c.RequiredText("fromacc", "Från konto", maxLenKonto)
+		toacc = c.RequiredText("toacc", "Till konto", maxLenKonto)
+	}
+	// Saldot räknas om för kontona, så de måste finnas.
+	accounts := getAccNames()
+	for _, acc := range []string{fromacc, toacc} {
+		if acc != "" && !slices.Contains(accounts, acc) {
+			c.fail("Kontot '%s' finns inte", acc)
+		}
+	}
+	if err := c.Err(); err != nil {
+		log.Println("addtransaction: ", err)
+		writeMessage(w, "Transaktionen sparades inte: "+err.Error()+".")
+		return
+	}
 
 	if transtyp == "Inköp" {
-		fromacc := req.FormValue("fromacc")
-		place := req.FormValue("place")
-		what := req.FormValue("what")
 		//log.Println("Val: ", fromacc)
 		//log.Println("Val: ", place)
 		//log.Println("Val: ", what)
@@ -628,8 +657,6 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	if transtyp == "Insättning" {
-		toacc := req.FormValue("toacc")
-		what := req.FormValue("what")
 		//log.Println("Val: ", toacc)
 		//log.Println("Val: ", what)
 
@@ -652,8 +679,6 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	if transtyp == "Uttag" {
-		fromacc := req.FormValue("fromacc")
-		//log.Println("Val: ", fromacc, getCurrentFuncName())
 
 		addTransaktionUttag(db, fromacc, date, who, amount, text)
 
@@ -673,8 +698,6 @@ func addtransaction(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	if transtyp == "Överföring" {
-		fromacc := req.FormValue("fromacc")
-		toacc := req.FormValue("toacc")
 		//log.Println("Val: ", fromacc, getCurrentFuncName())
 		//log.Println("Val: ", toacc)
 
@@ -867,44 +890,21 @@ type RaderaTransactionData struct {
 func updateTransactionHTML(w http.ResponseWriter, lopnr int, req *http.Request, db *sql.DB) {
 	//fmt.Println("updateTransaktion lopnr: ", lopnr)
 
-	var fromAcc = ""
-	if len(req.FormValue("fromAcc")) > 0 {
-		fromAcc = req.FormValue("fromAcc")
-	}
-	var toAcc = ""
-	if len(req.FormValue("toAcc")) > 0 {
-		toAcc = req.FormValue("toAcc")
-	}
-	var tType = ""
-	if len(req.FormValue("tType")) > 0 {
-		tType = req.FormValue("tType")
-	}
-	var date = ""
-	if len(req.FormValue("date")) > 0 {
-		date = req.FormValue("date")
-	}
-	var what = ""
-	if len(req.FormValue("what")) > 0 {
-		what = req.FormValue("what")
-	}
-	var who = ""
-	if len(req.FormValue("who")) > 0 {
-		who = req.FormValue("who")
-	}
-	var amount = ""
-	if len(req.FormValue("amount")) > 0 {
-		amount = SanitizeAmount(req.FormValue("amount"))
-	}
-	var fixed = false
-	if len(req.FormValue("fixed")) > 0 {
-		var fixedString = ""
-		fixedString = req.FormValue("fixed")
-		fixed, _ = strconv.ParseBool(fixedString)
-	}
-
-	var comment = ""
-	if len(req.FormValue("comment")) > 0 {
-		comment = req.FormValue("comment")
+	c := newFormCheck(req)
+	fromAcc := c.Text("fromAcc", "Från konto", maxLenKonto)
+	toAcc := c.Text("toAcc", "Till konto/Plats", maxLenKonto)
+	tType := c.RequiredText("tType", "Typ", maxLenTyp)
+	date := c.Date("date", "Datum", true)
+	what := c.Text("what", "Vad", maxLenVad)
+	who := c.Text("who", "Vem", maxLenVem)
+	amountDec, _ := c.Amount("amount", "Belopp", true)
+	amount := amountDec.String()
+	fixed := c.Bool("fixed", "Fast transaktion")
+	comment := c.Text("comment", "Text", maxLenText)
+	if err := c.Err(); err != nil {
+		log.Println("updateTransactionHTML: ", err)
+		writeMessage(w, "Transaktionen uppdaterades inte: "+err.Error()+".")
+		return
 	}
 
 	_ = updateTransactionSQL(lopnr, db, fromAcc, toAcc, tType, date, what, who, amount, fixed, comment)

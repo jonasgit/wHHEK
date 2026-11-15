@@ -87,9 +87,8 @@ func sumKatToday(kat string, selectYear int, intyp bool) decimal.Decimal {
 func hanteraYBR(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func hanteraYBR")
 
-	err := req.ParseForm()
-	if err != nil {
-		log.Fatal(err)
+	if !parseFormOrFail(w, req) {
+		return
 	}
 
 	now := time.Now()

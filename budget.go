@@ -216,69 +216,18 @@ func updateBudget(lopnr int, req *http.Request, db *sql.DB) (string, error) {
 		return "", fmt.Errorf("ogiltigt löpnr")
 	}
 
-	var Typ = ""
-	if len(req.FormValue("Typ")) > 0 {
-		Typ = req.FormValue("Typ")
+	c := newFormCheck(req)
+	Typ := c.RequiredText("Typ", "Typ", maxLenTyp)
+	Inkomst := c.OneOf("Inkomst", "Inkomst", "J", "N")
+	HurOfta := c.Int("HurOfta", "Hur ofta", 0, 12, true, 0)
+	StartMånad := c.Month("StartMånad", "Startmånad")
+	var belopp [12]string
+	for i, m := range monthNames {
+		amount, _ := c.Amount(m, m, false)
+		belopp[i] = AmountDec2DBStr(amount)
 	}
-	var Inkomst = ""
-	if len(req.FormValue("Inkomst")) > 0 {
-		Inkomst = req.FormValue("Inkomst")
-	}
-	var HurOfta = ""
-	if len(req.FormValue("HurOfta")) > 0 {
-		HurOfta = req.FormValue("HurOfta")
-	}
-	var StartMånad = ""
-	if len(req.FormValue("StartMånad")) > 0 {
-		StartMånad = req.FormValue("StartMånad")
-	}
-	var Jan = ""
-	if len(req.FormValue("Jan")) > 0 {
-		Jan = req.FormValue("Jan")
-	}
-	var Feb = ""
-	if len(req.FormValue("Feb")) > 0 {
-		Feb = req.FormValue("Feb")
-	}
-	var Mar = ""
-	if len(req.FormValue("Mar")) > 0 {
-		Mar = req.FormValue("Mar")
-	}
-	var Apr = ""
-	if len(req.FormValue("Apr")) > 0 {
-		Apr = req.FormValue("Apr")
-	}
-	var Maj = ""
-	if len(req.FormValue("Maj")) > 0 {
-		Maj = req.FormValue("Maj")
-	}
-	var Jun = ""
-	if len(req.FormValue("Jun")) > 0 {
-		Jun = req.FormValue("Jun")
-	}
-	var Jul = ""
-	if len(req.FormValue("Jul")) > 0 {
-		Jul = req.FormValue("Jul")
-	}
-	var Aug = ""
-	if len(req.FormValue("Aug")) > 0 {
-		Aug = req.FormValue("Aug")
-	}
-	var Sep = ""
-	if len(req.FormValue("Sep")) > 0 {
-		Sep = req.FormValue("Sep")
-	}
-	var Okt = ""
-	if len(req.FormValue("Okt")) > 0 {
-		Okt = req.FormValue("Okt")
-	}
-	var Nov = ""
-	if len(req.FormValue("Nov")) > 0 {
-		Nov = req.FormValue("Nov")
-	}
-	var Dec = ""
-	if len(req.FormValue("Dec")) > 0 {
-		Dec = req.FormValue("Dec")
+	if err := c.Err(); err != nil {
+		return "", fmt.Errorf("budgetposten uppdaterades inte: %w", err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -290,18 +239,18 @@ func updateBudget(lopnr int, req *http.Request, db *sql.DB) (string, error) {
 		Inkomst,
 		HurOfta,
 		StartMånad,
-		AmountStr2DBStr(SanitizeAmount(Jan)),
-		AmountStr2DBStr(SanitizeAmount(Feb)),
-		AmountStr2DBStr(SanitizeAmount(Mar)),
-		AmountStr2DBStr(SanitizeAmount(Apr)),
-		AmountStr2DBStr(SanitizeAmount(Maj)),
-		AmountStr2DBStr(SanitizeAmount(Jun)),
-		AmountStr2DBStr(SanitizeAmount(Jul)),
-		AmountStr2DBStr(SanitizeAmount(Aug)),
-		AmountStr2DBStr(SanitizeAmount(Sep)),
-		AmountStr2DBStr(SanitizeAmount(Okt)),
-		AmountStr2DBStr(SanitizeAmount(Nov)),
-		AmountStr2DBStr(SanitizeAmount(Dec)),
+		belopp[0],
+		belopp[1],
+		belopp[2],
+		belopp[3],
+		belopp[4],
+		belopp[5],
+		belopp[6],
+		belopp[7],
+		belopp[8],
+		belopp[9],
+		belopp[10],
+		belopp[11],
 		lopnr)
 
 	if err != nil {

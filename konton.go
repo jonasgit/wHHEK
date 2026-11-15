@@ -314,40 +314,42 @@ func updateKontoSaldo(db *sql.DB, Benamning string, Saldo decimal.Decimal) {
 func hanterakonton(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	err := req.ParseForm()
-	if err != nil {
-		log.Fatal(err)
+	if !parseFormOrFail(w, req) {
+		return
 	}
 
+	c := newFormCheck(req)
 	formaction := req.FormValue("action")
-	var lopnr = -1
-	if len(req.FormValue("lopnr")) > 0 {
-		lopnr, _ = strconv.Atoi(req.FormValue("lopnr"))
-	}
+	lopnr := c.Lopnr("lopnr")
 
 	// Nothing is written to w until the whole page is rendered by printKonton,
 	// so messages and forms end up in the right place inside the page.
 	var data AccountListData
 
+	// kontoForm läser och kontrollerar fälten för ett nytt eller ändrat konto.
+	kontoForm := func() (string, string, string, error) {
+		benamning := c.RequiredText("Benamning", "Benämning", maxLenKonto)
+		startSaldo, _ := c.Amount("StartSaldo", "Startsaldo", false)
+		startManad := c.Month("StartManad", "Startmånad")
+		return benamning, startSaldo.String(), startManad, c.Err()
+	}
+
 	switch formaction {
 	case "radera":
-		data.Message = raderaKonto(lopnr, db)
+		if err := c.Err(); err != nil || lopnr < 0 {
+			data.Message = "Kontot raderades inte: ogiltigt löpnr."
+		} else {
+			data.Message = raderaKonto(lopnr, db)
+		}
 	case "addform":
 		addformData(&data)
 	case "add":
-		var Benamning = ""
-		if len(req.FormValue("Benamning")) > 0 {
-			Benamning = req.FormValue("Benamning")
+		Benamning, StartSaldo, StartManad, err := kontoForm()
+		if err != nil {
+			data.Message = fmt.Sprintf("Kontot lades inte till: %v.", err)
+		} else {
+			data.Message = addKontow(Benamning, StartSaldo, StartManad, db)
 		}
-		var StartSaldo = ""
-		if len(req.FormValue("StartSaldo")) > 0 {
-			StartSaldo = req.FormValue("StartSaldo")
-		}
-		var StartManad = ""
-		if len(req.FormValue("StartManad")) > 0 {
-			StartManad = req.FormValue("StartManad")
-		}
-		data.Message = addKontow(Benamning, StartSaldo, StartManad, db)
 	case "editform":
 		editKonto, err := hämtaEditKonto(lopnr, db)
 		if err != nil {
@@ -357,19 +359,15 @@ func hanterakonton(w http.ResponseWriter, req *http.Request) {
 			data.EditKonto = editKonto
 		}
 	case "update":
-		var Benamning = ""
-		if len(req.FormValue("Benamning")) > 0 {
-			Benamning = req.FormValue("Benamning")
+		Benamning, StartSaldo, StartManad, err := kontoForm()
+		if err == nil && lopnr < 0 {
+			err = fmt.Errorf("löpnr saknas")
 		}
-		var StartSaldo = ""
-		if len(req.FormValue("StartSaldo")) > 0 {
-			StartSaldo = req.FormValue("StartSaldo")
+		if err != nil {
+			data.Message = fmt.Sprintf("Kontot uppdaterades inte: %v.", err)
+		} else {
+			data.Message = updateKonto(lopnr, Benamning, StartSaldo, StartManad, db)
 		}
-		var StartManad = ""
-		if len(req.FormValue("StartManad")) > 0 {
-			StartManad = req.FormValue("StartManad")
-		}
-		data.Message = updateKonto(lopnr, Benamning, StartSaldo, StartManad, db)
 	default:
 		fmt.Println("Okänd action: ", formaction)
 	}
