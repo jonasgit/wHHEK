@@ -6,6 +6,11 @@ REM Bygg för användning: ./make.bat release
 REM Bygg för utveckling: ./make.bat
 REM Städa              : ./make.bat clean
 
+REM Hämta GCC från winlibs.com, senaste för Win32 med POSIX threads
+REM och utan LLVM kan vara lämplig. Packa upp zip-filen på C:\
+REM Rensa bort inställningar för eventuell äldra kompilator
+REM i sysdm.cpl
+
 SET ARG1=%1
 SET ARG2=%2
 
@@ -19,6 +24,8 @@ IF NOT "%GOOS%"=="windows" (
 
 DEL wHHEK.exe wHHEK_x86.exe wHHEK_x64.exe mkdemodb_x86.exe
 
+set CC=C:\mingw32\bin\gcc.exe
+set GOARCH=386
 
 IF "%ARG1%"=="setup" (
   ECHO Hämtar beroenden...
