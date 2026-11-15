@@ -1,0 +1,9 @@
+# Embedded files (go:embed) must have identical bytes on all platforms,
+# so never convert to CRLF on checkout (e.g. Windows core.autocrlf=true).
+* text=auto eol=lf
+
+*.mdb binary
+*.MDB binary
+*.exe binary
+*.png binary
+*.ico binary
