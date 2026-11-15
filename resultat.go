@@ -40,18 +40,15 @@ type ResultatData struct {
 func hanteraYResult(w http.ResponseWriter, req *http.Request) {
 	log.Println("Func hanteraYResult")
 
-	err := req.ParseForm()
-	if err != nil {
-		log.Fatal(err)
+	if !parseFormOrFail(w, req) {
+		return
 	}
 
 	formYear := 0
 	selectYear := time.Now().Year()
-	if len(req.FormValue("formYear")) > 3 {
-		formYear, _ = strconv.Atoi(req.FormValue("formYear"))
-		if formYear > 1900 && formYear < 2200 {
-			selectYear = formYear
-		}
+	// Ett ogiltigt år ger innevarande år.
+	if formYear = newFormCheck(req).Int("formYear", "År", 1901, 2199, false, 0); formYear != 0 {
+		selectYear = formYear
 	}
 
 	showNulls := false

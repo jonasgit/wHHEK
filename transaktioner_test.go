@@ -590,7 +590,17 @@ func TestAddTransactionOgiltigtBelopp(t *testing.T) {
 		t.Errorf("ogiltigt belopp sparades: %d transaktioner", n)
 	}
 
-	postAddTransaction(t, "1-000")
+	// Tecken som inte hör till ett belopp tas inte bort, utan ger fel.
+	for _, amount := range []string{"1-000", "12abc", "1,2,3", "1.23456", "1e5"} {
+		if body := postAddTransaction(t, amount); !strings.Contains(body, "sparades inte") {
+			t.Errorf("%q: förväntade felmeddelande, fick %q", amount, body)
+		}
+	}
+	if n := antalTransaktioner(db); n != 0 {
+		t.Fatalf("ogiltiga belopp sparades: %d transaktioner", n)
+	}
+
+	postAddTransaction(t, "1 000")
 	if n := antalTransaktioner(db); n != 1 {
 		t.Fatalf("förväntade 1 transaktion, fick %d", n)
 	}

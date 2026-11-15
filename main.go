@@ -465,12 +465,15 @@ func showsummary(w http.ResponseWriter) {
 }
 
 func opendb(w http.ResponseWriter, req *http.Request) {
-	err := req.ParseForm()
-	if err != nil {
-		log.Fatal(err)
+	if !parseFormOrFail(w, req) {
+		return
 	}
 
 	filename := sanitizeFilename(req.FormValue("fname"))
+	if err := checkText(filename, maxLenFilnamn); err != nil {
+		renderMain(w, "message", MessageData{Text: "Felaktigt filnamn: ", Filnamn: filename, Back: true})
+		return
+	}
 
 	if strings.HasSuffix(strings.ToLower(filename), ".mdb") {
 		nopwDb = openJetDB(filename, false)
@@ -540,14 +543,13 @@ func quitapp(w http.ResponseWriter, req *http.Request) {
 }
 
 func createdb(w http.ResponseWriter, req *http.Request) {
-	err := req.ParseForm()
-	if err != nil {
-		log.Fatal(err)
+	if !parseFormOrFail(w, req) {
+		return
 	}
 
-	filename := req.FormValue("fname")
+	filename := strings.TrimSpace(req.FormValue("fname"))
 
-	if (len([]rune(filename)) < 1) ||
+	if (len([]rune(filename)) < 1) || checkText(filename, maxLenFilnamn) != nil ||
 		(strings.ContainsAny(filename, "\\/|:<>.\"'`\x00")) {
 
 		renderMain(w, "message", MessageData{Text: "Felaktigt filnamn(2): ", Filnamn: filename})
@@ -1058,20 +1060,25 @@ func monthly(w http.ResponseWriter, req *http.Request) {
 		NoDB: db == nil,
 	}
 
-	err := req.ParseForm()
-	if err != nil {
-		log.Fatal(err)
+	if !parseFormOrFail(w, req) {
+		return
 	}
 
 	var accYear, accMonth int
 	var accName string
 
-	if len(req.FormValue("accYear")) > 3 {
+	c := newFormCheck(req)
+	if req.FormValue("accYear") != "" {
 		// data from form
-		accYear, _ = strconv.Atoi(req.FormValue("accYear"))
-		accMonth, _ = strconv.Atoi(req.FormValue("accMonth"))
-		accName = req.FormValue("accName")
-	} else {
+		accYear = c.Int("accYear", "År", 1900, 2199, true, 0)
+		accMonth = c.Int("accMonth", "Månad", 1, 12, true, 0)
+		accName = c.RequiredText("accName", "Konto", maxLenKonto)
+		if err := c.Err(); err != nil {
+			log.Println("monthly: ", err)
+		}
+	}
+	if req.FormValue("accYear") == "" || c.Err() != nil {
+		// Saknas eller är fel i formuläret visas standardvärdena.
 		// default data
 		var date []byte // size 10
 		// find date of last transaction

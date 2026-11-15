@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 // PersonRow holds the data for a single person record displayed in the table.
@@ -207,57 +208,58 @@ func updatePerson(w http.ResponseWriter, lopnr int, namn string, birth string, s
 func hanterapersoner(w http.ResponseWriter, req *http.Request) {
 	renderPersoner(w, "personer_header", currentDatabase)
 
-	err := req.ParseForm()
-	if err != nil {
+	if err := req.ParseForm(); err != nil {
 		log.Printf("Error parsing form: %v", err)
-		// Continue rendering the page structure even if form parsing fails partially
+		personerMsg(w, "Kunde inte läsa formulärdata.")
+		printPersonerFooter(w)
+		return
 	}
 
+	c := newFormCheck(req)
 	formaction := req.FormValue("action")
-	var lopnr = -1
-	if len(req.FormValue("lopnr")) > 0 {
-		parsedLopnr, err := strconv.Atoi(req.FormValue("lopnr"))
-		if err == nil {
-			lopnr = parsedLopnr
+	lopnr := c.Lopnr("lopnr")
+
+	// personForm läser och kontrollerar fälten för en ny eller ändrad person.
+	personForm := func() (string, string, string, error) {
+		namn := c.RequiredText("namn", "Namn", maxLenVem)
+		// Född är fyra tecken: födelseår, eller 0 för Gemensamt.
+		birth := c.Int("birth", "Födelseår", 0, time.Now().Year(), true, 0)
+		if birth > 0 && birth < 1850 {
+			c.fail("Födelseår: %d är för tidigt", birth)
 		}
+		sex := c.OneOf("sex", "Kön", "Kvinna", "Man", "Gemensamt")
+		return namn, strconv.Itoa(birth), sex, c.Err()
 	}
 
 	// Handle actions that modify data (these write their own response content)
 	switch formaction {
 	case "radera":
-		raderaPerson(w, lopnr, db)
+		if err := c.Err(); err != nil || lopnr < 0 {
+			personerMsg(w, "Personen raderades inte: ogiltigt löpnr.")
+		} else {
+			raderaPerson(w, lopnr, db)
+		}
 	case "addform":
 		addformPerson(w)
 	case "add":
-		var namn = ""
-		if len(req.FormValue("namn")) > 0 {
-			namn = req.FormValue("namn")
+		namn, birth, sex, err := personForm()
+		if err != nil {
+			personerMsg(w, "Personen lades inte till: %v.", err)
+		} else {
+			addPerson(w, namn, birth, sex, db)
 		}
-		var birth = ""
-		if len(req.FormValue("birth")) > 0 {
-			birth = req.FormValue("birth")
-		}
-		var sex = ""
-		if len(req.FormValue("sex")) > 0 {
-			sex = req.FormValue("sex")
-		}
-		addPerson(w, namn, birth, sex, db)
 	case "editform":
 		editformPerson(w, lopnr, db)
 	case "update":
-		var namn = ""
-		if len(req.FormValue("namn")) > 0 {
-			namn = req.FormValue("namn")
+		namn, birth, sex, err := personForm()
+		if err == nil && lopnr < 0 {
+			err = fmt.Errorf("löpnr saknas")
 		}
-		var birth = ""
-		if len(req.FormValue("birth")) > 0 {
-			birth = req.FormValue("birth")
+		if err != nil {
+			personerMsg(w, "Personen uppdaterades inte: %v.", err)
+		} else {
+			updatePerson(w, lopnr, namn, birth, sex, db)
 		}
-		var sex = ""
-		if len(req.FormValue("sex")) > 0 {
-			sex = req.FormValue("sex")
-		}
-		updatePerson(w, lopnr, namn, birth, sex, db)
 	default:
 		// If no action is specified, we proceed to render the list via printPersoner
 		fmt.Println("No specific action taken.")

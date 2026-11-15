@@ -40,7 +40,13 @@
   {{if .ContextWarning}}
   <p class="chat_error">{{.ContextWarning}}. Chatten fungerar ändå. Nytt försök görs när programmet startas om.</p>
   {{end}}
-
+  <p>Exempel på frågor som kan fungera:
+  <UL>
+    <LI>När köpte jag möbler i år?</LI>
+    <LI>Visa alla köp för bil sedan 1:a september</LI>
+    <LI>visa alla köp för bil sedan 1:a september i år, sortera på belopp</LI>
+  </UL>
+  Exempel på modell: google/gemma-4-e4b</p>
   <div id="chatlog"></div>
 
   <form hx-post="/chatask" hx-target="#chatlog" hx-swap="beforeend"

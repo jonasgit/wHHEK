@@ -5,7 +5,6 @@ package main
 import (
 	_ "embed"
 	"html/template"
-	"log"
 	"net/http"
 )
 
@@ -102,9 +101,12 @@ var htmlpass string
 func passwordmgmt(w http.ResponseWriter, req *http.Request) {
 	//log.Println("passwordmgmt")
 
-	err := req.ParseForm()
-	if err != nil {
-		log.Fatal(err)
+	if !parseFormOrFail(w, req) {
+		return
+	}
+	if db == nil {
+		writeMessage(w, "Ingen databas är öppen.")
+		return
 	}
 
 	//typ := req.FormValue("submit")
@@ -118,6 +120,18 @@ func passwordmgmt(w http.ResponseWriter, req *http.Request) {
 	//log.Println("pwd2: ", pwd2)
 	pwd3 := req.FormValue("pwd3")
 	//log.Println("pwd3: ", pwd3)
+
+	// Lösenordet sparas i DtbVer.Losenord som rymmer 8 tecken.
+	if action == "set" || action == "change" {
+		if pwd2 == "" || pwd2 == " " {
+			writeMessage(w, "Lösenordet ändrades inte: nytt lösenord saknas.")
+			return
+		}
+		if err := checkText(pwd2, maxLenLosenord); err != nil {
+			writeMessage(w, "Lösenordet ändrades inte: lösenordet "+err.Error()+".")
+			return
+		}
+	}
 
 	switch action {
 	case "set":

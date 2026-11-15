@@ -242,25 +242,19 @@ func showFastaTransaktioner(w http.ResponseWriter, db *sql.DB, showedit bool) {
 
 func addfixedtransaction(w http.ResponseWriter, req *http.Request, db *sql.DB) {
 	log.Println("addfixedtransaction start")
-	err := req.ParseForm()
-	if err != nil {
-		log.Fatal(err)
+	if !parseFormOrFail(w, req) {
+		return
 	}
 
 	transtyp := req.FormValue("transtyp")
-	date := req.FormValue("date")
-	who := req.FormValue("who")
-	amount := req.FormValue("amount")
-	text := req.FormValue("text")
 	log.Println("Val: ", transtyp, getCurrentFuncName())
-	log.Println("Val: ", date)
-	log.Println("Val: ", who)
-	log.Println("Val: ", amount)
-	log.Println("Val: ", text)
 
 	if transtyp == "FastTrans" {
-		transid := req.FormValue("transid")
-		transidnum, _ := strconv.Atoi(transid)
+		transidnum, err := fixedTransID(req, "transid")
+		if err != nil {
+			writeMessage(w, "Ogiltig transaktion: "+err.Error()+".")
+			return
+		}
 		registreraFastTransaktionHTML(w, transidnum, db)
 	}
 	log.Println("addfixedtransaction slut")
@@ -619,27 +613,19 @@ type Fasta2Data struct {
 
 func editfixedtransaction(w http.ResponseWriter, req *http.Request, db *sql.DB) {
 	log.Println("editfixedtransaction start")
-	err := req.ParseForm()
-	if err != nil {
-		log.Fatal(err)
+	if !parseFormOrFail(w, req) {
+		return
 	}
 
 	transtyp := req.FormValue("transtyp")
-	date := req.FormValue("date")
-	who := req.FormValue("who")
-	amount := req.FormValue("amount")
-	text := req.FormValue("text")
 	log.Println("Val: ", transtyp, getCurrentFuncName())
-	log.Println("Val: ", date)
-	log.Println("Val: ", who)
-	log.Println("Val: ", amount)
-	log.Println("Val: ", text)
 
 	if transtyp == "FastTrans" {
-		transid := req.FormValue("transid")
-		transidnum, _ := strconv.Atoi(transid)
-
-		var err error
+		transidnum, err := fixedTransID(req, "transid")
+		if err != nil {
+			writeMessage(w, "Ogiltig transaktion: "+err.Error()+".")
+			return
+		}
 
 		var FrånKonto []byte  // size 40
 		var TillKonto []byte  // size 40
@@ -658,7 +644,9 @@ func editfixedtransaction(w http.ResponseWriter, req *http.Request, db *sql.DB) 
 		err = db.QueryRow("SELECT FrånKonto,TillKonto,Belopp,Datum,HurOfta,Vad,Vem,Löpnr,Kontrollnr,TillDatum,Rakning FROM Överföringar WHERE Löpnr = ?", transidnum).Scan(&FrånKonto, &TillKonto, &Belopp, &Datum, &HurOfta, &Vad, &Vem, &Löpnr, &Kontrollnr, &TillDatum, &Rakning)
 
 		if err != nil {
-			log.Fatal(err)
+			log.Println("Hittade inte fast transaktion ", transidnum, ": ", err)
+			writeMessage(w, "Den fasta transaktionen hittades inte.")
+			return
 		}
 
 		transaktion.Löpnr = toUtf8(Löpnr)
@@ -695,4 +683,48 @@ func editfixedtransaction(w http.ResponseWriter, req *http.Request, db *sql.DB) 
 		}
 	}
 	log.Println("editfixedtransaction slut")
+}
+
+// fixedForm är fälten i formuläret för att ändra en fast transaktion.
+type fixedForm struct {
+	fromAcc, toAcc, date, hurofta, tilldatum, what, who, amount, rakning string
+}
+
+// parseFixedForm läser och kontrollerar formuläret för en fast transaktion.
+func parseFixedForm(req *http.Request) (fixedForm, error) {
+	c := newFormCheck(req)
+	var f fixedForm
+	f.fromAcc = c.Text("fromAcc", "Från konto", maxLenKonto)
+	f.toAcc = c.Text("toAcc", "Till konto", maxLenKonto)
+	f.date = c.Date("date", "Datum", true)
+	f.hurofta = c.RequiredText("hurofta", "Hur ofta", maxLenHurOfta)
+	if f.hurofta != "" {
+		if _, _, _, err := normalizePeriod(f.hurofta); err != nil {
+			c.fail("%v", err)
+		}
+	}
+	// TillDatum är ett datum eller "---" (inget slutdatum).
+	f.tilldatum = strings.TrimSpace(req.FormValue("tilldatum"))
+	if f.tilldatum != "" && f.tilldatum != "---" {
+		f.tilldatum = c.Date("tilldatum", "Till datum", false)
+	}
+	f.what = c.Text("what", "Vad", maxLenVad)
+	f.who = c.Text("who", "Vem", maxLenVemFast)
+	amount, _ := c.Amount("amount", "Belopp", true)
+	f.amount = amount.String()
+	f.rakning = c.Text("rakning", "Räkning", maxLenRakning)
+	return f, c.Err()
+}
+
+// fixedTransID läser löpnumret på den fasta transaktion som ett formulär gäller.
+func fixedTransID(req *http.Request, name string) (int, error) {
+	c := newFormCheck(req)
+	id := c.Lopnr(name)
+	if err := c.Err(); err != nil {
+		return -1, err
+	}
+	if id < 0 {
+		return -1, fmt.Errorf("löpnr saknas")
+	}
+	return id, nil
 }

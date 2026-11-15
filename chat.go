@@ -18,6 +18,7 @@ import (
 	"sync"
 	"time"
 	"unicode"
+	"unicode/utf8"
 )
 
 const (
@@ -455,9 +456,21 @@ func chatParseHistory(history string) ([]chatMessage, error) {
 	if history == "" {
 		return nil, nil
 	}
+	if len(history) > maxLenChatHistory {
+		return nil, fmt.Errorf("historiken är för lång (%d byte)", len(history))
+	}
 	var messages []chatMessage
-	err := json.Unmarshal([]byte(history), &messages)
-	return messages, err
+	if err := json.Unmarshal([]byte(history), &messages); err != nil {
+		return nil, err
+	}
+	// Historiken kommer från webbläsaren, så den får bara innehålla frågor och svar,
+	// inte t.ex. egna systemmeddelanden.
+	for _, m := range messages {
+		if m.Role != "user" && m.Role != "assistant" {
+			return nil, fmt.Errorf("ogiltig roll %q i historiken", m.Role)
+		}
+	}
+	return messages, nil
 }
 
 // chatEstimateTokens uppskattar hur många tokens en text blir.
@@ -615,6 +628,8 @@ func serveChatAsk(w http.ResponseWriter, req *http.Request, baseURL string, data
 		data.Message = "Ingen databas är öppen."
 	} else if data.Question == "" {
 		data.Message = "Skriv en fråga."
+	} else if n := utf8.RuneCountInString(data.Question); n > maxLenChatQuestion || !utf8.ValidString(data.Question) {
+		data.Message = fmt.Sprintf("Frågan är för lång eller innehåller ogiltiga tecken (högst %d tecken).", maxLenChatQuestion)
 	} else if historyErr != nil {
 		log.Println("chat: ", historyErr)
 		data.Message = "Samtalet kunde inte läsas. Välj Rensa historik och försök igen."
