@@ -16,8 +16,21 @@ Detta programmet går att köra i Windows så länge det går att köra 32-bitar
 
 Konverterar man datafilen till sqlite så bör det gå att köra även på Mac, i Linux och kravet på 32-bitars program i Windows försvinner, men inte testat.
 
-Windows-versionen av det här går att köra i Linux också med hjälp av Wine. Men då krävs:
+Windows-versionen av det här går att köra i Linux också med hjälp av Wine. Men då krävs MDAC och Jet 4.0, och
+endast 32-bitarsvarianten (`wHHEK_x86.exe`) fungerar eftersom Jet bara finns i 32 bitar.
+
+**Wine med 32-bitars prefix (`WINEARCH=win32`):**
 `winetricks mdac28 jet40`
+
+**Wine i ren WoW64-mode (64-bitars prefix, t.ex. Wine 11):** Där går det inte att skapa ett win32-prefix och
+winetricks vägrar installera mdac28/jet40. Kör istället skriptet `wine-setup.sh` (testat med Wine 11.22):
+
+```sh
+./wine-setup.sh                                  # prefix ~/.wine-hhek, wine från PATH
+WINEPREFIX=~/.mittprefix WINE=/väg/till/wine ./wine-setup.sh
+```
+
+Starta sedan med `WINEPREFIX=~/.wine-hhek wine wHHEK_x86.exe` i katalogen med mdb-filen.
 
 **Projektmål:**
 1. Använd samma filformat som Hogia Hemekonomi (MDB/Jet/Access). För att man ska kunna växla fritt mellan detta program och Hemekonomi. Endast på Windows.
