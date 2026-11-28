@@ -32,6 +32,10 @@ WINEPREFIX=~/.mittprefix WINE=/väg/till/wine ./wine-setup.sh
 
 Starta sedan med `WINEPREFIX=~/.wine-hhek wine wHHEK_x86.exe` i katalogen med mdb-filen.
 
+För att kontrollera att MDAC, Jet 4.0 och ODBC-drivrutinen för Access fungerar i prefixet: bygg testet med
+`tools/jettest/build.sh` och kör `WINEPREFIX=~/.wine-hhek tools/jettest/run.sh`. Utan `WINEPREFIX` skapar
+`run.sh` ett nytt prefix, installerar med `wine-setup.sh` och testar det.
+
 **Projektmål:**
 1. Använd samma filformat som Hogia Hemekonomi (MDB/Jet/Access). För att man ska kunna växla fritt mellan detta program och Hemekonomi. Endast på Windows.
 2. Och ett mer framtidssäkert filformat (Sqlite3) som fungerar på andra OS. Det ska gå att konvertera mellan båda med verktyget på Windows.
